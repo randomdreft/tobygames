@@ -1,0 +1,2292 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Dierenklikker - TobyGames</title>
+<script src="https://cdn.jsdelivr.net/npm/@twemoji/api@latest/dist/twemoji.min.js" crossorigin="anonymous"></script>
+<style>
+:root {
+  --bg1: #0f4c2a;
+  --bg2: #1a6b3c;
+  --bg3: #0d3b2e;
+  --panel: rgba(255,255,255,0.08);
+  --panel-border: rgba(255,255,255,0.15);
+  --text: #e8f5e9;
+  --text-dim: #81c784;
+  --text-dark: #2e7d32;
+  --gold: #ffd700;
+  --green: #43a047;
+  --green-light: #66bb6a;
+  --red: #ef5350;
+  --orange: #ff9800;
+  --blue: #42a5f5;
+  --purple: #ab47bc;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  background: linear-gradient(135deg, var(--bg1) 0%, var(--bg2) 50%, var(--bg3) 100%);
+  color: var(--text);
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  min-height: 100vh;
+  overflow-x: hidden;
+  user-select: none;
+  padding-top: 48px;
+}
+.back-btn {
+  position: fixed; top: 12px; left: 12px; z-index: 100;
+  background: rgba(255,255,255,0.12); backdrop-filter: blur(10px);
+  border: 1px solid rgba(255,255,255,0.2); border-radius: 12px;
+  color: var(--text); text-decoration: none; padding: 8px 16px;
+  font-size: 14px; transition: all 0.2s;
+}
+.back-btn:hover { background: rgba(255,255,255,0.2); }
+
+/* Points display (top of left panel) */
+#points-display {
+  font-size: clamp(18px, 3.5vw, 28px); font-weight: 700;
+  text-align: center; text-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  transition: transform 0.1s;
+}
+#points-display.bump { transform: scale(1.05); }
+#dps-display {
+  font-size: clamp(12px, 2vw, 15px); color: var(--text-dim);
+  text-align: center; margin-bottom: 8px;
+}
+
+/* Mobile nav */
+#mobile-nav {
+  display: none; position: fixed; bottom: 0; left: 0; right: 0; z-index: 90;
+  background: rgba(15,76,42,0.95); backdrop-filter: blur(10px);
+  border-top: 1px solid var(--panel-border);
+  padding: 6px 0 env(safe-area-inset-bottom, 6px);
+}
+#mobile-nav .tab {
+  flex: 1; background: none; border: none; color: var(--text-dim);
+  font-size: 22px; padding: 8px; cursor: pointer; border-radius: 8px;
+}
+#mobile-nav .tab.active { color: var(--gold); background: rgba(255,255,255,0.1); }
+
+/* Main layout */
+#game {
+  display: grid; grid-template-columns: 35% 30% 35%;
+  gap: 12px; padding: 8px 12px 20px; max-width: 1400px; margin: 0 auto;
+  height: calc(100vh - 56px);
+}
+.panel {
+  background: var(--panel); backdrop-filter: blur(8px);
+  border: 1px solid var(--panel-border); border-radius: 16px;
+  padding: 16px; overflow-y: auto;
+}
+.panel::-webkit-scrollbar { width: 6px; }
+.panel::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 3px; }
+
+/* Left panel: animal */
+#left-panel { display: flex; flex-direction: column; align-items: center; justify-content: flex-start; }
+#click-area {
+  position: relative; width: 100%; flex: 1 1 auto;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; max-height: 50vh; min-height: 0;
+}
+img.emoji {
+  height: 1em; width: 1em; margin: 0 .05em 0 .1em;
+  vertical-align: -0.1em; display: inline-block;
+}
+#big-animal {
+  font-size: clamp(80px, 18vw, 200px); line-height: 1;
+  transition: transform 0.08s; filter: drop-shadow(0 4px 20px rgba(0,0,0,0.3));
+  animation: idle-pulse 3s ease-in-out infinite;
+}
+#big-animal img.emoji { filter: drop-shadow(0 4px 20px rgba(0,0,0,0.3)); }
+#big-animal:active { transform: scale(0.88); }
+@keyframes idle-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.04); }
+}
+@keyframes click-bounce {
+  0% { transform: scale(0.85); }
+  50% { transform: scale(1.1); }
+  100% { transform: scale(1); }
+}
+.click-particle {
+  position: absolute; pointer-events: none;
+  font-size: clamp(16px, 3vw, 24px); font-weight: 700; color: var(--gold);
+  text-shadow: 0 1px 4px rgba(0,0,0,0.5);
+  animation: particle-fly 0.9s ease-out forwards;
+}
+@keyframes particle-fly {
+  0% { opacity: 1; transform: translateY(0) scale(1); }
+  100% { opacity: 0; transform: translateY(-80px) scale(0.5); }
+}
+.orbiter {
+  position: absolute; font-size: clamp(20px, 3vw, 32px);
+  pointer-events: none; animation: orbit var(--dur) linear infinite;
+  animation-delay: var(--delay);
+}
+@keyframes orbit {
+  from { transform: rotate(0deg) translateX(var(--radius)) rotate(0deg); }
+  to { transform: rotate(360deg) translateX(var(--radius)) rotate(-360deg); }
+}
+#click-info {
+  margin-top: 12px; font-size: 14px; color: var(--text-dim); text-align: center;
+}
+#animal-name {
+  font-size: clamp(16px, 3vw, 22px); font-weight: 600; margin-top: 8px;
+  text-align: center;
+}
+
+/* Middle panel: mini-games */
+#middle-panel h2 { font-size: 18px; margin-bottom: 12px; text-align: center; }
+.minigame-box {
+  background: rgba(0,0,0,0.2); border-radius: 12px; padding: 14px; margin-bottom: 12px;
+}
+.minigame-box h3 { font-size: 15px; margin-bottom: 8px; }
+.mg-btn {
+  width: 100%; padding: 12px; border: none; border-radius: 10px;
+  background: var(--green); color: white; font-size: 16px; font-weight: 600;
+  cursor: pointer; transition: all 0.2s;
+}
+.mg-btn:hover:not(:disabled) { background: var(--green-light); transform: translateY(-1px); }
+.mg-btn:disabled { background: #555; cursor: not-allowed; opacity: 0.7; }
+.cooldown-text { font-size: 13px; color: var(--text-dim); margin-top: 6px; text-align: center; }
+
+/* Quiz */
+#quiz-game { margin-top: 10px; }
+.quiz-question { font-size: 15px; font-weight: 600; margin-bottom: 10px; line-height: 1.4; }
+.quiz-answers { display: flex; flex-direction: column; gap: 6px; }
+.quiz-answer {
+  padding: 10px 14px; border: 2px solid var(--panel-border); border-radius: 8px;
+  background: rgba(0,0,0,0.15); color: var(--text); font-size: 14px;
+  cursor: pointer; transition: all 0.2s; text-align: left;
+}
+.quiz-answer:hover { border-color: var(--green); background: rgba(67,160,71,0.15); }
+.quiz-answer.correct { border-color: var(--green); background: rgba(67,160,71,0.3); }
+.quiz-answer.wrong { border-color: var(--red); background: rgba(239,83,80,0.3); }
+.quiz-result { font-size: 15px; font-weight: 600; margin-top: 10px; text-align: center; padding: 8px; border-radius: 8px; }
+
+/* Catcher */
+#catcher-field {
+  position: relative; width: 100%; height: 250px; overflow: hidden;
+  background: rgba(0,0,0,0.2); border-radius: 10px; margin-top: 10px;
+}
+.catch-animal {
+  position: absolute; font-size: 28px; cursor: pointer;
+  animation: catch-pop 0.3s ease-out; transition: transform 0.1s;
+}
+.catch-animal:hover { transform: scale(1.3); }
+@keyframes catch-pop { from { transform: scale(0); } to { transform: scale(1); } }
+#catcher-hud {
+  display: flex; justify-content: space-between; margin-top: 8px;
+  font-size: 14px; font-weight: 600;
+}
+
+/* Middle panel tabs */
+#mid-tabs {
+  display: flex; gap: 4px; margin-bottom: 12px;
+}
+.mid-tab {
+  flex: 1; padding: 8px 4px; border: none; border-radius: 8px;
+  background: rgba(0,0,0,0.2); color: var(--text-dim); font-size: 13px;
+  cursor: pointer; transition: all 0.2s;
+}
+.mid-tab.active { background: rgba(255,255,255,0.15); color: var(--gold); }
+.mid-content { display: none; }
+.mid-content.active { display: block; }
+
+/* Minigame lock */
+.mg-lock-msg {
+  text-align: center; padding: 10px; color: var(--text-dim); font-size: 13px;
+  background: rgba(0,0,0,0.15); border-radius: 8px;
+}
+.minigame-box.locked .mg-btn,
+.minigame-box.locked .cooldown-text { display: none; }
+.minigame-box.locked h3 { opacity: 0.5; }
+
+/* Buff kiezer */
+.buff-choices { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+.buff-card {
+  padding: 12px 8px; border-radius: 10px; text-align: center;
+  border: 2px solid var(--panel-border); background: rgba(0,0,0,0.15);
+  cursor: pointer; transition: all 0.15s;
+}
+.buff-card:hover { border-color: var(--gold); background: rgba(255,215,0,0.1); transform: translateY(-2px); }
+.buff-card-emoji { font-size: 28px; margin-bottom: 4px; }
+.buff-card-name { font-size: 13px; font-weight: 700; margin-bottom: 2px; }
+.buff-card-desc { font-size: 11px; color: var(--text-dim); line-height: 1.3; }
+
+/* Buff indicator */
+#buff-indicator {
+  text-align: center; padding: 6px 10px; margin-bottom: 6px;
+  border-radius: 8px; font-size: 13px; font-weight: 600;
+  min-height: 29px; visibility: hidden; box-sizing: border-box;
+  animation: buff-pulse 1s ease-in-out infinite;
+}
+@keyframes buff-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+/* Sort game */
+#sort-field {
+  text-align: center; padding: 20px; min-height: 100px;
+  background: rgba(0,0,0,0.2); border-radius: 10px; margin-bottom: 8px;
+}
+#sort-current { font-size: 48px; margin-bottom: 4px; }
+#sort-name { font-size: 14px; color: var(--text-dim); }
+.sort-buttons { display: flex; gap: 6px; margin-bottom: 8px; }
+.sort-cat-btn {
+  flex: 1; padding: 12px 8px; border: 2px solid var(--panel-border); border-radius: 10px;
+  background: rgba(0,0,0,0.15); color: var(--text); font-size: 13px; font-weight: 600;
+  cursor: pointer; transition: all 0.15s; text-align: center;
+}
+.sort-cat-btn:hover { border-color: var(--green); background: rgba(67,160,71,0.15); }
+.sort-cat-btn.correct { border-color: var(--green); background: rgba(67,160,71,0.3); }
+.sort-cat-btn.wrong { border-color: var(--red); background: rgba(239,83,80,0.3); }
+#sort-hud {
+  display: flex; justify-content: space-between;
+  font-size: 14px; font-weight: 600;
+}
+
+/* Stats */
+.stat-row {
+  display: flex; justify-content: space-between; padding: 4px 0;
+  font-size: 13px; border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+.stat-label { color: var(--text-dim); }
+
+/* Right panel: shop */
+#shop-tabs {
+  display: flex; gap: 4px; margin-bottom: 12px; flex-wrap: wrap;
+}
+.shop-tab {
+  flex: 1; min-width: 60px; padding: 8px 4px; border: none; border-radius: 8px;
+  background: rgba(0,0,0,0.2); color: var(--text-dim); font-size: 13px;
+  cursor: pointer; transition: all 0.2s; white-space: nowrap;
+}
+.shop-tab.active { background: rgba(255,255,255,0.15); color: var(--gold); }
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+
+/* Shop items */
+.shop-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px; margin-bottom: 6px; border-radius: 10px;
+  background: rgba(0,0,0,0.15); border: 2px solid transparent;
+  cursor: pointer; transition: all 0.15s;
+}
+.shop-item:hover { background: rgba(0,0,0,0.25); }
+.shop-item.affordable { border-color: rgba(67,160,71,0.4); }
+.shop-item.affordable:hover { border-color: var(--green); }
+.shop-item.locked { opacity: 0.35; pointer-events: none; }
+.shop-item.bought { opacity: 0.5; border-color: var(--gold); pointer-events: none; }
+.shop-emoji { font-size: 32px; flex-shrink: 0; }
+.shop-info { flex: 1; min-width: 0; }
+.shop-name { font-size: 14px; font-weight: 600; }
+.shop-name .count { color: var(--gold); margin-left: 4px; }
+.shop-flavor { font-size: 11px; color: var(--text-dim); margin-top: 1px; }
+.shop-dps { font-size: 12px; color: var(--green-light); margin-top: 2px; }
+.shop-price {
+  font-size: 14px; font-weight: 700; white-space: nowrap;
+  padding: 6px 12px; border-radius: 8px; background: rgba(0,0,0,0.2);
+  text-align: center; min-width: 80px;
+}
+.shop-item.affordable .shop-price { color: var(--green-light); }
+.shop-item:not(.affordable) .shop-price { color: var(--red); }
+#buy-amount-bar {
+  display: flex; gap: 6px; margin-bottom: 10px; justify-content: center;
+}
+.buy-amt-btn {
+  padding: 5px 14px; border: 2px solid rgba(255,255,255,0.15); border-radius: 8px;
+  background: rgba(0,0,0,0.2); color: var(--text-dim); font-size: 13px; font-weight: 600;
+  cursor: pointer; transition: all 0.15s;
+}
+.buy-amt-btn.active { border-color: var(--gold); color: var(--gold); background: rgba(255,215,0,0.1); }
+.buy-amt-btn:hover { border-color: var(--gold); }
+.shop-item.bought .shop-price { color: var(--gold); }
+
+/* Upgrade categories */
+.upgrade-category { margin-bottom: 16px; }
+.upgrade-category h3 { font-size: 14px; color: var(--gold); margin-bottom: 8px; padding-bottom: 4px; border-bottom: 1px solid rgba(255,215,0,0.2); }
+
+/* Achievements */
+.ach-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(44px, 1fr));
+  gap: 6px;
+}
+.ach-item {
+  aspect-ratio: 1; display: flex; align-items: center; justify-content: center;
+  font-size: 22px; border-radius: 8px; background: rgba(0,0,0,0.3);
+  border: 2px solid transparent; cursor: default; position: relative;
+}
+.ach-item.earned { background: rgba(255,215,0,0.15); border-color: var(--gold); }
+.ach-item.unearned { filter: grayscale(1); opacity: 0.3; }
+/* Global tooltip (fixed, always on top) */
+#tooltip {
+  display: none; position: fixed; z-index: 500;
+  background: rgba(0,0,0,0.92); color: var(--text); padding: 10px 14px;
+  border-radius: 10px; font-size: 13px; max-width: 260px;
+  pointer-events: none; line-height: 1.5;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+  border: 1px solid rgba(255,255,255,0.1);
+}
+#tooltip .tip-title { font-weight: 700; color: var(--gold); margin-bottom: 3px; }
+#tooltip .tip-desc { color: var(--text-dim); }
+.ach-summary { font-size: 13px; color: var(--text-dim); margin-bottom: 12px; text-align: center; }
+.ach-section { margin-bottom: 14px; }
+.ach-section h4 { font-size: 13px; color: var(--text-dim); margin-bottom: 6px; }
+
+/* Options */
+.opt-section { margin-bottom: 20px; }
+.opt-section h3 { font-size: 15px; margin-bottom: 10px; }
+.opt-btn {
+  display: block; width: 100%; padding: 12px; margin-bottom: 8px;
+  border: 2px solid var(--panel-border); border-radius: 10px;
+  background: rgba(0,0,0,0.2); color: var(--text); font-size: 14px;
+  cursor: pointer; transition: all 0.2s; text-align: center;
+}
+.opt-btn:hover { background: rgba(0,0,0,0.3); border-color: rgba(255,255,255,0.3); }
+.opt-btn.prestige-btn { border-color: var(--purple); color: var(--purple); }
+.opt-btn.prestige-btn:hover { background: rgba(171,71,188,0.15); }
+.opt-btn.danger { border-color: var(--red); color: var(--red); }
+.opt-btn.danger:hover { background: rgba(239,83,80,0.15); }
+.opt-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.prestige-info {
+  background: rgba(171,71,188,0.1); border: 1px solid rgba(171,71,188,0.3);
+  border-radius: 10px; padding: 12px; margin-bottom: 12px; font-size: 13px; line-height: 1.5;
+}
+
+/* Modals */
+.modal-overlay {
+  display: none; position: fixed; inset: 0; z-index: 200;
+  background: rgba(0,0,0,0.7); backdrop-filter: blur(4px);
+  align-items: center; justify-content: center; padding: 20px;
+}
+.modal-overlay.show { display: flex; }
+.modal-box {
+  background: linear-gradient(135deg, #1a472a, #0d3b2e);
+  border: 1px solid var(--panel-border); border-radius: 16px;
+  padding: 24px; max-width: 500px; width: 100%; max-height: 80vh;
+  overflow-y: auto;
+}
+.modal-box h2 { font-size: 20px; margin-bottom: 12px; text-align: center; }
+.modal-box p { font-size: 14px; line-height: 1.5; margin-bottom: 12px; }
+.modal-box textarea {
+  width: 100%; height: 200px; background: rgba(0,0,0,0.3); color: var(--text);
+  border: 1px solid var(--panel-border); border-radius: 8px; padding: 10px;
+  font-family: 'Courier New', monospace; font-size: 12px; resize: vertical;
+}
+.modal-buttons { display: flex; gap: 8px; margin-top: 16px; justify-content: center; }
+.modal-btn {
+  padding: 10px 24px; border: none; border-radius: 8px;
+  font-size: 15px; font-weight: 600; cursor: pointer; transition: all 0.2s;
+}
+.modal-btn.primary { background: var(--green); color: white; }
+.modal-btn.primary:hover { background: var(--green-light); }
+.modal-btn.secondary { background: rgba(255,255,255,0.1); color: var(--text); }
+.modal-btn.secondary:hover { background: rgba(255,255,255,0.2); }
+.modal-btn.danger { background: var(--red); color: white; }
+.modal-btn.danger:hover { background: #f44336; }
+.modal-highlight { font-size: 28px; text-align: center; color: var(--gold); font-weight: 700; margin: 16px 0; }
+
+/* Notification toast */
+.toast {
+  position: fixed; top: 80px; left: 50%; transform: translateX(-50%);
+  background: rgba(0,0,0,0.85); color: var(--gold); padding: 10px 20px;
+  border-radius: 10px; font-size: 14px; font-weight: 600; z-index: 150;
+  animation: toast-in 0.3s ease-out, toast-out 0.3s ease-in 2.7s forwards;
+  pointer-events: none; text-align: center;
+}
+@keyframes toast-in { from { opacity: 0; transform: translateX(-50%) translateY(-20px); } }
+@keyframes toast-out { to { opacity: 0; transform: translateX(-50%) translateY(-20px); } }
+
+/* Responsive */
+@media (max-width: 900px) {
+  #game { grid-template-columns: 1fr; max-width: 600px; padding-bottom: 70px; }
+  .panel { max-height: none; }
+  .panel.hidden-mobile { display: none; }
+  #mobile-nav { display: flex; }
+  .back-btn { font-size: 12px; padding: 6px 10px; }
+  #top-bar { padding: 10px 60px 4px; }
+  #click-area { max-height: 40vh; }
+}
+</style>
+</head>
+<body>
+<a href="index.html" class="back-btn">← TobyGames</a>
+
+
+<div id="mobile-nav">
+  <button class="tab active" onclick="showMobilePanel('left')" id="mob-left">🐾 Dier</button>
+  <button class="tab" onclick="showMobilePanel('middle')" id="mob-middle">🎮 Spel</button>
+  <button class="tab" onclick="showMobilePanel('right')" id="mob-right">🛒 Winkel</button>
+</div>
+
+<div id="game">
+  <!-- LEFT: Big Animal -->
+  <div id="left-panel" class="panel">
+    <div id="points-display">0 dierenpunten</div>
+    <div id="dps-display">0 dieren per seconde</div>
+    <div id="buff-indicator"></div>
+    <div id="click-area" onclick="doClick(event)">
+      <div id="big-animal">🐜</div>
+    </div>
+    <div id="animal-name">Mier</div>
+    <div id="click-info">+1 per klik</div>
+  </div>
+
+  <!-- MIDDLE: Mini-games & Stats -->
+  <div id="middle-panel" class="panel hidden-mobile">
+    <div id="mid-tabs">
+      <button class="mid-tab active" onclick="showMidTab('games')">🎮 Mini-spellen</button>
+      <button class="mid-tab" onclick="showMidTab('stats')">📊 Statistieken</button>
+    </div>
+
+    <div id="mid-games" class="mid-content active">
+      <div class="minigame-box" id="mg-quiz">
+        <h3>🧠 Dierenquiz</h3>
+        <div class="mg-lock-msg" id="lock-quiz"></div>
+        <button class="mg-btn" id="quiz-btn" onclick="startQuiz()">Start Quiz!</button>
+        <div id="quiz-cooldown" class="cooldown-text"></div>
+        <div id="quiz-game" style="display:none"></div>
+      </div>
+
+      <div class="minigame-box" id="mg-catcher">
+        <h3>🎯 Dierenvanger</h3>
+        <div class="mg-lock-msg" id="lock-catcher"></div>
+        <button class="mg-btn" id="catcher-btn" onclick="startCatcher()">Start Vangen!</button>
+        <div id="catcher-cooldown" class="cooldown-text"></div>
+        <div id="catcher-game" style="display:none">
+          <div id="catcher-field"></div>
+          <div id="catcher-hud">
+            <span>Gevangen: <b id="catcher-score">0</b></span>
+            <span>Tijd: <b id="catcher-timer">15</b>s</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="minigame-box" id="mg-math">
+        <h3>🔢 Dieren Wiskunde</h3>
+        <div class="mg-lock-msg" id="lock-math"></div>
+        <button class="mg-btn" id="math-btn" onclick="startMath()">Start Rekenen!</button>
+        <div id="math-cooldown" class="cooldown-text"></div>
+        <div id="math-game" style="display:none"></div>
+      </div>
+
+      <div class="minigame-box" id="mg-buff">
+        <h3>✨ Buff Kiezer</h3>
+        <div class="mg-lock-msg" id="lock-buff"></div>
+        <button class="mg-btn" id="buff-btn" onclick="startBuff()">Kies je Buff!</button>
+        <div id="buff-cooldown" class="cooldown-text"></div>
+        <div id="buff-game" style="display:none"></div>
+      </div>
+
+      <div class="minigame-box" id="mg-sort">
+        <h3>🗂️ Dieren Sorteren</h3>
+        <div class="mg-lock-msg" id="lock-sort"></div>
+        <button class="mg-btn" id="sort-btn" onclick="startSort()">Start Sorteren!</button>
+        <div id="sort-cooldown" class="cooldown-text"></div>
+        <div id="sort-game" style="display:none">
+          <div id="sort-field"><div id="sort-current"></div><div id="sort-name"></div></div>
+          <div class="sort-buttons">
+            <button class="sort-cat-btn" onclick="sortAnswer('boerderij')">🌾 Boerderij</button>
+            <button class="sort-cat-btn" onclick="sortAnswer('bos')">🌲 Bos</button>
+            <button class="sort-cat-btn" onclick="sortAnswer('water')">🌊 Water</button>
+          </div>
+          <div id="sort-hud">
+            <span>Goed: <b id="sort-score">0</b></span>
+            <span>Tijd: <b id="sort-timer">15</b>s</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="mid-stats" class="mid-content">
+      <div id="stats-list"></div>
+    </div>
+  </div>
+
+  <!-- RIGHT: Shop -->
+  <div id="right-panel" class="panel hidden-mobile">
+    <div id="shop-tabs">
+      <button class="shop-tab active" onclick="showShopTab('animals')">🐾 Dieren</button>
+      <button class="shop-tab" onclick="showShopTab('upgrades')">⬆️ Upgrades</button>
+      <button class="shop-tab" onclick="showShopTab('achievements')">🏆 Prestaties</button>
+      <button class="shop-tab" onclick="showShopTab('options')">⚙️ Opties</button>
+    </div>
+    <div id="tab-animals" class="tab-content active"></div>
+    <div id="tab-upgrades" class="tab-content"></div>
+    <div id="tab-achievements" class="tab-content"></div>
+    <div id="tab-options" class="tab-content"></div>
+  </div>
+</div>
+
+<!-- Offline earnings modal -->
+<div class="modal-overlay" id="offline-modal">
+  <div class="modal-box">
+    <h2>Welkom terug! 🎉</h2>
+    <p>Terwijl je weg was hebben je dieren hard gewerkt!</p>
+    <div class="modal-highlight" id="offline-amount">+0</div>
+    <p style="text-align:center;color:var(--text-dim)" id="offline-detail"></p>
+    <div class="modal-buttons">
+      <button class="modal-btn primary" onclick="closeModal('offline-modal')">Geweldig!</button>
+    </div>
+  </div>
+</div>
+
+<!-- Prestige modal -->
+<div class="modal-overlay" id="prestige-modal">
+  <div class="modal-box">
+    <h2>⭐ Evolutie ⭐</h2>
+    <p>Je dierentuin evolueert naar een hoger niveau!</p>
+    <div class="modal-highlight" id="prestige-stars-preview">+0 ⭐</div>
+    <p style="font-size:13px;line-height:1.6">
+      <span style="color:var(--green-light)">✓ Je houdt:</span> sterren (+5% DPS elk), prestaties (+2% DPS elk)<br>
+      <span style="color:var(--red)">✗ Je verliest:</span> dieren, punten, alle upgrades<br><br>
+      <span style="color:var(--text-dim)">Met je sterrenbonus ga je de volgende keer veel sneller!</span>
+    </p>
+    <div id="prestige-keep-info" style="font-size:13px;margin-top:8px"></div>
+    <p id="prestige-current-info" style="text-align:center;font-size:13px;margin-top:8px"></p>
+    <div class="modal-buttons">
+      <button class="modal-btn danger" onclick="doPrestige()">Evolueer!</button>
+      <button class="modal-btn secondary" onclick="closeModal('prestige-modal')">Nog niet</button>
+    </div>
+  </div>
+</div>
+
+<!-- Import modal -->
+<div class="modal-overlay" id="import-modal">
+  <div class="modal-box">
+    <h2>Savegame importeren</h2>
+    <p>Plak hieronder je savegame. Je mag het ook aanpassen... als je durft! 😏</p>
+    <textarea id="import-text" spellcheck="false"></textarea>
+    <div class="modal-buttons">
+      <button class="modal-btn primary" onclick="doImport()">Laden!</button>
+      <button class="modal-btn secondary" onclick="closeModal('import-modal')">Annuleren</button>
+    </div>
+  </div>
+</div>
+
+<!-- Tooltip -->
+<div id="tooltip"></div>
+
+<!-- Error import modal -->
+<div class="modal-overlay" id="error-modal">
+  <div class="modal-box">
+    <h2>Oeps! 💥</h2>
+    <p id="error-text">Je savegame is kapot. Probeer het opnieuw!</p>
+    <div class="modal-buttons">
+      <button class="modal-btn secondary" onclick="closeModal('error-modal')">OK</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ================================================================
+   SECTIE 1: SPELGEGEVENS
+   ================================================================ */
+
+const SAVE_VERSION = 1;
+const COST_MULTIPLIER = 1.15;
+const ACHIEVEMENT_BONUS = 0.02; // +2% DPS per achievement
+const PRESTIGE_BONUS = 0.05;    // +5% DPS per star
+const MAX_OFFLINE_SECONDS = 14 * 24 * 3600; // 14 days
+const PRESTIGE_KEEP_OFFLINE = 3;  // stars needed to keep offline upgrades
+const PRESTIGE_KEEP_CLICK = 7;    // stars needed to keep click upgrades
+const PRESTIGE_KEEP_GLOBAL = 12;  // stars needed to keep global upgrades
+const AUTOSAVE_INTERVAL = 30000; // 30 sec
+const TICK_INTERVAL = 100;       // 100ms
+const RENDER_INTERVAL = 250;     // 250ms
+const QUIZ_COOLDOWN = 180000;    // 3 min
+const CATCHER_COOLDOWN = 300000; // 5 min
+const MATH_COOLDOWN = 180000;    // 3 min
+const BUFF_COOLDOWN = 240000;    // 4 min
+const SORT_COOLDOWN = 300000;    // 5 min
+const BUFF_DURATION = 30000;     // 30 sec
+
+const MINIGAME_UNLOCKS = [
+  {id:'quiz', reqAnimal:'slak', label:'Koop een Slak'},
+  {id:'catcher', reqAnimal:'kip', label:'Koop een Kip'},
+  {id:'math', reqAnimal:'hond', label:'Koop een Hond'},
+  {id:'buff', reqAnimal:'olifant', label:'Koop een Olifant'},
+  {id:'sort', reqAnimal:'draak', label:'Koop een Draak'}
+];
+
+const BUFF_TYPES = [
+  {id:'dps2x', emoji:'🔥', name:'Vuurkracht', desc:'DPS ×2 voor 30 seconden', color:'#ff6b35'},
+  {id:'sale', emoji:'🏷️', name:'Uitverkoop', desc:'Alle dieren halve prijs voor 30 sec', color:'#e91e63'},
+  {id:'clickdps', emoji:'⭐', name:'Gouden Regen', desc:'+10% van DPS per klik voor 30 sec', color:'#ffd700'},
+  {id:'jackpot', emoji:'💰', name:'Jackpot', desc:'Direct 30 seconden DPS als bonus!', color:'#66bb6a'}
+];
+
+const SORT_ANIMALS = [
+  {emoji:'🐔', name:'Kip', cat:'boerderij'}, {emoji:'🐷', name:'Varken', cat:'boerderij'},
+  {emoji:'🐄', name:'Koe', cat:'boerderij'}, {emoji:'🐑', name:'Schaap', cat:'boerderij'},
+  {emoji:'🐴', name:'Paard', cat:'boerderij'}, {emoji:'🐐', name:'Geit', cat:'boerderij'},
+  {emoji:'🦊', name:'Vos', cat:'bos'}, {emoji:'🐻', name:'Beer', cat:'bos'},
+  {emoji:'🦌', name:'Hert', cat:'bos'}, {emoji:'🐿️', name:'Eekhoorn', cat:'bos'},
+  {emoji:'🦉', name:'Uil', cat:'bos'}, {emoji:'🐺', name:'Wolf', cat:'bos'},
+  {emoji:'🐟', name:'Vis', cat:'water'}, {emoji:'🐬', name:'Dolfijn', cat:'water'},
+  {emoji:'🐙', name:'Octopus', cat:'water'}, {emoji:'🦈', name:'Haai', cat:'water'},
+  {emoji:'🐢', name:'Schildpad', cat:'water'}, {emoji:'🐊', name:'Krokodil', cat:'water'}
+];
+
+const ANIMALS = [
+  {id:'mier', emoji:'🐜', name:'Mier', plural:'mieren', flavor:'Sjouwt kruimels voor je',
+   baseDps:0.1, basePrice:15, upgrades:[
+     {id:'mier_1', name:'Sterkere kaakjes', desc:'Mieren bijten harder', req:10, cost:1e3, mult:2},
+     {id:'mier_2', name:'Vliegende mieren', desc:'Mieren met vleugels!', req:50, cost:5e4, mult:3},
+     {id:'mier_3', name:'Robotmieren', desc:'Bleep bloop kruip kruip', req:200, cost:1e7, mult:10}
+   ]},
+  {id:'slak', emoji:'🐌', name:'Slak', plural:'slakken', flavor:'Langzaam maar zeker',
+   baseDps:0.5, basePrice:100, upgrades:[
+     {id:'slak_1', name:'Turbo slijmspoor', desc:'Sneller glijden!', req:10, cost:5e3, mult:2},
+     {id:'slak_2', name:'Racehelm', desc:'Vroom vroom slak', req:50, cost:2.5e5, mult:3},
+     {id:'slak_3', name:'Raketslakken', desc:'3... 2... 1... Lancering!', req:200, cost:5e7, mult:10}
+   ]},
+  {id:'kikker', emoji:'🐸', name:'Kikker', plural:'kikkers', flavor:'Vangt punten met zijn tong',
+   baseDps:4, basePrice:1100, upgrades:[
+     {id:'kikker_1', name:'Plakkerige tong', desc:'Vangt twee keer zoveel', req:10, cost:5e4, mult:2},
+     {id:'kikker_2', name:'Ninja kikker', desc:'Onzichtbaar en dodelijk', req:50, cost:2.5e6, mult:3},
+     {id:'kikker_3', name:'Gifkikker', desc:'Mooi maar gevaarlijk!', req:200, cost:5e8, mult:10}
+   ]},
+  {id:'kip', emoji:'🐔', name:'Kip', plural:'kippen', flavor:'Legt gouden eieren',
+   baseDps:10, basePrice:12000, upgrades:[
+     {id:'kip_1', name:'Gouden eieren', desc:'Elk ei is goud waard', req:10, cost:5e5, mult:2},
+     {id:'kip_2', name:'Turbo kip', desc:'Rent sneller dan je denkt', req:50, cost:2.5e7, mult:3},
+     {id:'kip_3', name:'Dino-kip', desc:'T-Rex maar dan met veren', req:200, cost:5e9, mult:10}
+   ]},
+  {id:'kat', emoji:'🐱', name:'Kat', plural:'katten', flavor:'Slaapt 18u per dag, maar die 6u...',
+   baseDps:40, basePrice:130000, upgrades:[
+     {id:'kat_1', name:'Kattenkruid', desc:'Extra gemotiveerd!', req:10, cost:5e6, mult:2},
+     {id:'kat_2', name:'Laserkat', desc:'Pew pew pew!', req:50, cost:2.5e8, mult:3},
+     {id:'kat_3', name:'Superkat', desc:'Met cape en masker', req:200, cost:5e10, mult:10}
+   ]},
+  {id:'hond', emoji:'🐕', name:'Hond', plural:'honden', flavor:'Brave boy! Apporteert punten',
+   baseDps:100, basePrice:1400000, upgrades:[
+     {id:'hond_1', name:'Bot van goud', desc:'Het beste speeltje', req:10, cost:5e7, mult:2},
+     {id:'hond_2', name:'Politiehond', desc:'Pakt de boeven!', req:50, cost:2.5e9, mult:3},
+     {id:'hond_3', name:'Robothond', desc:'Woef. Woef. Systeem actief.', req:200, cost:5e11, mult:10}
+   ]},
+  {id:'paard', emoji:'🐴', name:'Paard', plural:'paarden', flavor:'Galoppeert door je puntenteller',
+   baseDps:400, basePrice:20000000, upgrades:[
+     {id:'paard_1', name:'Gouden hoefijzers', desc:'Brengt extra geluk!', req:10, cost:7.5e8, mult:2},
+     {id:'paard_2', name:'Eenhoorn', desc:'Magisch en glitterig', req:50, cost:4e10, mult:3},
+     {id:'paard_3', name:'Pegasus', desc:'Vliegt door de wolken', req:200, cost:8e12, mult:10}
+   ]},
+  {id:'olifant', emoji:'🐘', name:'Olifant', plural:'olifanten', flavor:'Vergeet nooit een punt',
+   baseDps:6666, basePrice:330000000, upgrades:[
+     {id:'olifant_1', name:'Geheugentraining', desc:'Onthoudt nog meer punten', req:10, cost:1.2e10, mult:2},
+     {id:'olifant_2', name:'Mammoet', desc:'IJstijd editie!', req:50, cost:6e11, mult:3},
+     {id:'olifant_3', name:'Mecha-olifant', desc:'Groter. Sterker. Metaler.', req:200, cost:1.2e14, mult:10}
+   ]},
+  {id:'walvis', emoji:'🐋', name:'Walvis', plural:'walvissen', flavor:'Slurpt oceanen vol punten',
+   baseDps:98765, basePrice:5100000000, upgrades:[
+     {id:'walvis_1', name:'Krillfeest', desc:'All-you-can-eat buffet', req:10, cost:1.8e11, mult:2},
+     {id:'walvis_2', name:'Narwal', desc:'De eenhoorn van de zee', req:50, cost:9e12, mult:3},
+     {id:'walvis_3', name:'Megalodon', desc:'De grootste ooit!', req:200, cost:2e15, mult:10}
+   ]},
+  {id:'draak', emoji:'🐉', name:'Draak', plural:'draken', flavor:'Mythisch. Legendarisch. Duur.',
+   baseDps:999999, basePrice:75000000000, upgrades:[
+     {id:'draak_1', name:'Vuurspuwen', desc:'Alles brandt!', req:10, cost:2.7e12, mult:2},
+     {id:'draak_2', name:'IJsdraak', desc:'Bevriest de concurrentie', req:50, cost:1.35e14, mult:3},
+     {id:'draak_3', name:'Kosmische draak', desc:'Heerser van het universum', req:200, cost:2.7e16, mult:10}
+   ]}
+];
+
+const CLICK_UPGRADES = [
+  {id:'click_1', name:'Stevige vinger', desc:'+1 per klik', cost:100, addClick:1},
+  {id:'click_2', name:'Twee vingers', desc:'+5 per klik', cost:500, addClick:5},
+  {id:'click_3', name:'Hele hand', desc:'+25 per klik', cost:5000, addClick:25},
+  {id:'click_4', name:'Twee handen', desc:'+100 per klik', cost:50000, addClick:100},
+  {id:'click_5', name:'Dierenmagneet', desc:'+1% van je DPS per klik', cost:500000, dpsPercent:1},
+  {id:'click_6', name:'Supermagneet', desc:'+5% van je DPS per klik', cost:5000000, dpsPercent:5},
+  {id:'click_7', name:'Ultramagneet', desc:'+10% van je DPS per klik', cost:50000000, dpsPercent:10}
+];
+
+const GLOBAL_UPGRADES = [
+  {id:'global_1', name:'Dierenvoer', desc:'Alle DPS +10%', cost:1000, addPercent:10},
+  {id:'global_2', name:'Beter voer', desc:'Alle DPS +25%', cost:10000, addPercent:25},
+  {id:'global_3', name:'Premium voer', desc:'Alle DPS +50%', cost:100000, addPercent:50},
+  {id:'global_4', name:'Dierenfluisteraar', desc:'Alle DPS ×2', cost:1000000, multiply:2},
+  {id:'global_5', name:'Dierentrainer', desc:'Alle DPS ×2', cost:10000000, multiply:2},
+  {id:'global_6', name:'Dierentovenaar', desc:'Alle DPS ×2', cost:100000000, multiply:2},
+  {id:'global_7', name:'Dierenmeester', desc:'Alle DPS ×2', cost:10000000000, multiply:2}
+];
+
+const OFFLINE_UPGRADES = [
+  {id:'offline_1', name:'Nachtwaker', desc:'10% DPS terwijl je weg bent', cost:10000, offlinePct:10},
+  {id:'offline_2', name:'Nachtploeg', desc:'25% DPS offline', cost:100000, offlinePct:25},
+  {id:'offline_3', name:'Bewaker', desc:'50% DPS offline', cost:1000000, offlinePct:50},
+  {id:'offline_4', name:'Nachtmanager', desc:'75% DPS offline', cost:50000000, offlinePct:75},
+  {id:'offline_5', name:'24/7 Dierentuin', desc:'100% DPS offline', cost:1000000000, offlinePct:100}
+];
+
+const MILESTONES = [1, 10, 25, 50, 100, 250, 500, 1000];
+const MILESTONE_LABELS = ['Eerste','10','25','50','100','250','500','1000'];
+
+const QUIZ_QUESTIONS = [
+  {q:"Hoeveel poten heeft een spin?", a:["8","6","10","4"], c:0},
+  {q:"Welk dier is het grootste op aarde?", a:["Blauwe vinvis","Olifant","Giraffe","Walvishaai"], c:0},
+  {q:"Wat eet een panda het liefst?", a:["Bamboe","Vis","Vlees","Bananen"], c:0},
+  {q:"Hoeveel poten heeft een mier?", a:["6","8","4","10"], c:0},
+  {q:"Welk dier kan het hardst rennen?", a:["Cheetah","Leeuw","Paard","Hond"], c:0},
+  {q:"Hoe heet een baby kat?", a:["Kitten","Puppy","Kuiken","Veulen"], c:0},
+  {q:"Welk dier heeft de langste nek?", a:["Giraffe","Struisvogel","Kameel","Lama"], c:0},
+  {q:"Hoeveel armen heeft een octopus?", a:["8","6","10","12"], c:0},
+  {q:"Welk dier maakt honing?", a:["Bij","Wesp","Vlinder","Mug"], c:0},
+  {q:"Hoe noem je een groep wolven?", a:["Roedel","Kudde","Zwerm","School"], c:0},
+  {q:"Welk dier slaapt ondersteboven?", a:["Vleermuis","Luiaard","Koala","Uil"], c:0},
+  {q:"Hoeveel harten heeft een octopus?", a:["3","1","2","8"], c:0},
+  {q:"Welk dier kan zijn kleur veranderen?", a:["Kameleon","Gekko","Leguaan","Kikker"], c:0},
+  {q:"Hoeveel tanden heeft een slak?", a:["Duizenden!","Geen","32","100"], c:0},
+  {q:"Hoe heet een baby hond?", a:["Puppy","Kitten","Veulen","Welp"], c:0},
+  {q:"Welk dier heeft zwart-witte strepen?", a:["Zebra","Tijger","Panda","Stinkdier"], c:0},
+  {q:"Hoeveel ogen heeft een spin meestal?", a:["8","2","6","4"], c:0},
+  {q:"Wat eet een koala?", a:["Eucalyptus","Bamboe","Gras","Insecten"], c:0},
+  {q:"Welk dier legt eieren maar is geen vogel?", a:["Schildpad","Dolfijn","Konijn","Muis"], c:0},
+  {q:"Hoe heet een baby paard?", a:["Veulen","Kalf","Lam","Puppy"], c:0},
+  {q:"Welk dier bouwt dammen?", a:["Bever","Otter","Eend","Muskusrat"], c:0},
+  {q:"Welk dier heeft de grootste oren?", a:["Afrikaanse olifant","Konijn","Vos","Ezel"], c:0},
+  {q:"Hoe noem je een groep vissen?", a:["School","Kudde","Roedel","Kolonie"], c:0},
+  {q:"Welk dier kan zijn staart laten afvallen?", a:["Hagedis","Slang","Schildpad","Kikker"], c:0},
+  {q:"Hoeveel maanden is een olifant zwanger?", a:["22 maanden","9 maanden","12 maanden","6 maanden"], c:0},
+  {q:"Welk dier is het snelste in het water?", a:["Zeilvis","Dolfijn","Haai","Tonijn"], c:0},
+  {q:"Hoe heet een baby koe?", a:["Kalf","Veulen","Lam","Big"], c:0},
+  {q:"Welk dier maakt een web?", a:["Spin","Rups","Vlinder","Mier"], c:0},
+  {q:"Hoeveel kamers heeft het hart van een vis?", a:["2","4","1","3"], c:0},
+  {q:"Welk dier kan achteruit vliegen?", a:["Kolibrie","Papegaai","Uil","Mees"], c:0},
+  {q:"Hoe ademen vissen?", a:["Met kieuwen","Met longen","Door hun huid","Met hun bek"], c:0},
+  {q:"Welk dier is het langste?", a:["Giraffe","Olifant","Slang","Krokodil"], c:0},
+  {q:"Wat is een dolfijn?", a:["Een zoogdier","Een vis","Een haai","Een reptiel"], c:0},
+  {q:"Hoeveel poten heeft een kreeft?", a:["10","8","6","12"], c:0},
+  {q:"Welk dier heeft de scherpste ogen?", a:["Arend","Uil","Kat","Havik"], c:0},
+  {q:"Hoe noem je een baby schaap?", a:["Lam","Kalf","Big","Kuiken"], c:0},
+  {q:"Welk dier kan het langst zonder water?", a:["Kameel","Olifant","Slang","Schildpad"], c:0},
+  {q:"Wat eet een flamingo?", a:["Garnalen en algen","Vis","Gras","Insecten"], c:0},
+  {q:"Waarom is een flamingo roze?", a:["Door zijn eten","Zonnebrand","Zo geboren","Door het water"], c:0},
+  {q:"Welk dier heeft geen botten?", a:["Kwal","Slak","Slang","Worm"], c:0},
+  {q:"Welk dier kan het langst slapen?", a:["Luiaard","Kat","Koala","Beer"], c:0},
+  {q:"Hoeveel kleuren kan een kameleon worden?", a:["Heel veel!","2","3","Alleen groen"], c:0},
+  {q:"Welk dier heeft de grootste tanden?", a:["Nijlpaard","Olifant","Walrus","Haai"], c:0},
+  {q:"Hoe noem je een baby geit?", a:["Geitje","Lam","Kalf","Veulen"], c:0},
+  {q:"Welk dier kan over water lopen?", a:["Basilisk hagedis","Kikker","Spin","Muis"], c:0},
+  {q:"Hoeveel nieren heeft een mens?", a:["2","1","4","3"], c:0},
+  {q:"Welk dier is het giftigste ter wereld?", a:["Pijlgifkikker","Cobra","Schorpioen","Spin"], c:0},
+  {q:"Hoe oud kan een schildpad worden?", a:["Meer dan 150 jaar","50 jaar","20 jaar","80 jaar"], c:0},
+  {q:"Welk dier heeft de langste tong?", a:["Kameleon","Kikker","Miereneter","Giraffe"], c:0},
+  {q:"Hoeveel botten heeft een haai?", a:["Nul!","200","100","50"], c:0},
+  {q:"Welk dier kan het hardst bijten?", a:["Krokodil","Haai","Leeuw","Hyena"], c:0},
+  {q:"Hoe noem je een baby eend?", a:["Eendje","Kuiken","Pulletje","Kalf"], c:0},
+  {q:"Welk dier heeft strepen die uniek zijn, net als vingerafdrukken?", a:["Zebra","Tijger","Giraf","Cheetah"], c:0},
+  {q:"Wat is het zwaarste insect?", a:["Goliathkever","Vliegend hert","Bidsprinkhaan","Mestkever"], c:0},
+  {q:"Welk dier kan zijn kop bijna helemaal omdraaien?", a:["Uil","Papegaai","Arend","Flamingo"], c:0},
+  {q:"Hoeveel magen heeft een koe?", a:["4","1","2","3"], c:0},
+  {q:"Welk dier heeft het beste geheugen?", a:["Olifant","Dolfijn","Hond","Papegaai"], c:0},
+  {q:"Wat eet een egel?", a:["Insecten","Gras","Noten","Vis"], c:0},
+  {q:"Welk dier kan elektriciteit maken?", a:["Sidderaal","Octopus","Kwal","Rog"], c:0},
+  {q:"Hoeveel soorten mieren bestaan er?", a:["Meer dan 12.000","100","500","50"], c:0},
+  {q:"Welk dier heeft blauwe tong?", a:["Giraf","Koe","Hond","Paard"], c:0},
+  {q:"Hoe ademt een dolfijn?", a:["Met longen","Met kieuwen","Door zijn huid","Met zijn bek"], c:0},
+  {q:"Welk dier is het luidste?", a:["Bultrugwalvis","Leeuw","Papegaai","Brulkikker"], c:0},
+  {q:"Hoeveel eieren legt een octopus?", a:["Duizenden","10","100","1"], c:0},
+  {q:"Welk dier heeft de dikste vacht?", a:["Zeeotter","IJsbeer","Poolvos","Husky"], c:0},
+  {q:"Wat is een groep leeuwen?", a:["Troep","Roedel","Kudde","School"], c:0},
+  {q:"Welk dier kan het diepst duiken?", a:["Potvis","Dolfijn","Pinguïn","Zeehond"], c:0},
+  {q:"Hoeveel poten heeft een duizendpoot echt?", a:["30 tot 354","Precies 1000","500","100"], c:0},
+  {q:"Welk dier heeft vingerafdrukken die lijken op die van mensen?", a:["Koala","Chimpansee","Gorilla","Orang-oetan"], c:0},
+  {q:"Hoe noem je een baby konijn?", a:["Kit","Puppy","Kuiken","Lam"], c:0},
+  {q:"Welk dier is het oudste nog levende soort?", a:["Degenkrab","Krokodil","Haai","Schildpad"], c:0},
+  {q:"Hoeveel liter water kan een kameel drinken in 10 minuten?", a:["100 liter","10 liter","30 liter","5 liter"], c:0},
+  {q:"Welk dier heeft de meeste poten?", a:["Miljoenpoot","Duizendpoot","Kreeft","Spin"], c:0},
+  {q:"Wat is bijzonder aan een platypus?", a:["Het legt eieren én zoogt","Het kan vliegen","Het heeft schubben","Het leeft 200 jaar"], c:0},
+  {q:"Welk dier maakt het grootste nest?", a:["Wevervogel","Arend","Ooievaar","Zwaluw"], c:0},
+  {q:"Hoeveel uur per dag slaapt een kat gemiddeld?", a:["12 tot 16 uur","8 uur","5 uur","20 uur"], c:0},
+  {q:"Welk dier heeft het grootste oog?", a:["Kolossale inktvis","Walvis","Struisvogel","Olifant"], c:0},
+  {q:"Hoe snel kan een struisvogel rennen?", a:["70 km/u","30 km/u","50 km/u","20 km/u"], c:0},
+  {q:"Welk dier gebruikt gereedschap?", a:["Chimpansee","Hond","Kat","Paard"], c:0},
+  {q:"Hoeveel soorten pinguïns bestaan er?", a:["18","2","5","50"], c:0},
+  {q:"Welk dier kan het langst onder water blijven?", a:["Lederschildpad","Dolfijn","Walvis","Krokodil"], c:0},
+  {q:"Wat is het kleinste vogeltje?", a:["Bijkolibrie","Winterkoning","Pimpelmees","Goudhaantje"], c:0}
+];
+
+/* ================================================================
+   SECTIE 2: SPELSTATUS
+   ================================================================ */
+
+function defaultState() {
+  const s = {
+    version: SAVE_VERSION,
+    currentPoints: 0,
+    totalEarned: 0,
+    totalClicks: 0,
+    playTimeSeconds: 0,
+    animals: {},
+    upgrades: {},
+    achievements: {},
+    prestige: { stars: 0, timesReset: 0 },
+    minigames: { quizLast: 0, catcherLast: 0, mathLast: 0, buffLast: 0, sortLast: 0 },
+    lastTick: Date.now()
+  };
+  ANIMALS.forEach(a => s.animals[a.id] = 0);
+  return s;
+}
+
+let state = defaultState();
+
+/* ================================================================
+   SECTIE 3: GETALLEN FORMATTEREN
+   ================================================================ */
+
+const NUM_NAMES = [
+  {val:1e24, name:'quadriljoen'}, {val:1e21, name:'triljard'}, {val:1e18, name:'triljoen'},
+  {val:1e15, name:'biljard'}, {val:1e12, name:'biljoen'}, {val:1e9, name:'miljard'},
+  {val:1e6, name:'miljoen'}
+];
+
+function formatNumber(n) {
+  if (n === undefined || n === null || isNaN(n)) return '0';
+  if (!isFinite(n)) return 'oneindig';
+  if (n < 0) return '-' + formatNumber(-n);
+  if (n < 1 && n > 0) return n.toFixed(1).replace('.', ',');
+  n = Math.floor(n);
+  if (n < 10000) return n.toLocaleString('nl-NL');
+  for (const {val, name} of NUM_NAMES) {
+    if (n >= val) {
+      const d = n / val;
+      return (d < 100 ? d.toFixed(1).replace('.', ',') : Math.floor(d).toLocaleString('nl-NL')) + ' ' + name;
+    }
+  }
+  // thousands
+  if (n >= 10000) return Math.floor(n).toLocaleString('nl-NL');
+  return n.toString();
+}
+
+function formatDps(n) {
+  if (n < 0.1) return '0';
+  if (n < 10) return n.toFixed(1).replace('.', ',');
+  return formatNumber(n);
+}
+
+function formatTime(seconds) {
+  seconds = Math.floor(seconds);
+  if (seconds < 60) return seconds + 's';
+  if (seconds < 3600) return Math.floor(seconds/60) + 'm ' + (seconds%60) + 's';
+  const h = Math.floor(seconds/3600);
+  const m = Math.floor((seconds%3600)/60);
+  if (h < 24) return h + 'u ' + m + 'm';
+  const d = Math.floor(h/24);
+  return d + 'd ' + (h%24) + 'u';
+}
+
+/* ================================================================
+   SECTIE 4: SAVEGAME (INI formaat)
+   ================================================================ */
+
+function stateToIni() {
+  let lines = [];
+  lines.push('# === DIERENKLIKKER SAVEGAME ===');
+  lines.push('# Je mag dit bestand aanpassen!');
+  lines.push('# Tip: verander je punten of voeg dieren toe ;)');
+  lines.push('');
+  lines.push('[meta]');
+  lines.push('versie=' + SAVE_VERSION);
+  lines.push('opgeslagen=' + new Date().toISOString());
+  lines.push('');
+  lines.push('[speler]');
+  lines.push('punten=' + Math.floor(state.currentPoints));
+  lines.push('totaal_verdiend=' + Math.floor(state.totalEarned));
+  lines.push('totaal_klikken=' + state.totalClicks);
+  lines.push('speeltijd=' + Math.floor(state.playTimeSeconds));
+  lines.push('');
+  lines.push('[dieren]');
+  ANIMALS.forEach(a => lines.push(a.id + '=' + (state.animals[a.id] || 0)));
+  lines.push('');
+  lines.push('[upgrades]');
+  const allUpgrades = getAllUpgradeIds();
+  allUpgrades.forEach(id => { if (state.upgrades[id]) lines.push(id + '=1'); });
+  lines.push('');
+  lines.push('[prestaties]');
+  Object.keys(state.achievements).forEach(id => { if (state.achievements[id]) lines.push(id + '=1'); });
+  lines.push('');
+  lines.push('[evolutie]');
+  lines.push('sterren=' + state.prestige.stars);
+  lines.push('keer_geevolueerd=' + state.prestige.timesReset);
+  lines.push('');
+  lines.push('[minispellen]');
+  lines.push('quiz_laatst=' + state.minigames.quizLast);
+  lines.push('vanger_laatst=' + state.minigames.catcherLast);
+  lines.push('wiskunde_laatst=' + state.minigames.mathLast);
+  lines.push('buff_laatst=' + state.minigames.buffLast);
+  lines.push('sorteren_laatst=' + state.minigames.sortLast);
+  return lines.join('\n');
+}
+
+function getAllUpgradeIds() {
+  const ids = [];
+  ANIMALS.forEach(a => a.upgrades.forEach(u => ids.push(u.id)));
+  CLICK_UPGRADES.forEach(u => ids.push(u.id));
+  GLOBAL_UPGRADES.forEach(u => ids.push(u.id));
+  OFFLINE_UPGRADES.forEach(u => ids.push(u.id));
+  return ids;
+}
+
+function parseIni(text) {
+  const result = {};
+  let section = null;
+  text.split('\n').forEach(line => {
+    const t = line.trim();
+    if (!t || t.startsWith('#') || t.startsWith(';')) return;
+    const sm = t.match(/^\[([^\]]+)\]$/);
+    if (sm) { section = sm[1].toLowerCase(); result[section] = result[section] || {}; return; }
+    if (section) {
+      const eq = t.indexOf('=');
+      if (eq > 0) {
+        result[section][t.substring(0, eq).trim().toLowerCase()] = t.substring(eq + 1).trim();
+      }
+    }
+  });
+  return result;
+}
+
+function safeInt(val, def, min, max) {
+  if (def === undefined) def = 0;
+  if (min === undefined) min = 0;
+  if (max === undefined) max = Number.MAX_SAFE_INTEGER;
+  const n = parseInt(val);
+  if (isNaN(n) || !isFinite(n)) return def;
+  return Math.max(min, Math.min(max, Math.floor(n)));
+}
+
+function safeFloat(val, def, min) {
+  if (def === undefined) def = 0;
+  if (min === undefined) min = 0;
+  const n = parseFloat(val);
+  if (isNaN(n) || !isFinite(n)) return def;
+  return Math.max(min, n);
+}
+
+function iniToState(text) {
+  let ini;
+  try { ini = parseIni(text); } catch(e) { return null; }
+  if (!ini || typeof ini !== 'object') return null;
+
+  const s = defaultState();
+
+  // Player
+  const sp = ini.speler || ini.player || {};
+  s.currentPoints = safeFloat(sp.punten || sp.current_points, 0, 0);
+  s.totalEarned = safeFloat(sp.totaal_verdiend || sp.total_earned, 0, 0);
+  s.totalClicks = safeInt(sp.totaal_klikken || sp.total_clicks, 0, 0);
+  s.playTimeSeconds = safeFloat(sp.speeltijd || sp.play_time_seconds, 0, 0);
+
+  // Animals
+  const da = ini.dieren || ini.animals || {};
+  ANIMALS.forEach(a => {
+    if (da[a.id] !== undefined) s.animals[a.id] = safeInt(da[a.id], 0, 0);
+  });
+
+  // Upgrades
+  const du = ini.upgrades || {};
+  const validUpgrades = new Set(getAllUpgradeIds());
+  Object.keys(du).forEach(id => {
+    if (validUpgrades.has(id) && safeInt(du[id], 0) > 0) s.upgrades[id] = 1;
+  });
+
+  // Achievements
+  const dp = ini.prestaties || ini.achievements || {};
+  Object.keys(dp).forEach(id => {
+    if (safeInt(dp[id], 0) > 0) s.achievements[id] = 1;
+  });
+
+  // Prestige
+  const de = ini.evolutie || ini.prestige || {};
+  s.prestige.stars = safeInt(de.sterren || de.stars, 0, 0);
+  s.prestige.timesReset = safeInt(de.keer_geevolueerd || de.times_reset, 0, 0);
+
+  // Minigames
+  const dm = ini.minispellen || ini.minigames || {};
+  s.minigames.quizLast = safeInt(dm.quiz_laatst || dm.quiz_last_played, 0, 0);
+  s.minigames.catcherLast = safeInt(dm.vanger_laatst || dm.vanger_last_played || dm.catcher_last_played, 0, 0);
+  s.minigames.mathLast = safeInt(dm.wiskunde_laatst, 0, 0);
+  s.minigames.buffLast = safeInt(dm.buff_laatst || dm.tellen_laatst, 0, 0);
+  s.minigames.sortLast = safeInt(dm.sorteren_laatst, 0, 0);
+
+  // Ensure totalEarned >= currentPoints
+  if (s.totalEarned < s.currentPoints) s.totalEarned = s.currentPoints;
+
+  s.lastTick = Date.now();
+  return s;
+}
+
+function saveGame() {
+  try {
+    state.lastTick = Date.now();
+    localStorage.setItem('dierenklikker_save', stateToIni());
+  } catch(e) {}
+}
+
+function loadGame() {
+  try {
+    const data = localStorage.getItem('dierenklikker_save');
+    if (!data) return false;
+    const loaded = iniToState(data);
+    if (!loaded) return false;
+    const oldTick = loaded.lastTick;
+    loaded.lastTick = Date.now();
+
+    // Calculate offline earnings
+    const saved = parseIni(data);
+    const meta = saved.meta || {};
+    let savedTime = 0;
+    if (meta.opgeslagen || meta.last_saved) {
+      const d = new Date(meta.opgeslagen || meta.last_saved);
+      if (!isNaN(d.getTime())) savedTime = d.getTime();
+    }
+    if (savedTime > 0) {
+      const elapsed = Math.min((Date.now() - savedTime) / 1000, MAX_OFFLINE_SECONDS);
+      if (elapsed > 60) {
+        state = loaded;
+        const offlinePct = getOfflinePercent();
+        if (offlinePct > 0) {
+          const dps = getTotalDps();
+          const earnings = dps * elapsed * (offlinePct / 100);
+          if (earnings > 0) {
+            state.currentPoints += earnings;
+            state.totalEarned += earnings;
+            showOfflineModal(earnings, elapsed);
+          }
+        }
+        return true;
+      }
+    }
+    state = loaded;
+    return true;
+  } catch(e) { return false; }
+}
+
+function exportSave() {
+  const text = stateToIni();
+  const blob = new Blob([text], {type: 'text/plain'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'dierenklikker-savegame.txt';
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('Savegame gedownload!');
+}
+
+function showImportModal() {
+  document.getElementById('import-text').value = stateToIni();
+  showModal('import-modal');
+}
+
+function doImport() {
+  const text = document.getElementById('import-text').value;
+  const loaded = iniToState(text);
+  if (!loaded) {
+    closeModal('import-modal');
+    document.getElementById('error-text').textContent =
+      'Je savegame kon niet gelezen worden. Controleer of het formaat klopt!';
+    showModal('error-modal');
+    return;
+  }
+  loaded.lastTick = Date.now();
+  state = loaded;
+  // Award the hacker achievement
+  if (!state.achievements['savegame_hacker']) {
+    state.achievements['savegame_hacker'] = 1;
+    showToast('🏆 Prestatie: Savegame Hacker!');
+  }
+  closeModal('import-modal');
+  saveGame();
+  buildShop();
+  showToast('Savegame geladen!');
+}
+
+function resetGame() {
+  if (!confirm('Weet je het zeker? Je verliest ALLES!')) return;
+  state = defaultState();
+  localStorage.removeItem('dierenklikker_save');
+  buildShop();
+  showToast('Spel gereset!');
+}
+
+/* ================================================================
+   SECTIE 5: BEREKENINGEN
+   ================================================================ */
+
+function getAnimalPrice(animalId) {
+  const a = ANIMALS.find(x => x.id === animalId);
+  const count = state.animals[animalId] || 0;
+  let price = Math.ceil(a.basePrice * Math.pow(COST_MULTIPLIER, count));
+  const buff = getActiveBuff();
+  if (buff && buff.type === 'sale') price = Math.ceil(price * 0.5);
+  return price;
+}
+
+function getBulkPrice(animalId, qty) {
+  const a = ANIMALS.find(x => x.id === animalId);
+  const count = state.animals[animalId] || 0;
+  const buff = getActiveBuff();
+  const saleMult = (buff && buff.type === 'sale') ? 0.5 : 1;
+  let total = 0;
+  for (let i = 0; i < qty; i++) {
+    total += Math.ceil(a.basePrice * Math.pow(COST_MULTIPLIER, count + i) * saleMult);
+  }
+  return total;
+}
+
+function getAnimalDps(animalId) {
+  const a = ANIMALS.find(x => x.id === animalId);
+  let dps = a.baseDps;
+  // Animal-specific upgrades
+  a.upgrades.forEach(u => { if (state.upgrades[u.id]) dps *= u.mult; });
+  // Milestone bonuses (auto, ×2 per milestone reached)
+  const count = state.animals[animalId] || 0;
+  MILESTONES.forEach(m => { if (count >= m) dps *= 2; });
+  return dps;
+}
+
+function getTotalDps() {
+  let total = 0;
+  ANIMALS.forEach(a => {
+    total += getAnimalDps(a.id) * (state.animals[a.id] || 0);
+  });
+  // Global upgrade multipliers
+  let addPct = 0, mult = 1;
+  GLOBAL_UPGRADES.forEach(u => {
+    if (state.upgrades[u.id]) {
+      if (u.addPercent) addPct += u.addPercent;
+      if (u.multiply) mult *= u.multiply;
+    }
+  });
+  total *= (1 + addPct/100) * mult;
+  // Achievement bonus
+  const achCount = Object.keys(state.achievements).filter(k => state.achievements[k]).length;
+  total *= (1 + achCount * ACHIEVEMENT_BONUS);
+  // Prestige bonus
+  total *= (1 + state.prestige.stars * PRESTIGE_BONUS);
+  // Active buff: DPS ×2
+  const buff = getActiveBuff();
+  if (buff && buff.type === 'dps2x') total *= 2;
+  return total;
+}
+
+function getClickValue() {
+  let base = 1;
+  let dpsPct = 0;
+  CLICK_UPGRADES.forEach(u => {
+    if (state.upgrades[u.id]) {
+      if (u.addClick) base += u.addClick;
+      if (u.dpsPercent) dpsPct += u.dpsPercent;
+    }
+  });
+  // Prestige bonus on clicks too
+  base *= (1 + state.prestige.stars * PRESTIGE_BONUS);
+  // Active buff effects on clicks
+  const buff = getActiveBuff();
+  if (buff && buff.type === 'clickdps') dpsPct += 10;
+  return base + getTotalDps() * (dpsPct / 100);
+}
+
+function getOfflinePercent() {
+  let pct = 0;
+  OFFLINE_UPGRADES.forEach(u => { if (state.upgrades[u.id]) pct = u.offlinePct; });
+  return pct;
+}
+
+function getHighestAnimal() {
+  for (let i = ANIMALS.length - 1; i >= 0; i--) {
+    if ((state.animals[ANIMALS[i].id] || 0) > 0) return ANIMALS[i];
+  }
+  return ANIMALS[0];
+}
+
+function isAnimalVisible(animalId) {
+  const idx = ANIMALS.findIndex(a => a.id === animalId);
+  if (idx === 0) return true;
+  return (state.animals[ANIMALS[idx-1].id] || 0) > 0;
+}
+
+function canPrestige() {
+  return ANIMALS.every(a => (state.animals[a.id] || 0) > 0);
+}
+
+function getPrestigeStars() {
+  if (state.totalEarned < 1e10) return 0;
+  return Math.max(1, Math.floor(Math.log10(state.totalEarned) - 9));
+}
+
+/* ================================================================
+   SECTIE 6: ACHIEVEMENTS
+   ================================================================ */
+
+function buildAchievementDefs() {
+  const defs = [];
+  // Per-animal milestones
+  ANIMALS.forEach(a => {
+    MILESTONES.forEach((m, mi) => {
+      defs.push({
+        id: a.id + '_' + m,
+        emoji: a.emoji,
+        name: m + ' ' + a.plural,
+        desc: 'Je hebt ' + m + ' ' + a.plural + '!',
+        group: a.name,
+        check: () => (state.animals[a.id] || 0) >= m
+      });
+    });
+  });
+  // Total animals
+  const totalMilestones = [
+    [10, 'Mini dierentuin'], [50, 'Dierenverzamelaar'], [100, 'Dierentuin directeur'],
+    [500, 'Dierenrijk'], [1000, 'Dierenwereld'], [5000, 'Dierenplaneet']
+  ];
+  totalMilestones.forEach(([n, name]) => {
+    defs.push({
+      id: 'totaal_' + n, emoji: '🏠', name: name,
+      desc: n + ' dieren in totaal!', group: 'Totaal',
+      check: () => ANIMALS.reduce((s, a) => s + (state.animals[a.id]||0), 0) >= n
+    });
+  });
+  // Click milestones
+  const clickMilestones = [
+    [100, 'Klik klik klik'], [1000, 'Doordrukker'], [10000, 'Klikkampioen'],
+    [100000, 'Supersnelle vinger'], [1000000, 'Miljoen klikken!']
+  ];
+  clickMilestones.forEach(([n, name]) => {
+    defs.push({
+      id: 'klik_' + n, emoji: '👆', name: name,
+      desc: formatNumber(n) + ' keer geklikt!', group: 'Klikken',
+      check: () => state.totalClicks >= n
+    });
+  });
+  // Points milestones
+  const pointMilestones = [
+    [1000, 'Eerste duizend', '🪙'], [1e6, 'Miljonair', '💰'],
+    [1e9, 'Miljardair', '💎'], [1e12, 'Biljonair', '👑'], [1e15, 'Biljardair', '🌟']
+  ];
+  pointMilestones.forEach(([n, name, em]) => {
+    defs.push({
+      id: 'punten_' + n, emoji: em, name: name,
+      desc: formatNumber(n) + ' punten verdiend!', group: 'Punten',
+      check: () => state.totalEarned >= n
+    });
+  });
+  // Special
+  defs.push({
+    id: 'alle_dieren', emoji: '🌈', name: 'Alle dieren!',
+    desc: 'Minstens 1 van elk dier!', group: 'Speciaal',
+    check: () => ANIMALS.every(a => (state.animals[a.id]||0) > 0)
+  });
+  defs.push({
+    id: 'eerste_evolutie', emoji: '⭐', name: 'Geëvolueerd!',
+    desc: 'Je eerste evolutie!', group: 'Speciaal',
+    check: () => state.prestige.timesReset > 0
+  });
+  defs.push({
+    id: 'savegame_hacker', emoji: '💾', name: 'Savegame Hacker',
+    desc: 'Een savegame geïmporteerd!', group: 'Speciaal',
+    check: () => !!state.achievements['savegame_hacker']
+  });
+  return defs;
+}
+
+let achievementDefs = buildAchievementDefs();
+
+function checkAchievements() {
+  let newOnes = [];
+  achievementDefs.forEach(a => {
+    if (!state.achievements[a.id] && a.check()) {
+      state.achievements[a.id] = 1;
+      newOnes.push(a);
+    }
+  });
+  newOnes.forEach(a => showToast('🏆 ' + a.name));
+}
+
+/* ================================================================
+   SECTIE 7: KLIKKEN & KOPEN
+   ================================================================ */
+
+function doClick(event) {
+  const value = getClickValue();
+  state.currentPoints += value;
+  state.totalEarned += value;
+  state.totalClicks++;
+
+  // Particle
+  const area = document.getElementById('click-area');
+  const rect = area.getBoundingClientRect();
+  const x = event.clientX - rect.left;
+  const y = event.clientY - rect.top;
+  const p = document.createElement('div');
+  p.className = 'click-particle';
+  p.textContent = '+' + formatNumber(Math.floor(value));
+  p.style.left = x + 'px';
+  p.style.top = y + 'px';
+  area.appendChild(p);
+  setTimeout(() => p.remove(), 900);
+
+  // Bounce
+  const el = document.getElementById('big-animal');
+  el.style.animation = 'none';
+  el.offsetHeight; // reflow
+  el.style.animation = 'click-bounce 0.15s ease-out';
+  setTimeout(() => el.style.animation = 'idle-pulse 3s ease-in-out infinite', 150);
+
+  // Bump points display
+  const pd = document.getElementById('points-display');
+  pd.classList.add('bump');
+  setTimeout(() => pd.classList.remove('bump'), 100);
+}
+
+function buyAnimal(animalId) {
+  // Buy as many as affordable, up to buyMultiplier
+  let bought = 0;
+  for (let i = 0; i < buyMultiplier; i++) {
+    const price = getAnimalPrice(animalId);
+    if (state.currentPoints < price) break;
+    state.currentPoints -= price;
+    state.animals[animalId] = (state.animals[animalId] || 0) + 1;
+    bought++;
+  }
+}
+
+function buyUpgrade(upgradeId) {
+  if (state.upgrades[upgradeId]) return;
+  const u = findUpgrade(upgradeId);
+  if (!u) return;
+  if (state.currentPoints < u.cost) return;
+  // Check requirements for animal upgrades
+  if (u.req !== undefined) {
+    const animalId = upgradeId.split('_')[0];
+    // Handle multi-word animal ids
+    const animal = ANIMALS.find(a => a.upgrades.some(au => au.id === upgradeId));
+    if (animal && (state.animals[animal.id] || 0) < u.req) return;
+  }
+  state.currentPoints -= u.cost;
+  state.upgrades[upgradeId] = 1;
+}
+
+function findUpgrade(id) {
+  for (const a of ANIMALS) {
+    const u = a.upgrades.find(u => u.id === id);
+    if (u) return u;
+  }
+  let u = CLICK_UPGRADES.find(u => u.id === id);
+  if (u) return u;
+  u = GLOBAL_UPGRADES.find(u => u.id === id);
+  if (u) return u;
+  u = OFFLINE_UPGRADES.find(u => u.id === id);
+  return u;
+}
+
+/* ================================================================
+   SECTIE 8: MINI-GAMES
+   ================================================================ */
+
+let quizActive = false;
+let catcherActive = false;
+let catcherInterval = null;
+let catcherScore = 0;
+let catcherSpawnInterval = null;
+
+function startQuiz() {
+  if (quizActive || !isMinigameUnlocked('quiz')) return;
+  const now = Date.now();
+  if (now - state.minigames.quizLast < QUIZ_COOLDOWN) return;
+  quizActive = true;
+  document.getElementById('quiz-btn').disabled = true;
+
+  // Pick random question
+  const q = QUIZ_QUESTIONS[Math.floor(Math.random() * QUIZ_QUESTIONS.length)];
+  // Shuffle answers (keep track of correct)
+  const correctAnswer = q.a[q.c];
+  const shuffled = [...q.a].sort(() => Math.random() - 0.5);
+  const correctIdx = shuffled.indexOf(correctAnswer);
+
+  let html = '<div class="quiz-question">' + q.q + '</div><div class="quiz-answers">';
+  shuffled.forEach((a, i) => {
+    html += '<button class="quiz-answer" onclick="answerQuiz(' + i + ',' + correctIdx + ')" data-idx="' + i + '">' + a + '</button>';
+  });
+  html += '</div><div id="quiz-result"></div>';
+
+  const game = document.getElementById('quiz-game');
+  game.innerHTML = html;
+  game.style.display = 'block';
+}
+
+function answerQuiz(chosen, correct) {
+  if (!quizActive) return;
+  quizActive = false;
+  state.minigames.quizLast = Date.now();
+
+  const buttons = document.querySelectorAll('.quiz-answer');
+  buttons.forEach((b, i) => {
+    b.onclick = null;
+    b.style.pointerEvents = 'none';
+    if (i === correct) b.classList.add('correct');
+    if (i === chosen && chosen !== correct) b.classList.add('wrong');
+  });
+
+  const result = document.getElementById('quiz-result');
+  if (chosen === correct) {
+    const bonus = getTotalDps() * 600; // 10 minutes DPS
+    state.currentPoints += bonus;
+    state.totalEarned += bonus;
+    result.innerHTML = '<div class="quiz-result" style="background:rgba(67,160,71,0.2);color:var(--green-light)">Goed! +' + formatNumber(bonus) + ' punten!</div>';
+  } else {
+    result.innerHTML = '<div class="quiz-result" style="background:rgba(239,83,80,0.2);color:var(--red)">Helaas, fout!</div>';
+  }
+
+  setTimeout(() => {
+    document.getElementById('quiz-game').style.display = 'none';
+    document.getElementById('quiz-btn').disabled = false;
+  }, 2500);
+}
+
+function startCatcher() {
+  if (catcherActive || !isMinigameUnlocked('catcher')) return;
+  const now = Date.now();
+  if (now - state.minigames.catcherLast < CATCHER_COOLDOWN) return;
+  catcherActive = true;
+  catcherScore = 0;
+  document.getElementById('catcher-btn').disabled = true;
+  document.getElementById('catcher-game').style.display = 'block';
+  document.getElementById('catcher-score').textContent = '0';
+  document.getElementById('catcher-timer').textContent = '15';
+  document.getElementById('catcher-field').innerHTML = '';
+
+  const allEmoji = ANIMALS.map(a => a.emoji);
+  let timeLeft = 15;
+
+  // Spawn animals
+  catcherSpawnInterval = setInterval(() => {
+    if (!catcherActive) return;
+    const field = document.getElementById('catcher-field');
+    const emoji = allEmoji[Math.floor(Math.random() * allEmoji.length)];
+    const el = document.createElement('div');
+    el.className = 'catch-animal';
+    el.textContent = emoji;
+    el.style.left = Math.random() * 85 + '%';
+    el.style.top = Math.random() * 85 + '%';
+    el.onclick = function() {
+      catcherScore++;
+      document.getElementById('catcher-score').textContent = catcherScore;
+      el.style.transform = 'scale(0)';
+      setTimeout(() => el.remove(), 200);
+    };
+    field.appendChild(el);
+    // Remove after 2 seconds if not caught
+    setTimeout(() => { if (el.parentNode) el.remove(); }, 2000);
+  }, 600);
+
+  // Timer
+  catcherInterval = setInterval(() => {
+    timeLeft--;
+    document.getElementById('catcher-timer').textContent = timeLeft;
+    if (timeLeft <= 0) endCatcher();
+  }, 1000);
+}
+
+function endCatcher() {
+  catcherActive = false;
+  state.minigames.catcherLast = Date.now();
+  clearInterval(catcherInterval);
+  clearInterval(catcherSpawnInterval);
+
+  const bonus = getTotalDps() * 60 * catcherScore; // each caught = 1 min DPS
+  state.currentPoints += bonus;
+  state.totalEarned += bonus;
+
+  const field = document.getElementById('catcher-field');
+  field.innerHTML = '<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;font-size:18px;font-weight:700">' +
+    '<div>' + catcherScore + ' gevangen!</div>' +
+    '<div style="color:var(--gold);margin-top:8px">+' + formatNumber(bonus) + ' punten</div></div>';
+
+  setTimeout(() => {
+    document.getElementById('catcher-game').style.display = 'none';
+    document.getElementById('catcher-btn').disabled = false;
+  }, 3000);
+}
+
+/* ================================================================
+   SECTIE 8b: MINI-GAME UNLOCK & NIEUWE GAMES
+   ================================================================ */
+
+function isMinigameUnlocked(id) {
+  const mg = MINIGAME_UNLOCKS.find(m => m.id === id);
+  if (!mg) return true;
+  return (state.animals[mg.reqAnimal] || 0) > 0;
+}
+
+/* Dieren Wiskunde */
+let mathActive = false;
+
+function startMath() {
+  if (mathActive || !isMinigameUnlocked('math')) return;
+  if (Date.now() - state.minigames.mathLast < MATH_COOLDOWN) return;
+  mathActive = true;
+  document.getElementById('math-btn').disabled = true;
+
+  const emoji = ANIMALS[Math.floor(Math.random() * ANIMALS.length)].emoji;
+  const isAdd = Math.random() > 0.3;
+  let a, b, answer;
+  if (isAdd) {
+    a = 1 + Math.floor(Math.random() * 12);
+    b = 1 + Math.floor(Math.random() * 12);
+    answer = a + b;
+  } else {
+    a = 3 + Math.floor(Math.random() * 15);
+    b = 1 + Math.floor(Math.random() * a);
+    answer = a - b;
+  }
+  const op = isAdd ? '+' : '−';
+
+  const options = new Set([answer]);
+  while (options.size < 4) {
+    let fake = answer + Math.floor(Math.random() * 7) - 3;
+    if (fake < 0) fake = 0;
+    if (fake !== answer) options.add(fake);
+  }
+  const sorted = [...options].sort((a,b) => a - b);
+  const correctIdx = sorted.indexOf(answer);
+
+  const game = document.getElementById('math-game');
+  game.style.display = 'block';
+  let html = '<div class="quiz-question" style="font-size:22px;text-align:center">' +
+    a + ' ' + emoji + ' ' + op + ' ' + b + ' ' + emoji + ' = ?</div>';
+  html += '<div class="quiz-answers">';
+  sorted.forEach((opt, i) => {
+    html += '<button class="quiz-answer" onclick="answerMath(' + i + ',' + correctIdx + ')">' + opt + ' ' + emoji + '</button>';
+  });
+  html += '</div><div id="math-result"></div>';
+  game.innerHTML = html;
+}
+
+function answerMath(chosen, correct) {
+  if (!mathActive) return;
+  mathActive = false;
+  state.minigames.mathLast = Date.now();
+
+  const buttons = document.querySelectorAll('#math-game .quiz-answer');
+  buttons.forEach((b, i) => {
+    b.onclick = null; b.style.pointerEvents = 'none';
+    if (i === correct) b.classList.add('correct');
+    if (i === chosen && chosen !== correct) b.classList.add('wrong');
+  });
+
+  const result = document.getElementById('math-result');
+  if (chosen === correct) {
+    const bonus = getTotalDps() * 600;
+    state.currentPoints += bonus;
+    state.totalEarned += bonus;
+    result.innerHTML = '<div class="quiz-result" style="background:rgba(67,160,71,0.2);color:var(--green-light)">Goed! +' + formatNumber(bonus) + ' punten!</div>';
+  } else {
+    result.innerHTML = '<div class="quiz-result" style="background:rgba(239,83,80,0.2);color:var(--red)">Helaas, fout!</div>';
+  }
+  setTimeout(() => {
+    document.getElementById('math-game').style.display = 'none';
+    document.getElementById('math-btn').disabled = false;
+  }, 2500);
+}
+
+/* Buff Kiezer */
+let activeBuff = null; // {type, endsAt}
+let buyMultiplier = 1; // 1, 10 or 100
+
+function startBuff() {
+  if (!isMinigameUnlocked('buff')) return;
+  if (Date.now() - state.minigames.buffLast < BUFF_COOLDOWN) return;
+  // Don't allow if buff already active
+  if (activeBuff && Date.now() < activeBuff.endsAt) return;
+
+  document.getElementById('buff-btn').disabled = true;
+  state.minigames.buffLast = Date.now();
+
+  // Pick 4 random animals for flavor
+  const shuffled = [...ANIMALS].sort(() => Math.random() - 0.5);
+  const game = document.getElementById('buff-game');
+  game.style.display = 'block';
+  let html = '<div class="buff-choices">';
+  BUFF_TYPES.forEach((buff, i) => {
+    html += '<div class="buff-card" onclick="chooseBuff(\'' + buff.id + '\')" style="border-color:' + buff.color + '30">';
+    html += '<div class="buff-card-emoji">' + shuffled[i].emoji + '</div>';
+    html += '<div class="buff-card-name" style="color:' + buff.color + '">' + buff.emoji + ' ' + buff.name + '</div>';
+    html += '<div class="buff-card-desc">' + buff.desc + '</div>';
+    html += '</div>';
+  });
+  html += '</div>';
+  game.innerHTML = html;
+}
+
+function chooseBuff(buffId) {
+  const buff = BUFF_TYPES.find(b => b.id === buffId);
+  if (!buff) return;
+
+  // Apply jackpot immediately
+  if (buff.id === 'jackpot') {
+    const bonus = getTotalDps() * 30; // 30 seconds DPS
+    state.currentPoints += bonus;
+    state.totalEarned += bonus;
+    showToast(buff.emoji + ' Jackpot! +' + formatNumber(bonus) + ' punten!');
+  } else {
+    // Set timed buff
+    activeBuff = { type: buff.id, endsAt: Date.now() + BUFF_DURATION, emoji: buff.emoji, name: buff.name, color: buff.color };
+    showToast(buff.emoji + ' ' + buff.name + ' actief voor 30 seconden!');
+  }
+
+  document.getElementById('buff-game').style.display = 'none';
+  document.getElementById('buff-btn').disabled = false;
+}
+
+function getActiveBuff() {
+  if (!activeBuff) return null;
+  if (Date.now() >= activeBuff.endsAt) { activeBuff = null; return null; }
+  return activeBuff;
+}
+
+/* Dieren Sorteren */
+let sortActive = false;
+let sortInterval = null;
+let sortScore = 0;
+let sortCurrent = null;
+let sortBag = [];
+
+function startSort() {
+  if (sortActive || !isMinigameUnlocked('sort')) return;
+  if (Date.now() - state.minigames.sortLast < SORT_COOLDOWN) return;
+  sortActive = true;
+  sortScore = 0;
+  sortBag = [];
+  document.getElementById('sort-btn').disabled = true;
+  document.getElementById('sort-game').style.display = 'block';
+  document.getElementById('sort-score').textContent = '0';
+  document.getElementById('sort-timer').textContent = '15';
+
+  nextSortAnimal();
+  let timeLeft = 15;
+  sortInterval = setInterval(() => {
+    timeLeft--;
+    document.getElementById('sort-timer').textContent = timeLeft;
+    if (timeLeft <= 0) endSort();
+  }, 1000);
+}
+
+function nextSortAnimal() {
+  // Bag-based shuffle: refill when empty for fair category distribution
+  if (sortBag.length === 0) {
+    sortBag = [...SORT_ANIMALS].sort(() => Math.random() - 0.5);
+    // If last shown animal is same as first in new bag, swap with a random later one
+    if (sortCurrent && sortBag[0].emoji === sortCurrent.emoji && sortBag.length > 1) {
+      const swapIdx = 1 + Math.floor(Math.random() * (sortBag.length - 1));
+      [sortBag[0], sortBag[swapIdx]] = [sortBag[swapIdx], sortBag[0]];
+    }
+  }
+  sortCurrent = sortBag.shift();
+  document.getElementById('sort-current').textContent = sortCurrent.emoji;
+  document.getElementById('sort-name').textContent = sortCurrent.name;
+  // Reset button styles
+  document.querySelectorAll('.sort-cat-btn').forEach(b => {
+    b.classList.remove('correct', 'wrong');
+  });
+}
+
+function sortAnswer(category) {
+  if (!sortActive || !sortCurrent) return;
+  const btn = document.querySelector('.sort-cat-btn[onclick*="' + category + '"]');
+  if (category === sortCurrent.cat) {
+    sortScore++;
+    document.getElementById('sort-score').textContent = sortScore;
+    if (btn) btn.classList.add('correct');
+    setTimeout(nextSortAnimal, 300);
+  } else {
+    // Wrong answer: show correct category, then end the game
+    sortActive = false; // prevent further clicks
+    if (btn) btn.classList.add('wrong');
+    document.querySelectorAll('.sort-cat-btn').forEach(b => {
+      if (b.getAttribute('onclick').includes(sortCurrent.cat)) b.classList.add('correct');
+    });
+    setTimeout(endSort, 800);
+  }
+}
+
+function endSort() {
+  sortActive = false;
+  state.minigames.sortLast = Date.now();
+  clearInterval(sortInterval);
+  sortCurrent = null;
+
+  const bonus = getTotalDps() * 60 * sortScore;
+  state.currentPoints += bonus;
+  state.totalEarned += bonus;
+
+  const field = document.getElementById('sort-field');
+  field.innerHTML = '<div style="font-size:18px;font-weight:700;padding:20px">' +
+    '<div>' + sortScore + ' goed gesorteerd!</div>' +
+    '<div style="color:var(--gold);margin-top:8px">+' + formatNumber(bonus) + ' punten</div></div>';
+
+  setTimeout(() => {
+    document.getElementById('sort-game').style.display = 'none';
+    document.getElementById('sort-btn').disabled = false;
+    // Restore sort field HTML
+    document.getElementById('sort-field').innerHTML =
+      '<div id="sort-current"></div><div id="sort-name"></div>';
+  }, 3000);
+}
+
+/* ================================================================
+   SECTIE 9: EVOLUTIE (PRESTIGE)
+   ================================================================ */
+
+function showPrestigeModal() {
+  if (!canPrestige()) return;
+  const stars = getPrestigeStars();
+  const totalAfter = state.prestige.stars + stars;
+  document.getElementById('prestige-stars-preview').textContent = '+' + stars + ' ⭐';
+  document.getElementById('prestige-current-info').innerHTML =
+    'Nu: ' + state.prestige.stars + '⭐ → Na evolutie: <b style="color:var(--gold)">' + totalAfter + '⭐</b> (+' + (totalAfter * 5) + '% DPS)';
+  // Show which upgrades are kept
+  let keepHtml = '';
+  const hasOffline = OFFLINE_UPGRADES.some(u => state.upgrades[u.id]);
+  const hasClick = CLICK_UPGRADES.some(u => state.upgrades[u.id]);
+  const hasGlobal = GLOBAL_UPGRADES.some(u => state.upgrades[u.id]);
+  if (hasOffline || hasClick || hasGlobal) {
+    keepHtml += prestigeKeepLine(totalAfter, PRESTIGE_KEEP_OFFLINE, 'Offline upgrades', '🌙');
+    keepHtml += prestigeKeepLine(totalAfter, PRESTIGE_KEEP_CLICK, 'Klik-upgrades', '👆');
+    keepHtml += prestigeKeepLine(totalAfter, PRESTIGE_KEEP_GLOBAL, 'Globale upgrades', '🌍');
+  }
+  document.getElementById('prestige-keep-info').innerHTML = keepHtml;
+  showModal('prestige-modal');
+}
+
+function doPrestige() {
+  const newStars = getPrestigeStars();
+  const totalStars = state.prestige.stars + newStars;
+  const keepAch = {...state.achievements};
+  const keepPrestige = {
+    stars: totalStars,
+    timesReset: state.prestige.timesReset + 1
+  };
+
+  // Determine which upgrades to keep based on total stars
+  const keepUpgrades = {};
+  if (totalStars >= PRESTIGE_KEEP_OFFLINE) {
+    OFFLINE_UPGRADES.forEach(u => { if (state.upgrades[u.id]) keepUpgrades[u.id] = 1; });
+  }
+  if (totalStars >= PRESTIGE_KEEP_CLICK) {
+    CLICK_UPGRADES.forEach(u => { if (state.upgrades[u.id]) keepUpgrades[u.id] = 1; });
+  }
+  if (totalStars >= PRESTIGE_KEEP_GLOBAL) {
+    GLOBAL_UPGRADES.forEach(u => { if (state.upgrades[u.id]) keepUpgrades[u.id] = 1; });
+  }
+
+  state = defaultState();
+  state.achievements = keepAch;
+  state.prestige = keepPrestige;
+  state.upgrades = keepUpgrades;
+
+  // Award first prestige achievement
+  if (!state.achievements['eerste_evolutie']) {
+    state.achievements['eerste_evolutie'] = 1;
+  }
+
+  closeModal('prestige-modal');
+  saveGame();
+  buildShop();
+  showToast('⭐ Geëvolueerd! +' + newStars + ' sterren!');
+}
+
+/* ================================================================
+   SECTIE 10: UI RENDERING
+   ================================================================ */
+
+function buildShop() {
+  buildAnimalShop();
+  buildUpgradeShop();
+  buildAchievements();
+  buildOptions();
+}
+
+function buildAnimalShop() {
+  const container = document.getElementById('tab-animals');
+  let html = '';
+  if (state.prestige.stars >= 1) {
+    html += '<div id="buy-amount-bar">';
+    [1, 10, 100].forEach(n => {
+      html += '<button class="buy-amt-btn' + (buyMultiplier === n ? ' active' : '') + '" onclick="setBuyAmount(' + n + ')">' + n + '×</button>';
+    });
+    html += '</div>';
+  }
+  ANIMALS.forEach(a => {
+    const tip = escHtml(a.name) + '|' + escHtml(a.flavor);
+    html += '<div class="shop-item" id="shop-' + a.id + '" onclick="buyAnimal(\'' + a.id + '\')" data-tip="' + tip + '">';
+    html += '<div class="shop-emoji">' + a.emoji + '</div>';
+    html += '<div class="shop-info">';
+    html += '<div class="shop-name">' + a.name + ' <span class="count" id="count-' + a.id + '">×0</span></div>';
+    html += '<div class="shop-flavor">' + a.flavor + '</div>';
+    html += '<div class="shop-dps" id="animdps-' + a.id + '"></div>';
+    html += '</div>';
+    html += '<div class="shop-price" id="price-' + a.id + '"></div>';
+    html += '</div>';
+  });
+  container.innerHTML = html;
+}
+
+function setBuyAmount(n) {
+  buyMultiplier = n;
+  document.querySelectorAll('.buy-amt-btn').forEach(b => {
+    b.classList.toggle('active', b.textContent === n + '×');
+  });
+}
+
+function buildUpgradeShop() {
+  const container = document.getElementById('tab-upgrades');
+  let html = '';
+
+  // Click upgrades
+  html += '<div class="upgrade-category"><h3>👆 Klik-upgrades</h3>';
+  CLICK_UPGRADES.forEach(u => { html += upgradeItemHtml(u); });
+  html += '</div>';
+
+  // Global upgrades
+  html += '<div class="upgrade-category"><h3>🌍 Globale upgrades</h3>';
+  GLOBAL_UPGRADES.forEach(u => { html += upgradeItemHtml(u); });
+  html += '</div>';
+
+  // Offline upgrades
+  html += '<div class="upgrade-category"><h3>🌙 Offline upgrades</h3>';
+  OFFLINE_UPGRADES.forEach(u => { html += upgradeItemHtml(u); });
+  html += '</div>';
+
+  // Per-animal upgrades
+  ANIMALS.forEach(a => {
+    html += '<div class="upgrade-category"><h3>' + a.emoji + ' ' + a.name + '-upgrades</h3>';
+    a.upgrades.forEach(u => { html += upgradeItemHtml(u, a); });
+    html += '</div>';
+  });
+
+  container.innerHTML = html;
+}
+
+function upgradeItemHtml(u, animal) {
+  const reqText = animal ? ' (nodig: ' + u.req + ' ' + animal.plural + ')' : '';
+  const tip = escHtml(u.name) + '|' + escHtml(u.desc + reqText);
+  return '<div class="shop-item" id="upg-' + u.id + '" onclick="buyUpgrade(\'' + u.id + '\')" data-tip="' + tip + '">' +
+    '<div class="shop-info">' +
+    '<div class="shop-name">' + u.name + '</div>' +
+    '<div class="shop-flavor">' + u.desc + reqText + '</div>' +
+    '</div>' +
+    '<div class="shop-price" id="upgprice-' + u.id + '">' + formatNumber(u.cost) + '</div>' +
+    '</div>';
+}
+
+function escHtml(s) { return s.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;'); }
+
+function prestigeKeepLine(currentStars, required, label, emoji) {
+  if (currentStars >= required) {
+    return '<span style="color:var(--green-light)">' + emoji + ' ' + required + '⭐ ' + label + ' behouden ✓</span><br>';
+  } else {
+    return '<span style="color:var(--text-dim)">' + emoji + ' ' + required + '⭐ ' + label + ' behouden (nog ' + (required - currentStars) + ' sterren nodig)</span><br>';
+  }
+}
+
+function buildAchievements() {
+  const container = document.getElementById('tab-achievements');
+  const earned = Object.keys(state.achievements).filter(k => state.achievements[k]).length;
+  const total = achievementDefs.length;
+  let html = '<div class="ach-summary">' + earned + '/' + total + ' prestaties — elke prestatie geeft +2% DPS!</div>';
+
+  // Group by animal, then specials
+  const groups = {};
+  achievementDefs.forEach(a => {
+    if (!groups[a.group]) groups[a.group] = [];
+    groups[a.group].push(a);
+  });
+  Object.keys(groups).forEach(g => {
+    html += '<div class="ach-section"><h4>' + g + '</h4><div class="ach-grid">';
+    groups[g].forEach(a => {
+      const e = state.achievements[a.id];
+      const achTip = e ? escHtml(a.name) + '|' + escHtml(a.desc) : '???|Nog niet ontgrendeld';
+      html += '<div class="ach-item ' + (e ? 'earned' : 'unearned') + '" id="ach-' + a.id + '" data-tip="' + achTip + '">' +
+        a.emoji +
+        '</div>';
+    });
+    html += '</div></div>';
+  });
+  container.innerHTML = html;
+}
+
+function buildOptions() {
+  const container = document.getElementById('tab-options');
+  let html = '';
+
+  // Save/load
+  html += '<div class="opt-section"><h3>💾 Savegame</h3>';
+  html += '<button class="opt-btn" onclick="saveGame(); showToast(\'Opgeslagen!\')">Opslaan</button>';
+  html += '<button class="opt-btn" onclick="exportSave()">Downloaden als bestand</button>';
+  html += '<button class="opt-btn" onclick="showImportModal()">Importeer savegame</button>';
+  html += '<button class="opt-btn danger" onclick="resetGame()">Spel resetten</button>';
+  html += '</div>';
+
+  // Prestige
+  html += '<div class="opt-section"><h3>⭐ Evolutie</h3>';
+  html += '<div class="prestige-info">';
+  if (state.prestige.stars > 0) {
+    html += 'Je hebt <b>' + state.prestige.stars + ' ⭐</b> (+' + (state.prestige.stars * 5) + '% op alles)<br>';
+    html += 'Keer geëvolueerd: ' + state.prestige.timesReset + '<br><br>';
+  }
+  html += '<b>Wat is Evolutie?</b><br>';
+  html += 'Als je minstens 1 van elk dier hebt (inclusief de Draak!), kun je je dierentuin laten evolueren.<br><br>';
+  html += '<b>Wat krijg je?</b><br>';
+  html += 'Evolutiesterren ⭐ — elke ster geeft <b>+5%</b> op al je DPS, voor altijd!<br>';
+  html += 'Hoe meer punten je hebt verdiend, hoe meer sterren je krijgt:<br>';
+  html += '<span style="color:var(--gold)">10 miljard → 1⭐ · 100 miljard → 2⭐ · 1 biljoen → 3⭐</span><br>';
+  html += 'Elke ×10 meer punten = +1 ster extra.<br><br>';
+  const previewStars = getPrestigeStars();
+  if (state.totalEarned > 0) {
+    html += '<b>Nu:</b> je hebt ' + formatNumber(Math.floor(state.totalEarned)) + ' totaal verdiend → <span style="color:var(--gold)">' + previewStars + ' ⭐</span><br><br>';
+  }
+  html += '<b style="color:var(--green-light)">Je houdt:</b> sterren, prestaties (+2% DPS elk)<br>';
+  html += '<b style="color:var(--red)">Je verliest:</b> dieren, punten, dier-upgrades<br><br>';
+  html += '<b>Upgrade-milestones:</b><br>';
+  const curStars = state.prestige.stars + previewStars;
+  html += prestigeKeepLine(curStars, PRESTIGE_KEEP_OFFLINE, 'Offline upgrades', '🌙');
+  html += prestigeKeepLine(curStars, PRESTIGE_KEEP_CLICK, 'Klik-upgrades', '👆');
+  html += prestigeKeepLine(curStars, PRESTIGE_KEEP_GLOBAL, 'Globale upgrades', '🌍');
+  html += '<br><span style="color:var(--text-dim)">Tip: na evolutie ga je sneller door je sterrenbonus! Elke keer kun je meer sterren verdienen.</span>';
+  html += '</div>';
+  html += '<button class="opt-btn prestige-btn" id="prestige-btn" onclick="showPrestigeModal()">⭐ Evolueer!</button>';
+  html += '</div>';
+
+  container.innerHTML = html;
+}
+
+function render() {
+  // Points
+  const pts = document.getElementById('points-display');
+  pts.textContent = formatNumber(Math.floor(state.currentPoints)) + ' dierenpunten';
+
+  // DPS
+  const dps = getTotalDps();
+  document.getElementById('dps-display').textContent = formatDps(dps) + ' per seconde';
+
+  // Big animal
+  const highest = getHighestAnimal();
+  document.getElementById('big-animal').textContent = highest.emoji;
+  document.getElementById('animal-name').textContent = highest.name;
+  document.getElementById('click-info').textContent = '+' + formatNumber(Math.floor(getClickValue())) + ' per klik';
+
+  // Orbiters
+  updateOrbiters();
+
+  // Animal shop
+  const qty = buyMultiplier;
+  ANIMALS.forEach(a => {
+    const el = document.getElementById('shop-' + a.id);
+    if (!el) return;
+    const count = state.animals[a.id] || 0;
+    const totalPrice = getBulkPrice(a.id, qty);
+    const singlePrice = getAnimalPrice(a.id);
+    const canAffordAny = state.currentPoints >= singlePrice;
+    const canAffordAll = state.currentPoints >= totalPrice;
+    const visible = isAnimalVisible(a.id);
+    el.classList.toggle('affordable', canAffordAny);
+    el.classList.toggle('locked', !visible);
+    document.getElementById('count-' + a.id).textContent = '×' + count;
+    const priceEl = document.getElementById('price-' + a.id);
+    const saleBuff = getActiveBuff();
+    if (saleBuff && saleBuff.type === 'sale') {
+      const unsaledTotal = (() => { let t = 0; for (let i = 0; i < qty; i++) t += Math.ceil(a.basePrice * Math.pow(COST_MULTIPLIER, count + i)); return t; })();
+      const priceColor = canAffordAll ? 'var(--green-light)' : canAffordAny ? '#ffa726' : 'var(--red)';
+      priceEl.innerHTML = '<s style="color:#ffa726;opacity:.6;font-size:.85em">' + formatNumber(unsaledTotal) + '</s> <span style="color:' + priceColor + '">' + formatNumber(totalPrice) + '</span>';
+    } else {
+      priceEl.textContent = formatNumber(totalPrice);
+    }
+    document.getElementById('animdps-' + a.id).textContent =
+      '+' + formatDps(getAnimalDps(a.id)) + '/s elk (totaal: ' + formatDps(getAnimalDps(a.id) * count) + '/s)';
+  });
+
+  // Upgrades
+  const allUpgradeSets = [CLICK_UPGRADES, GLOBAL_UPGRADES, OFFLINE_UPGRADES, ...ANIMALS.map(a => a.upgrades)];
+  allUpgradeSets.flat().forEach(u => {
+    const el = document.getElementById('upg-' + u.id);
+    if (!el) return;
+    const bought = !!state.upgrades[u.id];
+    el.classList.toggle('bought', bought);
+    el.classList.toggle('affordable', !bought && state.currentPoints >= u.cost);
+    // Check requirements
+    if (u.req !== undefined) {
+      const animal = ANIMALS.find(a => a.upgrades.some(au => au.id === u.id));
+      if (animal) {
+        const locked = (state.animals[animal.id] || 0) < u.req;
+        el.classList.toggle('locked', locked && !bought);
+      }
+    }
+    const priceEl = document.getElementById('upgprice-' + u.id);
+    if (priceEl) priceEl.textContent = bought ? 'Gekocht!' : formatNumber(u.cost);
+  });
+
+  // Achievements (update earned status)
+  achievementDefs.forEach(a => {
+    const el = document.getElementById('ach-' + a.id);
+    if (!el) return;
+    const e = !!state.achievements[a.id];
+    el.classList.toggle('earned', e);
+    el.classList.toggle('unearned', !e);
+    el.setAttribute('data-tip', e ? escHtml(a.name) + '|' + escHtml(a.desc) : '???|Nog niet ontgrendeld');
+  });
+
+  // Achievement summary
+  const achSummary = document.querySelector('.ach-summary');
+  if (achSummary) {
+    const earned = Object.keys(state.achievements).filter(k => state.achievements[k]).length;
+    achSummary.textContent = earned + '/' + achievementDefs.length + ' prestaties — elke prestatie geeft +2% DPS!';
+  }
+
+  // Prestige button
+  const pBtn = document.getElementById('prestige-btn');
+  if (pBtn) {
+    pBtn.disabled = !canPrestige();
+    if (canPrestige()) {
+      pBtn.textContent = '⭐ Evolueer! (+' + getPrestigeStars() + ' sterren)';
+    } else {
+      pBtn.textContent = '⭐ Evolueer (nodig: alle dieren)';
+    }
+  }
+
+  // Mini-game locks & cooldowns
+  MINIGAME_UNLOCKS.forEach(mg => {
+    const box = document.getElementById('mg-' + mg.id);
+    const lock = document.getElementById('lock-' + mg.id);
+    if (!box || !lock) return;
+    const unlocked = isMinigameUnlocked(mg.id);
+    box.classList.toggle('locked', !unlocked);
+    lock.textContent = unlocked ? '' : '🔒 ' + mg.label + ' om te spelen!';
+    lock.style.display = unlocked ? 'none' : 'block';
+  });
+  updateCooldown('quiz-btn', 'quiz-cooldown', state.minigames.quizLast, QUIZ_COOLDOWN, quizActive);
+  updateCooldown('catcher-btn', 'catcher-cooldown', state.minigames.catcherLast, CATCHER_COOLDOWN, catcherActive);
+  updateCooldown('math-btn', 'math-cooldown', state.minigames.mathLast, MATH_COOLDOWN, mathActive);
+  updateCooldown('buff-btn', 'buff-cooldown', state.minigames.buffLast, BUFF_COOLDOWN, false);
+  updateCooldown('sort-btn', 'sort-cooldown', state.minigames.sortLast, SORT_COOLDOWN, sortActive);
+
+  // Buff indicator
+  const buffInd = document.getElementById('buff-indicator');
+  const curBuff = getActiveBuff();
+  if (curBuff && buffInd) {
+    const remaining = Math.ceil((curBuff.endsAt - Date.now()) / 1000);
+    buffInd.style.visibility = 'visible';
+    buffInd.style.background = curBuff.color + '30';
+    buffInd.style.color = curBuff.color;
+    buffInd.innerHTML = curBuff.emoji + ' ' + curBuff.name + ' — ' + remaining + 's';
+  } else if (buffInd) {
+    buffInd.style.visibility = 'hidden';
+    buffInd.innerHTML = '';
+  }
+
+  // Stats
+  renderStats();
+
+  // Consistent emoji rendering
+  if (typeof twemoji !== 'undefined') twemoji.parse(document.body, { folder: 'svg', ext: '.svg' });
+}
+
+function updateCooldown(btnId, textId, lastPlayed, cooldown, active) {
+  const btn = document.getElementById(btnId);
+  const text = document.getElementById(textId);
+  if (!btn || !text) return;
+  const remaining = cooldown - (Date.now() - lastPlayed);
+  if (remaining > 0 && !active) {
+    btn.disabled = true;
+    text.textContent = 'Wacht ' + Math.ceil(remaining / 1000) + 's...';
+  } else if (!active) {
+    btn.disabled = false;
+    text.textContent = '';
+  }
+}
+
+function renderStats() {
+  const list = document.getElementById('stats-list');
+  if (!list) return;
+  const totalAnimals = ANIMALS.reduce((s, a) => s + (state.animals[a.id]||0), 0);
+  const achCount = Object.keys(state.achievements).filter(k => state.achievements[k]).length;
+  const stats = [
+    ['Totaal geklikt', formatNumber(state.totalClicks)],
+    ['Totaal verdiend', formatNumber(Math.floor(state.totalEarned))],
+    ['Totaal dieren', formatNumber(totalAnimals)],
+    ['Dieren per klik', formatNumber(Math.floor(getClickValue()))],
+    ['Prestaties', achCount + '/' + achievementDefs.length + ' (+' + (achCount * 2) + '% DPS)'],
+    ['Evolutiesterren', state.prestige.stars + ' ⭐ (+' + (state.prestige.stars * 5) + '%)'],
+    ['Offline bonus', getOfflinePercent() + '%'],
+    ['Speeltijd', formatTime(state.playTimeSeconds)],
+    ['Evoluties', state.prestige.timesReset + 'x']
+  ];
+  list.innerHTML = stats.map(([l,v]) =>
+    '<div class="stat-row"><span class="stat-label">' + l + '</span><span>' + v + '</span></div>'
+  ).join('');
+}
+
+let orbiters = [];
+function updateOrbiters() {
+  const area = document.getElementById('click-area');
+  const owned = ANIMALS.filter(a => (state.animals[a.id]||0) > 0);
+
+  // Only rebuild if set changed
+  const key = owned.map(a => a.id).join(',');
+  if (key === updateOrbiters._lastKey) return;
+  updateOrbiters._lastKey = key;
+
+  // Remove old
+  document.querySelectorAll('.orbiter').forEach(el => el.remove());
+
+  // Add new
+  owned.forEach((a, i) => {
+    const el = document.createElement('div');
+    el.className = 'orbiter';
+    el.textContent = a.emoji;
+    const radius = Math.min(area.offsetWidth, area.offsetHeight) * 0.35;
+    el.style.setProperty('--radius', radius + 'px');
+    el.style.setProperty('--dur', (8 + i * 2) + 's');
+    el.style.setProperty('--delay', (-i * 1.5) + 's');
+    el.style.left = '50%';
+    el.style.top = '50%';
+    area.appendChild(el);
+  });
+}
+updateOrbiters._lastKey = '';
+
+/* ================================================================
+   SECTIE 11: UI HELPERS
+   ================================================================ */
+
+/* Tooltip system */
+const tooltipEl = document.getElementById('tooltip');
+document.addEventListener('mouseover', function(e) {
+  const item = e.target.closest('[data-tip]');
+  if (!item) return;
+  const parts = item.dataset.tip.split('|');
+  tooltipEl.innerHTML = '<div class="tip-title">' + parts[0] + '</div>' +
+    (parts[1] ? '<div class="tip-desc">' + parts[1] + '</div>' : '');
+  tooltipEl.style.display = 'block';
+  positionTooltip(e);
+});
+document.addEventListener('mousemove', function(e) {
+  if (tooltipEl.style.display === 'block') positionTooltip(e);
+});
+document.addEventListener('mouseout', function(e) {
+  const item = e.target.closest('[data-tip]');
+  if (item) tooltipEl.style.display = 'none';
+});
+function positionTooltip(e) {
+  const tw = 270, th = tooltipEl.offsetHeight || 60;
+  let x = e.clientX + 14, y = e.clientY + 14;
+  if (x + tw > window.innerWidth) x = e.clientX - tw - 8;
+  if (y + th > window.innerHeight) y = e.clientY - th - 8;
+  tooltipEl.style.left = Math.max(4, x) + 'px';
+  tooltipEl.style.top = Math.max(4, y) + 'px';
+}
+
+function showMidTab(tabId) {
+  document.querySelectorAll('.mid-tab').forEach((t, i) =>
+    t.classList.toggle('active', (tabId === 'games' && i === 0) || (tabId === 'stats' && i === 1))
+  );
+  document.getElementById('mid-games').classList.toggle('active', tabId === 'games');
+  document.getElementById('mid-stats').classList.toggle('active', tabId === 'stats');
+}
+
+function showShopTab(tabId) {
+  document.querySelectorAll('.shop-tab').forEach(t => t.classList.toggle('active', t.textContent.includes(
+    tabId === 'animals' ? 'Dieren' : tabId === 'upgrades' ? 'Upgrades' : tabId === 'achievements' ? 'Prestaties' : 'Opties'
+  )));
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-' + tabId).classList.add('active');
+  // Rebuild achievements when viewing (to update status)
+  if (tabId === 'achievements') buildAchievements();
+}
+
+function showMobilePanel(panel) {
+  document.querySelectorAll('#mobile-nav .tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('mob-' + panel).classList.add('active');
+  ['left', 'middle', 'right'].forEach(p => {
+    document.getElementById(p + '-panel').classList.toggle('hidden-mobile', p !== panel);
+  });
+}
+
+function showModal(id) { document.getElementById(id).classList.add('show'); }
+function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+
+function showOfflineModal(amount, seconds) {
+  document.getElementById('offline-amount').textContent = '+' + formatNumber(Math.floor(amount)) + ' punten';
+  document.getElementById('offline-detail').textContent = 'Je dieren werkten ' + formatTime(seconds) + ' voor je!';
+  showModal('offline-modal');
+}
+
+function showToast(text) {
+  const t = document.createElement('div');
+  t.className = 'toast';
+  t.textContent = text;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 3000);
+}
+
+/* ================================================================
+   SECTIE 12: GAME LOOP
+   ================================================================ */
+
+function tick() {
+  const now = Date.now();
+  const dt = Math.min((now - state.lastTick) / 1000, 1); // cap at 1 second per tick
+  state.lastTick = now;
+
+  const dps = getTotalDps();
+  const earned = dps * dt;
+  state.currentPoints += earned;
+  state.totalEarned += earned;
+  state.playTimeSeconds += dt;
+}
+
+let lastAchCheck = 0;
+
+function gameLoop() {
+  tick();
+
+  const now = Date.now();
+  if (now - lastAchCheck > 1000) {
+    checkAchievements();
+    lastAchCheck = now;
+  }
+}
+
+/* ================================================================
+   SECTIE 13: INITIALISATIE
+   ================================================================ */
+
+function init() {
+  loadGame();
+  buildShop();
+  render();
+
+  // Game tick (100ms)
+  setInterval(gameLoop, TICK_INTERVAL);
+
+  // Render (250ms)
+  setInterval(render, RENDER_INTERVAL);
+
+  // Autosave (30s)
+  setInterval(saveGame, AUTOSAVE_INTERVAL);
+
+  // Save on close
+  window.addEventListener('beforeunload', saveGame);
+
+  // Mobile: show left panel by default
+  if (window.innerWidth <= 900) {
+    showMobilePanel('left');
+  }
+}
+
+init();
+</script>
+</body>
+</html>

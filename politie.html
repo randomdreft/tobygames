@@ -1,0 +1,1094 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Toby Game - Politie Jacht!</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #1e3c72, #2a5298);
+            font-family: 'Arial', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+        
+        .back-button {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 25px;
+            text-decoration: none;
+            font-weight: bold;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+        
+        .back-button:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+            text-decoration: none;
+            color: white;
+        }
+        
+        #gameContainer {
+            position: relative;
+            border: 3px solid #333;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+        }
+        
+        #gameCanvas {
+            background: #2d5a2d;
+            display: block;
+        }
+        
+        #ui {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: white;
+            font-size: 14px;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+        }
+        
+        #countdown {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 80px;
+            font-weight: bold;
+            color: #ff6b6b;
+            text-shadow: 4px 4px 8px rgba(0,0,0,0.8);
+            display: none;
+        }
+        
+        #gameOver {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 60px;
+            font-weight: bold;
+            color: #ff0000;
+            text-shadow: 4px 4px 8px rgba(0,0,0,0.8);
+            display: none;
+            text-align: center;
+            z-index: 1001;
+        }
+        
+        #restartBtn {
+            margin-top: 15px;
+            padding: 12px 24px;
+            font-size: 18px;
+            font-weight: bold;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            transition: all 0.3s ease;
+        }
+        
+        #restartBtn:hover {
+            background: #45a049;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.4);
+        }
+        
+        #finalScore {
+            font-size: 24px;
+            color: #ffd700;
+            margin: 15px 0;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+        }
+        
+        #scoreboard {
+            background: rgba(0,0,0,0.7);
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            max-width: 400px;
+        }
+        
+        #scoreboard h3 {
+            margin: 0 0 10px 0;
+            color: #ffd700;
+            text-align: center;
+            font-size: 18px;
+        }
+        
+        #scoreList {
+            color: white;
+            font-size: 14px;
+        }
+        
+        .scoreItem {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #444;
+        }
+        
+        .scoreItem:last-child {
+            border-bottom: none;
+        }
+        
+        .scoreRank {
+            color: #ffd700;
+            font-weight: bold;
+        }
+        
+        .scoreValue {
+            color: #fff;
+        }
+        
+        .newScore {
+            background: rgba(255, 215, 0, 0.2);
+            border-radius: 5px;
+            padding: 5px;
+        }
+        
+        #instructions {
+            margin-top: 20px;
+            color: white;
+            text-align: center;
+            background: rgba(0,0,0,0.3);
+            padding: 15px;
+            border-radius: 10px;
+            max-width: 600px;
+        }
+        
+        .key {
+            background: #333;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-family: monospace;
+            margin: 0 5px;
+        }
+        
+        /* Touch Controls voor iPad - Joystick */
+        .touch-controls {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: none;
+            z-index: 1000;
+        }
+        
+        .touch-controls.show {
+            display: block;
+        }
+        
+        .joystick-container {
+            position: relative;
+            width: 120px;
+            height: 120px;
+            margin: 0 auto;
+        }
+        
+        .joystick-base {
+            position: absolute;
+            width: 120px;
+            height: 120px;
+            background: rgba(255, 255, 255, 0.3);
+            border: 3px solid rgba(255, 255, 255, 0.6);
+            border-radius: 50%;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+        
+        .joystick-knob {
+            position: absolute;
+            width: 50px;
+            height: 50px;
+            background: rgba(255, 255, 255, 0.9);
+            border: 2px solid rgba(255, 255, 255, 1);
+            border-radius: 50%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            cursor: pointer;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            transition: all 0.1s ease;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+        
+        .joystick-knob:active {
+            background: rgba(255, 255, 255, 1);
+            transform: translate(-50%, -50%) scale(1.1);
+        }
+        
+        .joystick-knob.active {
+            background: rgba(255, 255, 255, 1);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+        
+        /* Responsive aanpassingen voor iPad */
+        @media (max-width: 1024px) and (orientation: portrait) {
+            #gameContainer {
+                transform: scale(0.8);
+                transform-origin: center top;
+            }
+            
+            .touch-controls {
+                display: block;
+                position: relative;
+                bottom: auto;
+                left: auto;
+                transform: none;
+                margin-top: 20px;
+            }
+            
+            #instructions {
+                display: none;
+            }
+            
+            /* Game over scherm hoger positioneren op iPad */
+            #gameOver {
+                top: 35%;
+                font-size: 50px;
+            }
+            
+            #restartBtn {
+                margin-top: 20px;
+                padding: 15px 30px;
+                font-size: 20px;
+            }
+        }
+        
+        @media (max-width: 1024px) and (orientation: landscape) {
+            #gameContainer {
+                transform: scale(0.7);
+                transform-origin: center;
+            }
+            
+            .touch-controls {
+                display: block;
+                position: relative;
+                bottom: auto;
+                left: auto;
+                transform: none;
+                margin-top: 15px;
+            }
+            
+            .joystick-container {
+                width: 100px;
+                height: 100px;
+            }
+            
+            .joystick-base {
+                width: 100px;
+                height: 100px;
+            }
+            
+            .joystick-knob {
+                width: 40px;
+                height: 40px;
+            }
+            
+            #instructions {
+                display: none;
+            }
+            
+            /* Game over scherm hoger positioneren op iPad landscape */
+            #gameOver {
+                top: 30%;
+                font-size: 45px;
+            }
+            
+            #restartBtn {
+                margin-top: 15px;
+                padding: 12px 25px;
+                font-size: 18px;
+            }
+        }
+        
+        /* Verberg touch controls op desktop */
+        @media (min-width: 1025px) {
+            .touch-controls {
+                display: none !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <a href="index.html" class="back-button">← Terug naar Games</a>
+    <div id="gameContainer">
+        <canvas id="gameCanvas" width="800" height="600"></canvas>
+        <div id="ui">
+            <div>Score: <span id="score">0</span></div>
+        </div>
+        <div id="countdown"></div>
+        <div id="gameOver">
+            <div>JE BENT AF!</div>
+            <div id="finalScore">Eindscore: <span id="finalScoreValue">0</span></div>
+            <div id="scoreboard">
+                <h3>🏆 Top 10 Scores</h3>
+                <div id="scoreList"></div>
+            </div>
+            <button id="restartBtn">Opnieuw Spelen</button>
+        </div>
+        
+        <!-- Touch Controls voor iPad - Joystick -->
+        <div class="touch-controls">
+            <div class="joystick-container">
+                <div class="joystick-base"></div>
+                <div class="joystick-knob" id="joystickKnob"></div>
+            </div>
+        </div>
+    </div>
+    
+    <div id="instructions">
+        <h3>🎮 Besturing:</h3>
+        <p><span class="key">↑</span> Vooruit rijden</p>
+        <p><span class="key">←</span> <span class="key">→</span> Sturen</p>
+        <p><span class="key">↓</span> Remmen/Achteruit</p>
+        <p>Ontwijk de politie auto en verzamel sterretjes voor extra punten!</p>
+         <p>⭐ Elk sterretje geeft +25 punten</p>
+    </div>
+
+    <script>
+        class Game {
+            constructor() {
+                this.canvas = document.getElementById('gameCanvas');
+                this.ctx = this.canvas.getContext('2d');
+                this.score = 0;
+                this.gameTime = 0;
+                this.gameRunning = false;
+                this.gameOver = false;
+                this.highScores = this.loadHighScores();
+                
+                // Speler auto
+                this.player = {
+                    x: 400,
+                    y: 300,
+                    angle: 0,
+                    speed: 0,
+                    maxSpeed: 3,
+                    acceleration: 0.15,
+                    deceleration: 0.08,
+                    turnSpeed: 0.03,
+                    width: 30,
+                    height: 20
+                };
+                
+                // Politie auto
+                this.police = {
+                    x: 100,
+                    y: 100,
+                    angle: 0,
+                    speed: 1.5,
+                    width: 30,
+                    height: 20,
+                    targetX: 400,
+                    targetY: 300
+                };
+                
+                // Sterretje
+                this.star = {
+                    x: 0,
+                    y: 0,
+                    size: 15,
+                    collected: false,
+                    sparkle: 0
+                };
+                
+                this.keys = {};
+                this.setupEventListeners();
+                this.spawnStar();
+                this.startCountdown();
+            }
+            
+            setupEventListeners() {
+                // Keyboard event listeners
+                document.addEventListener('keydown', (e) => {
+                    // Voorkom scrollen bij pijltjestoetsen
+                    if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+                        e.preventDefault();
+                    }
+                    
+                    // Enter toets om opnieuw te beginnen
+                    if (e.key === 'Enter' && this.gameOver) {
+                        this.restartGame();
+                        return;
+                    }
+                    
+                    this.keys[e.key] = true;
+                });
+                
+                document.addEventListener('keyup', (e) => {
+                    this.keys[e.key] = false;
+                });
+                
+                // Touch event listeners voor iPad
+                this.setupTouchControls();
+                
+                // Restart knop event listener
+                document.getElementById('restartBtn').addEventListener('click', () => {
+                    this.restartGame();
+                });
+            }
+            
+            setupTouchControls() {
+                this.joystick = {
+                    knob: document.getElementById('joystickKnob'),
+                    container: document.querySelector('.joystick-container'),
+                    base: document.querySelector('.joystick-base'),
+                    isActive: false,
+                    centerX: 0,
+                    centerY: 0,
+                    maxDistance: 35, // Maximale afstand van het centrum
+                    currentX: 0,
+                    currentY: 0
+                };
+                
+                if (!this.joystick.knob) return;
+                
+                // Joystick touch events
+                this.joystick.knob.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    this.startJoystick(e.touches[0]);
+                });
+                
+                this.joystick.knob.addEventListener('touchmove', (e) => {
+                    e.preventDefault();
+                    this.updateJoystick(e.touches[0]);
+                });
+                
+                this.joystick.knob.addEventListener('touchend', (e) => {
+                    e.preventDefault();
+                    this.endJoystick();
+                });
+                
+                // Mouse events voor desktop testing
+                this.joystick.knob.addEventListener('mousedown', (e) => {
+                    e.preventDefault();
+                    this.startJoystick(e);
+                });
+                
+                document.addEventListener('mousemove', (e) => {
+                    if (this.joystick.isActive) {
+                        e.preventDefault();
+                        this.updateJoystick(e);
+                    }
+                });
+                
+                document.addEventListener('mouseup', (e) => {
+                    if (this.joystick.isActive) {
+                        e.preventDefault();
+                        this.endJoystick();
+                    }
+                });
+                
+                // Voorkom context menu
+                this.joystick.knob.addEventListener('contextmenu', (e) => {
+                    e.preventDefault();
+                });
+                
+                // Voorkom scrollen bij touch op het canvas
+                this.canvas.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                });
+                
+                this.canvas.addEventListener('touchmove', (e) => {
+                    e.preventDefault();
+                });
+                
+                this.canvas.addEventListener('touchend', (e) => {
+                    e.preventDefault();
+                });
+            }
+            
+            startJoystick(touch) {
+                this.joystick.isActive = true;
+                this.joystick.knob.classList.add('active');
+                
+                const rect = this.joystick.container.getBoundingClientRect();
+                this.joystick.centerX = rect.left + rect.width / 2;
+                this.joystick.centerY = rect.top + rect.height / 2;
+                
+                this.updateJoystick(touch);
+            }
+            
+            updateJoystick(touch) {
+                if (!this.joystick.isActive) return;
+                
+                const clientX = touch.clientX || touch.pageX;
+                const clientY = touch.clientY || touch.pageY;
+                
+                // Bereken afstand van centrum
+                const deltaX = clientX - this.joystick.centerX;
+                const deltaY = clientY - this.joystick.centerY;
+                const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+                
+                // Beperk tot maximale afstand
+                let limitedX = deltaX;
+                let limitedY = deltaY;
+                
+                if (distance > this.joystick.maxDistance) {
+                    limitedX = (deltaX / distance) * this.joystick.maxDistance;
+                    limitedY = (deltaY / distance) * this.joystick.maxDistance;
+                }
+                
+                // Update joystick positie
+                this.joystick.knob.style.transform = `translate(calc(-50% + ${limitedX}px), calc(-50% + ${limitedY}px))`;
+                
+                // Update game controls
+                this.joystick.currentX = limitedX / this.joystick.maxDistance;
+                this.joystick.currentY = limitedY / this.joystick.maxDistance;
+                
+                this.updateGameControlsFromJoystick();
+            }
+            
+            endJoystick() {
+                this.joystick.isActive = false;
+                this.joystick.knob.classList.remove('active');
+                
+                // Reset joystick positie
+                this.joystick.knob.style.transform = 'translate(-50%, -50%)';
+                
+                // Reset game controls
+                this.joystick.currentX = 0;
+                this.joystick.currentY = 0;
+                this.updateGameControlsFromJoystick();
+            }
+            
+            updateGameControlsFromJoystick() {
+                // Converteer joystick input naar keyboard equivalent
+                const threshold = 0.3; // Drempelwaarde voor input
+                
+                // Reset alle keys
+                this.keys['ArrowUp'] = false;
+                this.keys['ArrowDown'] = false;
+                this.keys['ArrowLeft'] = false;
+                this.keys['ArrowRight'] = false;
+                
+                // Bereken de afstand van het centrum
+                const distance = Math.sqrt(this.joystick.currentX * this.joystick.currentX + this.joystick.currentY * this.joystick.currentY);
+                
+                // Alleen actie als joystick ver genoeg van centrum is
+                if (distance > threshold) {
+                    // Bereken de hoek van de joystick richting (in radialen)
+                    // Let op: Y-as is omgekeerd in joystick coördinaten
+                    const angle = Math.atan2(-this.joystick.currentY, this.joystick.currentX);
+                    
+                    // Converteer naar graden (0-360, waarbij 0° = rechts, 90° = boven)
+                    let degrees = (angle * 180 / Math.PI + 360) % 360;
+                    
+                    // Bepaal de richting op basis van de hoek
+                    // Rechts (315-45°)
+                    if (degrees >= 315 || degrees <= 45) {
+                        this.keys['ArrowRight'] = true;
+                    }
+                    // Boven (45-135°)
+                    if (degrees >= 45 && degrees <= 135) {
+                        this.keys['ArrowUp'] = true;
+                    }
+                    // Links (135-225°)
+                    if (degrees >= 135 && degrees <= 225) {
+                        this.keys['ArrowLeft'] = true;
+                    }
+                    // Onder (225-315°)
+                    if (degrees >= 225 && degrees <= 315) {
+                        this.keys['ArrowDown'] = true;
+                    }
+                }
+            }
+            
+            startCountdown() {
+                const countdownEl = document.getElementById('countdown');
+                let count = 3;
+                
+                // Toon scoreboard bij start
+                this.updateScoreboard();
+                
+                const countdown = setInterval(() => {
+                    countdownEl.textContent = count;
+                    countdownEl.style.display = 'block';
+                    
+                    if (count === 0) {
+                        countdownEl.textContent = 'START!';
+                        setTimeout(() => {
+                            countdownEl.style.display = 'none';
+                            this.startGame();
+                        }, 1000);
+                        clearInterval(countdown);
+                    }
+                    count--;
+                }, 1000);
+            }
+            
+            startGame() {
+                this.gameRunning = true;
+                this.gameLoop();
+            }
+            
+            updatePlayer() {
+                // Vooruit/achteruit
+                if (this.keys['ArrowUp']) {
+                    this.player.speed += this.player.acceleration;
+                } else if (this.keys['ArrowDown']) {
+                    this.player.speed -= this.player.acceleration;
+                } else {
+                    // Natuurlijke vertraging
+                    if (this.player.speed > 0) {
+                        this.player.speed -= this.player.deceleration;
+                    } else if (this.player.speed < 0) {
+                        this.player.speed += this.player.deceleration;
+                    }
+                }
+                
+                // Snelheid beperken
+                this.player.speed = Math.max(-this.player.maxSpeed/2, Math.min(this.player.maxSpeed, this.player.speed));
+                
+                // Sturen
+                if (this.keys['ArrowLeft']) {
+                    this.player.angle -= this.player.turnSpeed;
+                }
+                if (this.keys['ArrowRight']) {
+                    this.player.angle += this.player.turnSpeed;
+                }
+                
+                // Beweging
+                this.player.x += Math.cos(this.player.angle) * this.player.speed;
+                this.player.y += Math.sin(this.player.angle) * this.player.speed;
+                
+                // Binnen canvas houden
+                this.player.x = Math.max(this.player.width/2, Math.min(this.canvas.width - this.player.width/2, this.player.x));
+                this.player.y = Math.max(this.player.height/2, Math.min(this.canvas.height - this.player.height/2, this.player.y));
+            }
+            
+            updatePolice() {
+                // Politie volgt speler met wat random gedrag
+                const dx = this.player.x - this.police.x;
+                const dy = this.player.y - this.police.y;
+                const distance = Math.sqrt(dx*dx + dy*dy);
+                
+                if (distance > 50) {
+                    // Naar speler toe rijden
+                    this.police.targetX = this.player.x + (Math.random() - 0.5) * 100;
+                    this.police.targetY = this.player.y + (Math.random() - 0.5) * 100;
+                }
+                
+                // Politie beweging
+                const targetAngle = Math.atan2(this.police.targetY - this.police.y, this.police.targetX - this.police.x);
+                const angleDiff = targetAngle - this.police.angle;
+                
+                // Smooth draaien
+                if (Math.abs(angleDiff) > 0.1) {
+                    this.police.angle += Math.sign(angleDiff) * 0.03;
+                }
+                
+                // Vooruit rijden
+                this.police.x += Math.cos(this.police.angle) * this.police.speed;
+                this.police.y += Math.sin(this.police.angle) * this.police.speed;
+                
+                // Binnen canvas houden
+                this.police.x = Math.max(this.police.width/2, Math.min(this.canvas.width - this.police.width/2, this.police.x));
+                this.police.y = Math.max(this.police.height/2, Math.min(this.canvas.height - this.police.height/2, this.police.y));
+            }
+            
+            spawnStar() {
+                // Spawn sterretje op een willekeurige positie, maar niet te dicht bij de speler
+                let attempts = 0;
+                do {
+                    this.star.x = Math.random() * (this.canvas.width - 50) + 25;
+                    this.star.y = Math.random() * (this.canvas.height - 50) + 25;
+                    attempts++;
+                } while (this.getDistance(this.star.x, this.star.y, this.player.x, this.player.y) < 100 && attempts < 20);
+                
+                this.star.collected = false;
+                this.star.sparkle = 0;
+            }
+            
+            getDistance(x1, y1, x2, y2) {
+                const dx = x2 - x1;
+                const dy = y2 - y1;
+                return Math.sqrt(dx*dx + dy*dy);
+            }
+            
+            checkStarCollection() {
+                if (!this.star.collected) {
+                    const distance = this.getDistance(this.player.x, this.player.y, this.star.x, this.star.y);
+                    if (distance < (this.player.width + this.star.size) / 2) {
+                        // Sterretje opgepakt!
+                        this.star.collected = true;
+                         this.score += 25;
+                        document.getElementById('score').textContent = this.score;
+                        
+                        // Spawn een nieuw sterretje
+                        setTimeout(() => {
+                            this.spawnStar();
+                        }, 500);
+                    }
+                }
+            }
+            
+            checkCollision() {
+                const dx = this.player.x - this.police.x;
+                const dy = this.player.y - this.police.y;
+                const distance = Math.sqrt(dx*dx + dy*dy);
+                
+                if (distance < (this.player.width + this.police.width) / 2) {
+                    this.endGame();
+                }
+            }
+            
+            endGame() {
+                this.gameRunning = false;
+                this.gameOver = true;
+                
+                // Score opslaan en scoreboard bijwerken
+                this.saveScore(this.score);
+                this.updateScoreboard();
+                
+                // Game over scherm tonen
+                document.getElementById('gameOver').style.display = 'block';
+                document.getElementById('finalScoreValue').textContent = this.score;
+            }
+            
+            restartGame() {
+                // Reset alle game variabelen
+                this.score = 0;
+                this.gameTime = 0;
+                this.gameRunning = false;
+                this.gameOver = false;
+                
+                // Reset speler positie
+                this.player.x = 400;
+                this.player.y = 300;
+                this.player.angle = 0;
+                this.player.speed = 0;
+                
+                // Reset politie positie
+                this.police.x = 100;
+                this.police.y = 100;
+                this.police.angle = 0;
+                this.police.targetX = 400;
+                this.police.targetY = 300;
+                
+                // Reset sterretje
+                this.spawnStar();
+                
+                // Verberg game over scherm
+                document.getElementById('gameOver').style.display = 'none';
+                
+                // Reset score display
+                document.getElementById('score').textContent = '0';
+                
+                // Start opnieuw met countdown
+                this.startCountdown();
+            }
+            
+            loadHighScores() {
+                try {
+                    const scores = localStorage.getItem('tobyGameHighScores');
+                    return scores ? JSON.parse(scores) : [];
+                } catch (e) {
+                    return [];
+                }
+            }
+            
+            saveScore(score) {
+                // Alleen geldige scores opslaan (positief en redelijk)
+                if (score <= 0 || score > 1000000) {
+                    return false;
+                }
+                
+                // Score toevoegen aan lijst
+                this.highScores.push({
+                    score: score,
+                    date: new Date().toLocaleDateString('nl-NL'),
+                    timestamp: Date.now()
+                });
+                
+                // Sorteren op score (hoogste eerst)
+                this.highScores.sort((a, b) => b.score - a.score);
+                
+                // Alleen top 10 behouden
+                this.highScores = this.highScores.slice(0, 10);
+                
+                // Opslaan in localStorage
+                try {
+                    localStorage.setItem('tobyGameHighScores', JSON.stringify(this.highScores));
+                    return true;
+                } catch (e) {
+                    return false;
+                }
+            }
+            
+            updateScoreboard() {
+                const scoreList = document.getElementById('scoreList');
+                scoreList.innerHTML = '';
+                
+                this.highScores.forEach((scoreData, index) => {
+                    const scoreItem = document.createElement('div');
+                    scoreItem.className = 'scoreItem';
+                    
+                    // Markeer nieuwe score
+                    if (scoreData.score === this.score && scoreData.timestamp === Date.now()) {
+                        scoreItem.classList.add('newScore');
+                    }
+                    
+                    scoreItem.innerHTML = `
+                        <span class="scoreRank">#${index + 1}</span>
+                        <span class="scoreValue">${scoreData.score}</span>
+                        <span class="scoreDate">${scoreData.date}</span>
+                    `;
+                    
+                    scoreList.appendChild(scoreItem);
+                });
+            }
+            
+            draw() {
+                // Canvas leegmaken
+                this.ctx.fillStyle = '#2d5a2d';
+                this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+                
+                // Weg tekenen (eenvoudige strepen)
+                this.ctx.strokeStyle = '#ffffff';
+                this.ctx.lineWidth = 3;
+                this.ctx.setLineDash([20, 20]);
+                
+                // Horizontale lijnen
+                for (let y = 100; y < this.canvas.height; y += 100) {
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(0, y);
+                    this.ctx.lineTo(this.canvas.width, y);
+                    this.ctx.stroke();
+                }
+                
+                // Verticale lijnen
+                for (let x = 100; x < this.canvas.width; x += 100) {
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(x, 0);
+                    this.ctx.lineTo(x, this.canvas.height);
+                    this.ctx.stroke();
+                }
+                
+                this.ctx.setLineDash([]);
+                
+                // Auto's tekenen
+                this.drawCar(this.player.x, this.player.y, this.player.angle, this.player.width, this.player.height, '#ff6b6b');
+                this.drawCar(this.police.x, this.police.y, this.police.angle, this.police.width, this.police.height, '#4169e1', true);
+                
+                // Sterretje tekenen
+                if (!this.star.collected) {
+                    this.drawStar(this.star.x, this.star.y, this.star.size, this.star.sparkle);
+                }
+            }
+            
+            drawCar(x, y, angle, width, height, color, isPolice = false) {
+                this.ctx.save();
+                this.ctx.translate(x, y);
+                this.ctx.rotate(angle);
+                
+                if (isPolice) {
+                    // Politie auto (behouden van origineel)
+                    this.ctx.fillStyle = color;
+                    this.ctx.fillRect(-width/2, -height/2, width, height);
+                    
+                    // Auto details
+                    this.ctx.fillStyle = '#333';
+                    this.ctx.fillRect(-width/2 + 2, -height/2 + 2, width - 4, height - 4);
+                    
+                    // Voorruit
+                    this.ctx.fillStyle = '#87CEEB';
+                    this.ctx.fillRect(-width/2 + 4, -height/2 + 4, width - 8, height/2 - 2);
+                    
+                    // Zwaailichten
+                    this.ctx.fillStyle = '#ff0000';
+                    this.ctx.beginPath();
+                    this.ctx.arc(-width/2 - 5, -height/2 - 5, 3, 0, Math.PI * 2);
+                    this.ctx.fill();
+                    
+                    this.ctx.fillStyle = '#0000ff';
+                    this.ctx.beginPath();
+                    this.ctx.arc(-width/2 - 5, height/2 + 5, 3, 0, Math.PI * 2);
+                    this.ctx.fill();
+                    
+                    // Politie strepen
+                    this.ctx.fillStyle = '#ffffff';
+                    this.ctx.fillRect(-width/2, -height/2, width, 3);
+                    this.ctx.fillRect(-width/2, height/2 - 3, width, 3);
+                } else {
+                    // Speler auto - veel gedetailleerder
+                    const carWidth = width;
+                    const carHeight = height;
+                    
+                    // Hoofdlichaam van de auto
+                    this.ctx.fillStyle = color;
+                    this.ctx.fillRect(-carWidth/2, -carHeight/2, carWidth, carHeight);
+                    
+                    // Dak van de auto (kleiner en hoger)
+                    this.ctx.fillStyle = '#e74c3c';
+                    this.ctx.fillRect(-carWidth/2 + 2, -carHeight/2 + 2, carWidth - 4, carHeight/3);
+                    
+                    // Voorruit (grote ruit)
+                    this.ctx.fillStyle = '#87CEEB';
+                    this.ctx.fillRect(-carWidth/2 + 3, -carHeight/2 + 3, carWidth - 6, carHeight/3 - 2);
+                    
+                    // Achterruit
+                    this.ctx.fillStyle = '#87CEEB';
+                    this.ctx.fillRect(-carWidth/2 + 3, carHeight/2 - carHeight/3 + 1, carWidth - 6, carHeight/3 - 2);
+                    
+                    // Koplampen (voor)
+                    this.ctx.fillStyle = '#ffff00';
+                    this.ctx.fillRect(-carWidth/2 + 2, -carHeight/2 + 1, 4, 3);
+                    this.ctx.fillRect(carWidth/2 - 6, -carHeight/2 + 1, 4, 3);
+                    
+                    // Achterlichten
+                    this.ctx.fillStyle = '#ff0000';
+                    this.ctx.fillRect(-carWidth/2 + 2, carHeight/2 - 4, 4, 3);
+                    this.ctx.fillRect(carWidth/2 - 6, carHeight/2 - 4, 4, 3);
+                    
+                    // Wielen (4 wielen)
+                    this.ctx.fillStyle = '#333';
+                    this.ctx.fillRect(-carWidth/2 + 1, -carHeight/2 - 2, 3, 4);
+                    this.ctx.fillRect(carWidth/2 - 4, -carHeight/2 - 2, 3, 4);
+                    this.ctx.fillRect(-carWidth/2 + 1, carHeight/2 - 2, 3, 4);
+                    this.ctx.fillRect(carWidth/2 - 4, carHeight/2 - 2, 3, 4);
+                    
+                    // Velgen
+                    this.ctx.fillStyle = '#ccc';
+                    this.ctx.fillRect(-carWidth/2 + 1.5, -carHeight/2 - 1.5, 2, 3);
+                    this.ctx.fillRect(carWidth/2 - 3.5, -carHeight/2 - 1.5, 2, 3);
+                    this.ctx.fillRect(-carWidth/2 + 1.5, carHeight/2 - 1.5, 2, 3);
+                    this.ctx.fillRect(carWidth/2 - 3.5, carHeight/2 - 1.5, 2, 3);
+                    
+                    // Deur (lijn in het midden)
+                    this.ctx.strokeStyle = '#333';
+                    this.ctx.lineWidth = 1;
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(0, -carHeight/2 + 2);
+                    this.ctx.lineTo(0, carHeight/2 - 2);
+                    this.ctx.stroke();
+                    
+                    // Bumper (voor en achter)
+                    this.ctx.fillStyle = '#666';
+                    this.ctx.fillRect(-carWidth/2, -carHeight/2, carWidth, 2);
+                    this.ctx.fillRect(-carWidth/2, carHeight/2 - 2, carWidth, 2);
+                }
+                
+                this.ctx.restore();
+            }
+            
+            drawStar(x, y, size, sparkle) {
+                this.ctx.save();
+                this.ctx.translate(x, y);
+                
+                // Sparkle effect
+                const sparkleScale = 1 + Math.sin(sparkle) * 0.2;
+                this.ctx.scale(sparkleScale, sparkleScale);
+                
+                // Sterretje tekenen
+                this.ctx.fillStyle = '#ffd700';
+                this.ctx.strokeStyle = '#ffed4e';
+                this.ctx.lineWidth = 2;
+                
+                this.ctx.beginPath();
+                for (let i = 0; i < 5; i++) {
+                    const angle = (i * 4 * Math.PI) / 5;
+                    const outerRadius = size;
+                    const innerRadius = size * 0.4;
+                    
+                    // Buitenste punt
+                    const outerX = Math.cos(angle) * outerRadius;
+                    const outerY = Math.sin(angle) * outerRadius;
+                    
+                    // Binnenste punt
+                    const innerAngle = angle + (2 * Math.PI) / 10;
+                    const innerX = Math.cos(innerAngle) * innerRadius;
+                    const innerY = Math.sin(innerAngle) * innerRadius;
+                    
+                    if (i === 0) {
+                        this.ctx.moveTo(outerX, outerY);
+                    } else {
+                        this.ctx.lineTo(outerX, outerY);
+                    }
+                    this.ctx.lineTo(innerX, innerY);
+                }
+                this.ctx.closePath();
+                this.ctx.fill();
+                this.ctx.stroke();
+                
+                // Glans effect
+                this.ctx.fillStyle = '#fff';
+                this.ctx.beginPath();
+                this.ctx.arc(-size * 0.2, -size * 0.2, size * 0.15, 0, Math.PI * 2);
+                this.ctx.fill();
+                
+                this.ctx.restore();
+            }
+            
+            update() {
+                if (!this.gameRunning) return;
+                
+                this.updatePlayer();
+                this.updatePolice();
+                this.checkStarCollection();
+                this.checkCollision();
+                
+                // Score bijwerken (basis score + sterretje bonus)
+                this.gameTime += 1/60; // 60 FPS
+                const baseScore = Math.floor(this.gameTime * 10);
+                // Score wordt bijgewerkt in checkStarCollection voor sterretje bonus
+                if (baseScore > this.score) {
+                    this.score = baseScore;
+                    document.getElementById('score').textContent = this.score;
+                }
+                
+                // Sterretje sparkle animatie
+                if (!this.star.collected) {
+                    this.star.sparkle += 0.1;
+                }
+            }
+            
+            gameLoop() {
+                if (!this.gameRunning) return;
+                
+                this.update();
+                this.draw();
+                
+                requestAnimationFrame(() => this.gameLoop());
+            }
+        }
+        
+        // Detecteer touch device en toon touch controls
+        function isTouchDevice() {
+            return (('ontouchstart' in window) ||
+                   (navigator.maxTouchPoints > 0) ||
+                   (navigator.msMaxTouchPoints > 0));
+        }
+        
+        // Start het spel wanneer de pagina geladen is
+        window.addEventListener('load', () => {
+            // Toon touch controls alleen op touch devices
+            if (isTouchDevice()) {
+                const touchControls = document.querySelector('.touch-controls');
+                if (touchControls) {
+                    touchControls.classList.add('show');
+                }
+            }
+            
+            new Game();
+        });
+    </script>
+</body>
+</html>

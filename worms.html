@@ -1,0 +1,847 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Neuswormen</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { overflow: hidden; background: #2a2a3e; }
+    canvas { display: block; cursor: none; }
+  </style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script>
+(() => {
+  'use strict';
+
+  // ===== SETUP =====
+  const canvas = document.getElementById('c');
+  const ctx = canvas.getContext('2d');
+  let W, H;
+
+  function resize() {
+    W = canvas.width = window.innerWidth;
+    H = canvas.height = window.innerHeight;
+  }
+  window.addEventListener('resize', resize);
+  resize();
+
+  // ===== CONSTANTS =====
+  const MAX_PER_NOSTRIL = 4;
+  const SPAWN_INTERVAL = 1.5;
+  const TOTAL_SEGMENTS = 12;
+  const WORM_COLORS = [
+    '#7D6B4E','#6B8E23','#CD853F','#8FBC8F','#B8734B',
+    '#9ACD32','#A08060','#8B7355','#7B8D42','#C77B54'
+  ];
+
+  // ===== INPUT =====
+  const mouse = { x: W / 2, y: H / 2, down: false };
+
+  canvas.addEventListener('mousemove', e => {
+    mouse.x = e.clientX;
+    mouse.y = e.clientY;
+  });
+  canvas.addEventListener('mousedown', e => {
+    mouse.down = true;
+    mouse.x = e.clientX;
+    mouse.y = e.clientY;
+    tryGrabWorm();
+  });
+  canvas.addEventListener('mouseup', e => {
+    mouse.down = false;
+    releaseWorm();
+  });
+  // Prevent context menu
+  canvas.addEventListener('contextmenu', e => e.preventDefault());
+
+  // ===== GAME STATE =====
+  let score = 0;
+  let worms = [];
+  let grabbedWorm = null;
+  let spawnTimer = 0.5; // start first spawn after 0.5s
+  let gameTime = 0;
+  let particles = [];
+  let scorePopups = [];
+  const noseEffect = { shake: 0, redness: 0 };
+
+  // ===== GEOMETRY =====
+  function noseSize() {
+    return Math.min(W, H) * 0.33;
+  }
+
+  function noseCenter() {
+    return { x: W / 2, y: H * 0.38 };
+  }
+
+  function nostrilPos(side) {
+    const ns = noseSize();
+    const nc = noseCenter();
+    const offsetX = side === 'left' ? -ns * 0.19 : ns * 0.19;
+    return {
+      x: nc.x + offsetX,
+      y: nc.y + ns * 0.25,
+      rx: ns * 0.1,
+      ry: ns * 0.14
+    };
+  }
+
+  function slotExit(side, slot) {
+    const n = nostrilPos(side);
+    const angles = [-0.35, -0.12, 0.12, 0.35];
+    const a = angles[slot];
+    const x = n.x + Math.sin(a) * n.rx * 0.5;
+    const y = n.y + n.ry * 0.75;
+    const dx = Math.sin(a) * 0.3;
+    const dy = 1;
+    const len = Math.sqrt(dx * dx + dy * dy);
+    return { x, y, dx: dx / len, dy: dy / len };
+  }
+
+  function bucketGeom() {
+    const bw = Math.min(W, H) * 0.18;
+    return { x: W / 2, y: H * 0.85, w: bw, h: bw * 0.6 };
+  }
+
+  function isOverBucket(px, py) {
+    const b = bucketGeom();
+    return px > b.x - b.w * 0.6 && px < b.x + b.w * 0.6 &&
+           py > b.y - b.h * 0.6 && py < b.y + b.h * 0.6;
+  }
+
+  // ===== HELPERS =====
+  function lerp(a, b, t) { return a + (b - a) * t; }
+  function dist(x1, y1, x2, y2) {
+    const dx = x2 - x1, dy = y2 - y1;
+    return Math.sqrt(dx * dx + dy * dy);
+  }
+  function shadeColor(hex, amt) {
+    let r = parseInt(hex.slice(1, 3), 16);
+    let g = parseInt(hex.slice(3, 5), 16);
+    let b = parseInt(hex.slice(5, 7), 16);
+    r = Math.max(0, Math.min(255, r + amt));
+    g = Math.max(0, Math.min(255, g + amt));
+    b = Math.max(0, Math.min(255, b + amt));
+    return `rgb(${r},${g},${b})`;
+  }
+
+  // ===== WORM CREATION =====
+  function createWorm(side, slot) {
+    return {
+      side,
+      slot,
+      color: WORM_COLORS[Math.floor(Math.random() * WORM_COLORS.length)],
+      phase: Math.random() * Math.PI * 2,
+      wiggleSpeed: 2.5 + Math.random() * 2,
+      peekProgress: 0,
+      targetPeek: 0.35 + Math.random() * 0.45,
+      state: 'growing', // growing, idle, grabbed, free, falling, dead
+      headX: 0,
+      headY: 0,
+      chain: null,
+      vy: 0,
+      exitX: 0,
+      exitY: 0
+    };
+  }
+
+  // ===== SPAWN =====
+  function trySpawnWorm() {
+    const leftCount = worms.filter(w => w.side === 'left' && w.state !== 'free' && w.state !== 'falling' && w.state !== 'dead').length;
+    const rightCount = worms.filter(w => w.side === 'right' && w.state !== 'free' && w.state !== 'falling' && w.state !== 'dead').length;
+
+    if (leftCount >= MAX_PER_NOSTRIL && rightCount >= MAX_PER_NOSTRIL) return;
+
+    let side;
+    if (leftCount <= rightCount && leftCount < MAX_PER_NOSTRIL) side = 'left';
+    else if (rightCount < MAX_PER_NOSTRIL) side = 'right';
+    else side = 'left';
+
+    const usedSlots = worms
+      .filter(w => w.side === side && w.state !== 'free' && w.state !== 'falling' && w.state !== 'dead')
+      .map(w => w.slot);
+    let slot = -1;
+    for (let s = 0; s < MAX_PER_NOSTRIL; s++) {
+      if (!usedSlots.includes(s)) { slot = s; break; }
+    }
+    if (slot === -1) return;
+
+    worms.push(createWorm(side, slot));
+  }
+
+  // ===== WORM SEGMENT POSITIONS =====
+  function segRadius() { return noseSize() * 0.024; }
+  function segSpacing() { return noseSize() * 0.02; }
+
+  function peekSegments(worm) {
+    const exit = slotExit(worm.side, worm.slot);
+    const shk = shakeOffset();
+    const maxPeekDist = noseSize() * 0.18;
+    const peekDist = worm.peekProgress * maxPeekDist;
+    const sp = segSpacing();
+    const numVis = Math.max(1, Math.ceil(peekDist / sp));
+    const segments = [];
+
+    for (let i = 0; i < numVis; i++) {
+      const d = i * sp;
+      if (d > peekDist) break;
+      const wiggle = Math.sin(gameTime * worm.wiggleSpeed + i * 0.7 + worm.phase) * sp * 0.6;
+      const perpX = -exit.dy;
+      const perpY = exit.dx;
+      segments.push({
+        x: exit.x + shk.x + exit.dx * d + perpX * wiggle,
+        y: exit.y + shk.y + exit.dy * d + perpY * wiggle
+      });
+    }
+    segments.reverse(); // [0] = head (outermost)
+    return segments;
+  }
+
+  function grabbedSegments(worm) {
+    const exit = slotExit(worm.side, worm.slot);
+    const shk = shakeOffset();
+    const tailX = exit.x + shk.x;
+    const tailY = exit.y + shk.y;
+    const headX = worm.headX;
+    const headY = worm.headY;
+    const sp = segSpacing();
+    const pullDist = dist(tailX, tailY, headX, headY);
+    const numSegs = Math.max(3, Math.min(TOTAL_SEGMENTS, Math.ceil(pullDist / sp) + 2));
+    const segments = [];
+
+    const dx = headX - tailX;
+    const dy = headY - tailY;
+    const d = Math.sqrt(dx * dx + dy * dy) || 1;
+    const perpX = -dy / d;
+    const perpY = dx / d;
+
+    for (let i = 0; i < numSegs; i++) {
+      const t = i / (numSegs - 1); // 0=head, 1=tail
+      const wiggle = Math.sin(gameTime * worm.wiggleSpeed * 1.5 + i * 0.6 + worm.phase) * sp * 0.5 * t;
+      segments.push({
+        x: lerp(headX, tailX, t) + perpX * wiggle,
+        y: lerp(headY, tailY, t) + perpY * wiggle
+      });
+    }
+    return segments;
+  }
+
+  function wormHeadPos(worm) {
+    const segs = peekSegments(worm);
+    if (segs.length === 0) {
+      const exit = slotExit(worm.side, worm.slot);
+      const shk = shakeOffset();
+      return { x: exit.x + shk.x, y: exit.y + shk.y };
+    }
+    return { x: segs[0].x, y: segs[0].y };
+  }
+
+  // ===== INPUT HANDLERS =====
+  function tryGrabWorm() {
+    if (grabbedWorm) return;
+    let best = null;
+    let bestD = noseSize() * 0.08; // grab radius
+
+    for (const w of worms) {
+      if (w.state !== 'idle' && w.state !== 'growing') continue;
+      if (w.peekProgress < 0.15) continue;
+      const head = wormHeadPos(w);
+      const d = dist(mouse.x, mouse.y, head.x, head.y);
+      if (d < bestD) {
+        bestD = d;
+        best = w;
+      }
+    }
+    if (best) {
+      best.state = 'grabbed';
+      const head = wormHeadPos(best);
+      best.headX = head.x;
+      best.headY = head.y;
+      const exit = slotExit(best.side, best.slot);
+      const shk = shakeOffset();
+      best.exitX = exit.x + shk.x;
+      best.exitY = exit.y + shk.y;
+      grabbedWorm = best;
+    }
+  }
+
+  function releaseWorm() {
+    if (!grabbedWorm) return;
+    const w = grabbedWorm;
+
+    if (w.state === 'free') {
+      if (isOverBucket(w.chain[0].x, w.chain[0].y)) {
+        score++;
+        w.state = 'dead';
+        scorePopups.push({
+          x: w.chain[0].x, y: w.chain[0].y,
+          life: 1.0, maxLife: 1.0
+        });
+        spawnBucketSplash(w.chain[0].x, bucketGeom().y - bucketGeom().h * 0.3);
+      } else {
+        w.state = 'falling';
+        w.vy = 0;
+      }
+    } else if (w.state === 'grabbed') {
+      // Snap back
+      w.state = 'growing';
+      w.peekProgress *= 0.4;
+      w.targetPeek = 0.3 + Math.random() * 0.45;
+    }
+    grabbedWorm = null;
+  }
+
+  function extractWorm(worm) {
+    worm.state = 'free';
+    const sp = segSpacing();
+    worm.chain = [];
+    for (let i = 0; i < TOTAL_SEGMENTS; i++) {
+      const t = i / (TOTAL_SEGMENTS - 1);
+      worm.chain.push({
+        x: lerp(worm.headX, worm.exitX, t),
+        y: lerp(worm.headY, worm.exitY, t)
+      });
+    }
+    noseEffect.shake = 8;
+    noseEffect.redness = 1;
+    const exit = slotExit(worm.side, worm.slot);
+    const shk = shakeOffset();
+    spawnExtractParticles(exit.x + shk.x, exit.y + shk.y);
+  }
+
+  // ===== PARTICLES =====
+  function spawnExtractParticles(x, y) {
+    for (let i = 0; i < 10; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const speed = 40 + Math.random() * 80;
+      particles.push({
+        x, y,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed - 40,
+        color: `hsl(${45 + Math.random() * 30}, 50%, ${55 + Math.random() * 20}%)`,
+        radius: 2 + Math.random() * 3,
+        life: 0.5 + Math.random() * 0.3,
+        maxLife: 0.8
+      });
+    }
+  }
+
+  function spawnBucketSplash(x, y) {
+    for (let i = 0; i < 6; i++) {
+      const angle = -Math.PI / 2 + (Math.random() - 0.5) * Math.PI * 0.5;
+      const speed = 60 + Math.random() * 50;
+      particles.push({
+        x, y,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed,
+        color: '#8AB',
+        radius: 1.5 + Math.random() * 2,
+        life: 0.4 + Math.random() * 0.2,
+        maxLife: 0.6
+      });
+    }
+  }
+
+  // ===== NOSE EFFECT HELPERS =====
+  function shakeOffset() {
+    return {
+      x: noseEffect.shake * Math.sin(gameTime * 40),
+      y: noseEffect.shake * Math.cos(gameTime * 33) * 0.4
+    };
+  }
+
+  // ===== UPDATE =====
+  function update(dt) {
+    gameTime += dt;
+
+    // Spawn
+    spawnTimer -= dt;
+    if (spawnTimer <= 0) {
+      spawnTimer = SPAWN_INTERVAL + (Math.random() - 0.5) * 0.5;
+      trySpawnWorm();
+    }
+
+    // Update worms
+    const sp = segSpacing();
+    const pullThresh = noseSize() * 0.15;
+
+    for (const w of worms) {
+      switch (w.state) {
+        case 'growing':
+          w.peekProgress = Math.min(w.peekProgress + dt * 0.4, w.targetPeek);
+          if (w.peekProgress >= w.targetPeek) w.state = 'idle';
+          break;
+
+        case 'idle':
+          // Just wiggling — nothing special to update
+          break;
+
+        case 'grabbed': {
+          w.headX += (mouse.x - w.headX) * 0.25;
+          w.headY += (mouse.y - w.headY) * 0.25;
+          const exit = slotExit(w.side, w.slot);
+          const shk = shakeOffset();
+          w.exitX = exit.x + shk.x;
+          w.exitY = exit.y + shk.y;
+          if (dist(w.exitX, w.exitY, w.headX, w.headY) > pullThresh) {
+            extractWorm(w);
+          }
+          break;
+        }
+
+        case 'free': {
+          w.chain[0].x += (mouse.x - w.chain[0].x) * 0.35;
+          w.chain[0].y += (mouse.y - w.chain[0].y) * 0.35;
+          for (let i = 1; i < w.chain.length; i++) {
+            const prev = w.chain[i - 1];
+            const curr = w.chain[i];
+            const dx = curr.x - prev.x;
+            const dy = curr.y - prev.y;
+            const d = Math.sqrt(dx * dx + dy * dy);
+            if (d > sp) {
+              curr.x = prev.x + dx / d * sp;
+              curr.y = prev.y + dy / d * sp;
+            }
+          }
+          break;
+        }
+
+        case 'falling':
+          w.vy += 700 * dt;
+          if (w.chain) {
+            for (const seg of w.chain) {
+              seg.y += w.vy * dt;
+              seg.x += Math.sin(gameTime * 6 + seg.y * 0.02) * dt * 30;
+            }
+          }
+          if (w.chain && w.chain[0].y > H + 100) w.state = 'dead';
+          break;
+      }
+    }
+
+    // Remove dead
+    worms = worms.filter(w => w.state !== 'dead');
+
+    // Nose effects
+    noseEffect.shake *= Math.pow(0.02, dt);
+    if (noseEffect.shake < 0.1) noseEffect.shake = 0;
+    noseEffect.redness = Math.max(0, noseEffect.redness - dt * 2.5);
+
+    // Particles
+    particles = particles.filter(p => {
+      p.x += p.vx * dt;
+      p.y += p.vy * dt;
+      p.vy += 250 * dt;
+      p.life -= dt;
+      return p.life > 0;
+    });
+
+    // Score popups
+    scorePopups = scorePopups.filter(p => {
+      p.y -= 45 * dt;
+      p.life -= dt;
+      return p.life > 0;
+    });
+  }
+
+  // ===== DRAW =====
+  function draw() {
+    drawBackground();
+    drawFaceHint();
+    drawNose();
+    drawWormsInNose();
+    drawFreeAndFallingWorms();
+    drawBucket();
+    drawParticles();
+    drawScorePopups();
+    drawUI();
+    drawTweezers();
+  }
+
+  function drawBackground() {
+    const grad = ctx.createLinearGradient(0, 0, 0, H);
+    grad.addColorStop(0, '#E0F0FA');
+    grad.addColorStop(1, '#C8DFF0');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, W, H);
+  }
+
+  function drawFaceHint() {
+    // Subtle skin-toned oval behind nose
+    const nc = noseCenter();
+    const ns = noseSize();
+    const grad = ctx.createRadialGradient(nc.x, nc.y - ns * 0.1, 0, nc.x, nc.y, ns * 1.8);
+    grad.addColorStop(0, 'rgba(255,218,185,0.25)');
+    grad.addColorStop(1, 'rgba(255,218,185,0)');
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.ellipse(nc.x, nc.y - ns * 0.1, ns * 1.2, ns * 1.6, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Eyes hint
+    const eyeY = nc.y - ns * 0.75;
+    const eyeSpread = ns * 0.5;
+    ctx.strokeStyle = 'rgba(160,140,120,0.15)';
+    ctx.lineWidth = 2;
+    for (const sx of [-1, 1]) {
+      ctx.beginPath();
+      ctx.ellipse(nc.x + sx * eyeSpread, eyeY, ns * 0.18, ns * 0.12, 0, 0, Math.PI * 2);
+      ctx.stroke();
+      // Pupil dot
+      ctx.beginPath();
+      ctx.arc(nc.x + sx * eyeSpread, eyeY, ns * 0.04, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(80,60,40,0.12)';
+      ctx.fill();
+    }
+  }
+
+  function drawNose() {
+    const nc = noseCenter();
+    const ns = noseSize();
+    const shk = shakeOffset();
+    const cx = nc.x + shk.x;
+    const cy = nc.y + shk.y;
+    const red = noseEffect.redness;
+
+    ctx.save();
+    ctx.translate(cx, cy);
+
+    // Shadow
+    ctx.beginPath();
+    ctx.ellipse(3, ns * 0.38, ns * 0.38, ns * 0.06, 0, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(0,0,0,0.1)';
+    ctx.fill();
+
+    // Main nose shape
+    ctx.beginPath();
+    ctx.moveTo(0, -ns * 0.5);
+    ctx.bezierCurveTo(ns * 0.08, -ns * 0.48, ns * 0.48, -ns * 0.08, ns * 0.4, ns * 0.22);
+    ctx.bezierCurveTo(ns * 0.36, ns * 0.36, ns * 0.14, ns * 0.38, 0, ns * 0.34);
+    ctx.bezierCurveTo(-ns * 0.14, ns * 0.38, -ns * 0.36, ns * 0.36, -ns * 0.4, ns * 0.22);
+    ctx.bezierCurveTo(-ns * 0.48, -ns * 0.08, -ns * 0.08, -ns * 0.48, 0, -ns * 0.5);
+    ctx.closePath();
+
+    const r = Math.min(255, 255);
+    const g = Math.max(170, Math.round(205 - red * 45));
+    const b = Math.max(130, Math.round(175 - red * 55));
+    const grad = ctx.createRadialGradient(-ns * 0.06, -ns * 0.1, 0, 0, 0, ns * 0.5);
+    grad.addColorStop(0, `rgb(${r},${g + 15},${b + 10})`);
+    grad.addColorStop(0.5, `rgb(${r - 8},${g},${b})`);
+    grad.addColorStop(1, `rgb(${r - 35},${g - 25},${b - 30})`);
+    ctx.fillStyle = grad;
+    ctx.fill();
+    ctx.strokeStyle = `rgb(${185 - Math.round(red * 10)},${140 - Math.round(red * 15)},${120 - Math.round(red * 15)})`;
+    ctx.lineWidth = 2.5;
+    ctx.stroke();
+
+    // Highlight
+    ctx.beginPath();
+    ctx.ellipse(-ns * 0.07, -ns * 0.18, ns * 0.1, ns * 0.16, -0.3, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(255,255,255,0.22)';
+    ctx.fill();
+
+    // Nostrils
+    drawNostril(-ns * 0.19, ns * 0.18, ns * 0.1, ns * 0.13);
+    drawNostril(ns * 0.19, ns * 0.18, ns * 0.1, ns * 0.13);
+
+    ctx.restore();
+  }
+
+  function drawNostril(x, y, rx, ry) {
+    ctx.beginPath();
+    ctx.ellipse(x, y, rx, ry, 0, 0, Math.PI * 2);
+    const grad = ctx.createRadialGradient(x, y - ry * 0.2, 0, x, y, Math.max(rx, ry));
+    grad.addColorStop(0, '#1a0a00');
+    grad.addColorStop(0.7, '#2a1508');
+    grad.addColorStop(1, '#4a2a18');
+    ctx.fillStyle = grad;
+    ctx.fill();
+  }
+
+  function drawWormsInNose() {
+    for (const w of worms) {
+      if (w.state === 'growing' || w.state === 'idle') {
+        const segs = peekSegments(w);
+        if (segs.length > 0) {
+          drawWormBody(segs, w.color, segRadius(), false);
+        }
+      } else if (w.state === 'grabbed') {
+        const segs = grabbedSegments(w);
+        drawWormBody(segs, w.color, segRadius(), true);
+      }
+    }
+  }
+
+  function drawFreeAndFallingWorms() {
+    for (const w of worms) {
+      if ((w.state === 'free' || w.state === 'falling') && w.chain) {
+        // Add visual wiggle offset
+        const segs = w.chain.map((seg, i) => {
+          let perpX = 0, perpY = 0;
+          if (i < w.chain.length - 1) {
+            const dx = w.chain[i + 1].x - seg.x;
+            const dy = w.chain[i + 1].y - seg.y;
+            const d = Math.sqrt(dx * dx + dy * dy) || 1;
+            perpX = -dy / d;
+            perpY = dx / d;
+          }
+          const wiggle = Math.sin(gameTime * w.wiggleSpeed + i * 0.6 + w.phase) * 2.5;
+          return { x: seg.x + perpX * wiggle, y: seg.y + perpY * wiggle };
+        });
+        drawWormBody(segs, w.color, segRadius(), w.state === 'free');
+      }
+    }
+  }
+
+  function drawWormBody(segments, color, baseR, scared) {
+    if (segments.length === 0) return;
+    const dark = shadeColor(color, -25);
+
+    // Draw segments tail to head
+    for (let i = segments.length - 1; i >= 0; i--) {
+      const t = 1 - i / Math.max(1, segments.length - 1);
+      const r = baseR * (1 - t * 0.25);
+      ctx.beginPath();
+      ctx.arc(segments[i].x, segments[i].y, r, 0, Math.PI * 2);
+      ctx.fillStyle = (i % 2 === 0) ? color : dark;
+      ctx.fill();
+      ctx.strokeStyle = shadeColor(color, -40);
+      ctx.lineWidth = 0.5;
+      ctx.stroke();
+    }
+
+    // Head eyes
+    const head = segments[0];
+    const r = baseR;
+    const eyeR = r * (scared ? 0.35 : 0.28);
+    const eyeOffX = r * 0.35;
+    const eyeOffY = -r * 0.25;
+
+    // Whites
+    ctx.fillStyle = 'white';
+    ctx.beginPath();
+    ctx.arc(head.x - eyeOffX, head.y + eyeOffY, eyeR, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(head.x + eyeOffX, head.y + eyeOffY, eyeR, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Pupils track mouse
+    const pdx = mouse.x - head.x;
+    const pdy = mouse.y - head.y;
+    const pd = Math.sqrt(pdx * pdx + pdy * pdy) || 1;
+    const pOff = eyeR * 0.3;
+    const px = pdx / pd * pOff;
+    const py = pdy / pd * pOff;
+    const pupilR = scared ? eyeR * 0.45 : eyeR * 0.55;
+
+    ctx.fillStyle = '#111';
+    ctx.beginPath();
+    ctx.arc(head.x - eyeOffX + px, head.y + eyeOffY + py, pupilR, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(head.x + eyeOffX + px, head.y + eyeOffY + py, pupilR, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  function drawBucket() {
+    const b = bucketGeom();
+    const { x, y, w, h } = b;
+
+    ctx.save();
+
+    // Handle
+    ctx.beginPath();
+    ctx.arc(x, y - h / 2 - w * 0.15, w * 0.32, Math.PI * 0.18, Math.PI * 0.82);
+    ctx.strokeStyle = '#6A7A8A';
+    ctx.lineWidth = 3;
+    ctx.lineCap = 'round';
+    ctx.stroke();
+
+    // Body trapezoid
+    ctx.beginPath();
+    ctx.moveTo(x - w / 2, y - h / 2);
+    ctx.lineTo(x + w / 2, y - h / 2);
+    ctx.lineTo(x + w * 0.38, y + h / 2);
+    ctx.lineTo(x - w * 0.38, y + h / 2);
+    ctx.closePath();
+    const bodyGrad = ctx.createLinearGradient(x - w / 2, y, x + w / 2, y);
+    bodyGrad.addColorStop(0, '#5A6A7A');
+    bodyGrad.addColorStop(0.3, '#7A8A9A');
+    bodyGrad.addColorStop(0.7, '#7A8A9A');
+    bodyGrad.addColorStop(1, '#5A6A7A');
+    ctx.fillStyle = bodyGrad;
+    ctx.fill();
+    ctx.strokeStyle = '#4A5A6A';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // Bands
+    for (const frac of [0.35, 0.65]) {
+      const by = y - h / 2 + h * frac;
+      const bw2 = lerp(w / 2, w * 0.38, frac);
+      ctx.beginPath();
+      ctx.moveTo(x - bw2, by);
+      ctx.lineTo(x + bw2, by);
+      ctx.strokeStyle = '#4A5A6A';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+    }
+
+    // Rim
+    ctx.beginPath();
+    ctx.ellipse(x, y - h / 2, w / 2 + 2, h * 0.07, 0, 0, Math.PI * 2);
+    ctx.fillStyle = '#8090A0';
+    ctx.fill();
+    ctx.strokeStyle = '#4A5A6A';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // Worm bits peeking over rim (visual flavor based on score)
+    const visWorms = Math.min(score, 6);
+    for (let i = 0; i < visWorms; i++) {
+      const wx = x + (i - visWorms / 2 + 0.5) * (w * 0.12);
+      const wy = y - h / 2 - 2;
+      const wiggle = Math.sin(gameTime * 2 + i * 1.3) * 3;
+      ctx.beginPath();
+      ctx.moveTo(wx, wy);
+      ctx.quadraticCurveTo(wx + wiggle, wy - 8, wx + wiggle * 0.5, wy - 14);
+      ctx.strokeStyle = WORM_COLORS[i % WORM_COLORS.length];
+      ctx.lineWidth = 3;
+      ctx.lineCap = 'round';
+      ctx.stroke();
+    }
+
+    ctx.restore();
+  }
+
+  function drawParticles() {
+    for (const p of particles) {
+      const alpha = Math.min(1, p.life * 3);
+      ctx.globalAlpha = alpha;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.radius * (p.life / (p.maxLife || 0.5)), 0, Math.PI * 2);
+      ctx.fillStyle = p.color;
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  function drawScorePopups() {
+    for (const p of scorePopups) {
+      const alpha = p.life / p.maxLife;
+      ctx.globalAlpha = alpha;
+      ctx.fillStyle = '#FFD700';
+      ctx.font = `bold ${Math.round(28 + (1 - alpha) * 12)}px sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.shadowColor = 'rgba(0,0,0,0.4)';
+      ctx.shadowBlur = 3;
+      ctx.fillText('+1', p.x, p.y);
+      ctx.shadowBlur = 0;
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  function drawUI() {
+    const ns = noseSize();
+    // Title
+    ctx.fillStyle = 'rgba(80,60,50,0.6)';
+    ctx.font = `bold ${Math.round(ns * 0.11)}px "Comic Sans MS", "Chalkboard SE", cursive, sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    ctx.fillText('Neuswormen', W / 2, 15);
+
+    // Score
+    ctx.fillStyle = 'rgba(60,50,40,0.8)';
+    ctx.font = `bold ${Math.round(ns * 0.08)}px sans-serif`;
+    ctx.textBaseline = 'top';
+    ctx.fillText('Score: ' + score, W / 2, 15 + ns * 0.13);
+
+    // Instructions (fade out)
+    if (gameTime < 6) {
+      const alpha = gameTime < 4 ? 0.6 : 0.6 * (1 - (gameTime - 4) / 2);
+      ctx.globalAlpha = Math.max(0, alpha);
+      ctx.fillStyle = 'rgba(80,70,60,0.9)';
+      ctx.font = `${Math.round(ns * 0.05)}px sans-serif`;
+      ctx.textBaseline = 'bottom';
+      ctx.fillText('Pak de wormpjes met de pincet en sleep ze naar de emmer!', W / 2, H - 15);
+      ctx.globalAlpha = 1;
+    }
+  }
+
+  function drawTweezers() {
+    const x = mouse.x;
+    const y = mouse.y;
+    const closed = mouse.down;
+    const len = 32;
+    const spread = closed ? 1.5 : 7;
+
+    ctx.save();
+    ctx.translate(x, y);
+
+    // Arms
+    ctx.strokeStyle = '#B0B0B0';
+    ctx.lineWidth = 2.5;
+    ctx.lineCap = 'round';
+
+    // Left arm
+    ctx.beginPath();
+    ctx.moveTo(-spread, 3);
+    ctx.quadraticCurveTo(-5, -len * 0.35, -1.5, -len);
+    ctx.stroke();
+
+    // Right arm
+    ctx.beginPath();
+    ctx.moveTo(spread, 3);
+    ctx.quadraticCurveTo(5, -len * 0.35, 1.5, -len);
+    ctx.stroke();
+
+    // Highlights
+    ctx.strokeStyle = '#D5D5D5';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(-spread + 0.7, 2);
+    ctx.quadraticCurveTo(-4.5, -len * 0.35, -1, -len);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(spread - 0.7, 2);
+    ctx.quadraticCurveTo(4.5, -len * 0.35, 1, -len);
+    ctx.stroke();
+
+    // Tips
+    ctx.fillStyle = '#999';
+    ctx.beginPath();
+    ctx.ellipse(-spread, 4, 1.5, 2.5, -0.15, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.ellipse(spread, 4, 1.5, 2.5, 0.15, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.restore();
+  }
+
+  // ===== GAME LOOP =====
+  let lastTime = 0;
+
+  function loop(timestamp) {
+    const dt = Math.min(0.05, (timestamp - lastTime) / 1000);
+    lastTime = timestamp;
+
+    update(dt);
+    draw();
+
+    requestAnimationFrame(loop);
+  }
+
+  requestAnimationFrame(ts => {
+    lastTime = ts;
+    requestAnimationFrame(loop);
+  });
+
+})();
+</script>
+</body>
+</html>

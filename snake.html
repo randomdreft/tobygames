@@ -1,0 +1,1275 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>tobygames – snake</title>
+    <style>
+        /*
+        ===========================================
+        TOBYGAMES SNAKE - AANPASBARE INSTELLINGEN
+        ===========================================
+        
+        KLEUREN AANPASSEN:
+        - Wijzig de CSS variabelen hieronder om het kleurenschema te veranderen
+        - --primary: hoofdkleur voor knoppen en accenten
+        - --bg: achtergrondkleur
+        - --accent: accentkleur voor highlights
+        
+        HOME-LINK WIJZIGEN:
+        - Zoek naar "window.location.href = '/'" in de JavaScript code
+        - Vervang '/' door de gewenste URL (bijv. 'index.html' of 'https://example.com')
+        
+        ALLES RESETTEN:
+        - Open browser console (F12)
+        - Typ: localStorage.clear()
+        - Herlaad de pagina
+        ===========================================
+        */
+        
+        :root {
+            --primary: #1e3c72;
+            --bg: #2a5298;
+            --accent: #ffd700;
+            --text: #ffffff;
+            --grid: rgba(255, 255, 255, 0.1);
+            --snake: #4CAF50;
+            --snake-head: #45a049;
+            --apple: #ff6b6b;
+            --shadow: rgba(0, 0, 0, 0.3);
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, var(--primary), var(--bg));
+            color: var(--text);
+            min-height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        /* Header met navigatie en scores */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 20px;
+            background: rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .back-button {
+            background: rgba(255, 255, 255, 0.2);
+            color: var(--text);
+            padding: 10px 20px;
+            border-radius: 25px;
+            text-decoration: none;
+            font-weight: bold;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            transition: all 0.3s ease;
+            font-size: 14px;
+        }
+        
+        .back-button:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+            text-decoration: none;
+            color: var(--text);
+        }
+        
+        .score-display {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        
+        .score-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-size: 12px;
+        }
+        
+        .score-value {
+            font-size: 18px;
+            font-weight: bold;
+            color: var(--accent);
+        }
+        
+        .settings-button {
+            background: rgba(255, 255, 255, 0.2);
+            color: var(--text);
+            border: none;
+            padding: 8px 12px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.3s ease;
+        }
+        
+        .settings-button:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+        
+        /* Game container */
+        .game-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            position: relative;
+        }
+        
+        #gameCanvas {
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 10px;
+            box-shadow: 0 0 20px var(--shadow);
+            background: rgba(0, 0, 0, 0.2);
+            max-width: 100%;
+            max-height: 100%;
+        }
+        
+        /* Touch joystick */
+        .touch-controls {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: none;
+            z-index: 1000;
+        }
+        
+        .touch-controls.show {
+            display: block;
+        }
+        
+        .joystick-container {
+            position: relative;
+            width: 120px;
+            height: 120px;
+            margin: 0 auto;
+        }
+        
+        .joystick-base {
+            position: absolute;
+            width: 120px;
+            height: 120px;
+            background: rgba(255, 255, 255, 0.2);
+            border: 3px solid rgba(255, 255, 255, 0.4);
+            border-radius: 50%;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 15px var(--shadow);
+        }
+        
+        .joystick-knob {
+            position: absolute;
+            width: 50px;
+            height: 50px;
+            background: rgba(255, 255, 255, 0.9);
+            border: 2px solid rgba(255, 255, 255, 1);
+            border-radius: 50%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            cursor: pointer;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            transition: all 0.1s ease;
+            box-shadow: 0 2px 8px var(--shadow);
+        }
+        
+        .joystick-knob:active {
+            background: rgba(255, 255, 255, 1);
+            transform: translate(-50%, -50%) scale(1.1);
+        }
+        
+        /* Overlays */
+        .overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        }
+        
+        .overlay.show {
+            display: flex;
+        }
+        
+        .overlay-content {
+            text-align: center;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 40px;
+            border-radius: 20px;
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .countdown {
+            font-size: 80px;
+            font-weight: bold;
+            color: var(--accent);
+            text-shadow: 4px 4px 8px rgba(0, 0, 0, 0.8);
+        }
+        
+        .game-over-title {
+            font-size: 60px;
+            font-weight: bold;
+            color: #ff6b6b;
+            text-shadow: 4px 4px 8px rgba(0, 0, 0, 0.8);
+            margin-bottom: 20px;
+        }
+        
+        .final-score {
+            font-size: 24px;
+            color: var(--accent);
+            margin: 20px 0;
+        }
+        
+        .new-record {
+            color: var(--accent);
+            font-size: 18px;
+            font-weight: bold;
+            margin: 10px 0;
+            animation: pulse 1s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .button {
+            background: var(--primary);
+            color: var(--text);
+            border: none;
+            padding: 15px 30px;
+            border-radius: 25px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin: 10px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 8px var(--shadow);
+        }
+        
+        .button:hover {
+            background: var(--bg);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px var(--shadow);
+        }
+        
+        /* Settings modal */
+        .settings-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 3000;
+        }
+        
+        .settings-modal.show {
+            display: flex;
+        }
+        
+        .settings-content {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 30px;
+            border-radius: 20px;
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            max-width: 400px;
+            width: 90%;
+        }
+        
+        .settings-title {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .setting-group {
+            margin: 20px 0;
+        }
+        
+        .setting-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+        
+        .setting-control {
+            width: 100%;
+            padding: 8px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text);
+            font-size: 14px;
+        }
+        
+        .setting-control:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+        
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .checkbox {
+            width: 20px;
+            height: 20px;
+        }
+        
+        /* Responsive design */
+        @media (max-width: 768px) {
+            .header {
+                padding: 10px 15px;
+            }
+            
+            .back-button {
+                padding: 8px 15px;
+                font-size: 12px;
+            }
+            
+            .score-display {
+                gap: 15px;
+            }
+            
+            .score-value {
+                font-size: 16px;
+            }
+            
+            .game-container {
+                padding: 10px;
+            }
+            
+            .countdown {
+                font-size: 60px;
+            }
+            
+            .game-over-title {
+                font-size: 40px;
+            }
+            
+            .joystick-container {
+                width: 100px;
+                height: 100px;
+            }
+            
+            .joystick-base {
+                width: 100px;
+                height: 100px;
+            }
+            
+            .joystick-knob {
+                width: 40px;
+                height: 40px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .header {
+                flex-direction: column;
+                gap: 10px;
+                padding: 10px;
+            }
+            
+            .score-display {
+                gap: 20px;
+            }
+            
+            .countdown {
+                font-size: 50px;
+            }
+            
+            .game-over-title {
+                font-size: 30px;
+            }
+        }
+        
+        /* Hide touch controls on desktop */
+        @media (min-width: 1025px) {
+            .touch-controls {
+                display: none !important;
+            }
+        }
+        
+        /* Confetti animation */
+        .confetti {
+            position: fixed;
+            width: 10px;
+            height: 10px;
+            background: var(--accent);
+            animation: confetti-fall 3s linear forwards;
+            z-index: 4000;
+        }
+        
+        @keyframes confetti-fall {
+            0% {
+                transform: translateY(-100vh) rotate(0deg);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(100vh) rotate(720deg);
+                opacity: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header met navigatie en scores -->
+    <div class="header">
+        <a href="#" class="back-button" id="backButton">← Terug naar tobygames</a>
+        <div class="score-display">
+            <div class="score-item">
+                <div>Score</div>
+                <div class="score-value" id="currentScore">0</div>
+            </div>
+            <div class="score-item">
+                <div>High Score</div>
+                <div class="score-value" id="highScore">0</div>
+            </div>
+        </div>
+        <button class="settings-button" id="settingsButton">⚙️</button>
+    </div>
+    
+    <!-- Game container -->
+    <div class="game-container">
+        <canvas id="gameCanvas"></canvas>
+        
+        <!-- Touch joystick -->
+        <div class="touch-controls" id="touchControls">
+            <div class="joystick-container">
+                <div class="joystick-base"></div>
+                <div class="joystick-knob" id="joystickKnob"></div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Countdown overlay -->
+    <div class="overlay" id="countdownOverlay">
+        <div class="overlay-content">
+            <div class="countdown" id="countdownText">3</div>
+        </div>
+    </div>
+    
+    <!-- Game over overlay -->
+    <div class="overlay" id="gameOverOverlay">
+        <div class="overlay-content">
+            <div class="game-over-title">Game Over!</div>
+            <div class="final-score" id="finalScore">Score: 0</div>
+            <div class="new-record" id="newRecord" style="display: none;">🎉 Nieuw Record! 🎉</div>
+            <button class="button" id="playAgainButton">Opnieuw Spelen</button>
+        </div>
+    </div>
+    
+    <!-- Settings modal -->
+    <div class="settings-modal" id="settingsModal">
+        <div class="settings-content">
+            <div class="settings-title">Instellingen</div>
+            
+            <div class="setting-group">
+                <label class="setting-label">Raster weergave</label>
+                <div class="checkbox-group">
+                    <input type="checkbox" id="showGrid" class="checkbox" checked>
+                    <span>Raster tonen</span>
+                </div>
+            </div>
+            
+            <div class="setting-group">
+                <label class="setting-label">Wrap-around</label>
+                <div class="checkbox-group">
+                    <input type="checkbox" id="wrapAround" class="checkbox" checked>
+                    <span>Door muren gaan</span>
+                </div>
+            </div>
+            
+            <div class="setting-group">
+                <label class="setting-label">Snelheid</label>
+                <select id="gameSpeed" class="setting-control">
+                    <option value="slow">Rustig (150ms)</option>
+                    <option value="normal" selected>Normaal (120ms)</option>
+                    <option value="fast">Vlot (100ms)</option>
+                </select>
+            </div>
+            
+            <div class="setting-group">
+                <button class="button" id="fullscreenButton">Volledig Scherm</button>
+            </div>
+            
+            <div class="setting-group">
+                <button class="button" id="resetScoresButton">Scores Resetten</button>
+            </div>
+            
+            <div class="setting-group">
+                <button class="button" id="closeSettingsButton">Sluiten</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ===========================================
+        // SNAKE GAME - HOOFDKLASSE
+        // ===========================================
+        
+        class SnakeGame {
+            constructor() {
+                this.canvas = document.getElementById('gameCanvas');
+                this.ctx = this.canvas.getContext('2d');
+                this.gridSize = 20;
+                this.tileCount = 0;
+                this.tileSize = 0;
+                
+                // Game state
+                this.gameRunning = false;
+                this.gamePaused = false;
+                this.gameOver = false;
+                this.score = 0;
+                this.highScore = 0;
+                this.speed = 120; // ms per tick
+                
+                // Snake
+                this.snake = [];
+                this.direction = { x: 1, y: 0 };
+                this.nextDirection = { x: 1, y: 0 };
+                this.inputBuffer = [];
+                
+                // Apple
+                this.apple = { x: 0, y: 0 };
+                
+                // Settings
+                this.settings = {
+                    showGrid: true,
+                    wrapAround: true,
+                    speed: 'normal'
+                };
+                
+                // Touch joystick
+                this.joystick = {
+                    knob: document.getElementById('joystickKnob'),
+                    container: document.querySelector('.joystick-container'),
+                    isActive: false,
+                    centerX: 0,
+                    centerY: 0,
+                    maxDistance: 35,
+                    currentX: 0,
+                    currentY: 0
+                };
+                
+                // Animation
+                this.lastTime = 0;
+                this.accumulator = 0;
+                this.tickInterval = this.speed;
+                
+                // Confetti
+                this.confettiParticles = [];
+                
+                this.init();
+            }
+            
+            init() {
+                this.loadSettings();
+                this.loadScores();
+                this.setupCanvas();
+                this.setupEventListeners();
+                this.setupJoystick();
+                this.startCountdown();
+            }
+            
+            setupCanvas() {
+                const container = document.querySelector('.game-container');
+                const header = document.querySelector('.header');
+                const touchControls = document.getElementById('touchControls');
+                
+                // Bereken beschikbare ruimte
+                const availableWidth = window.innerWidth - 40;
+                const availableHeight = window.innerHeight - header.offsetHeight - 40;
+                
+                // Voor touch devices: ruimte reserveren voor joystick
+                const isTouch = this.isTouchDevice();
+                const joystickHeight = isTouch ? 140 : 0;
+                const gameHeight = availableHeight - joystickHeight;
+                
+                // Bepaal canvas grootte (vierkant)
+                const maxSize = Math.min(availableWidth, gameHeight);
+                const canvasSize = Math.floor(maxSize / this.gridSize) * this.gridSize;
+                
+                this.canvas.width = canvasSize;
+                this.canvas.height = canvasSize;
+                this.tileCount = canvasSize / this.gridSize;
+                this.tileSize = this.gridSize;
+                
+                // High DPI support
+                const dpr = window.devicePixelRatio || 1;
+                this.canvas.style.width = canvasSize + 'px';
+                this.canvas.style.height = canvasSize + 'px';
+                this.canvas.width = canvasSize * dpr;
+                this.canvas.height = canvasSize * dpr;
+                this.ctx.scale(dpr, dpr);
+                
+                // Toon joystick op touch devices
+                if (isTouch) {
+                    touchControls.classList.add('show');
+                }
+            }
+            
+            setupEventListeners() {
+                // Keyboard controls
+                document.addEventListener('keydown', (e) => {
+                    // Normalize key input for both arrow keys and WASD
+                    let normalizedKey = e.key.toLowerCase();
+                    
+                    // Map arrow keys to lowercase format
+                    if (e.key === 'ArrowUp') normalizedKey = 'arrowup';
+                    else if (e.key === 'ArrowDown') normalizedKey = 'arrowdown';
+                    else if (e.key === 'ArrowLeft') normalizedKey = 'arrowleft';
+                    else if (e.key === 'ArrowRight') normalizedKey = 'arrowright';
+                    
+                    if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright', 'w', 'a', 's', 'd'].includes(normalizedKey)) {
+                        e.preventDefault();
+                        this.handleInput(normalizedKey);
+                    }
+                });
+                
+                // Back button
+                document.getElementById('backButton').addEventListener('click', (e) => {
+                    e.preventDefault();
+                    // Stuur gebruiker terug naar homepage - pas deze URL aan naar wens
+                    window.location.href = '/';
+                });
+                
+                // Settings
+                document.getElementById('settingsButton').addEventListener('click', () => {
+                    this.showSettings();
+                });
+                
+                document.getElementById('closeSettingsButton').addEventListener('click', () => {
+                    this.hideSettings();
+                });
+                
+                document.getElementById('showGrid').addEventListener('change', (e) => {
+                    this.settings.showGrid = e.target.checked;
+                    this.saveSettings();
+                });
+                
+                document.getElementById('wrapAround').addEventListener('change', (e) => {
+                    this.settings.wrapAround = e.target.checked;
+                    this.saveSettings();
+                });
+                
+                document.getElementById('gameSpeed').addEventListener('change', (e) => {
+                    this.settings.speed = e.target.value;
+                    this.updateSpeed();
+                    this.saveSettings();
+                });
+                
+                document.getElementById('fullscreenButton').addEventListener('click', () => {
+                    this.toggleFullscreen();
+                });
+                
+                document.getElementById('resetScoresButton').addEventListener('click', () => {
+                    this.resetScores();
+                });
+                
+                // Play again button
+                document.getElementById('playAgainButton').addEventListener('click', () => {
+                    this.restartGame();
+                });
+                
+                // Window events
+                window.addEventListener('resize', () => {
+                    this.setupCanvas();
+                });
+                
+                window.addEventListener('visibilitychange', () => {
+                    if (document.hidden && this.gameRunning) {
+                        this.gamePaused = true;
+                    } else if (!document.hidden && this.gamePaused) {
+                        this.gamePaused = false;
+                        this.startCountdown();
+                    }
+                });
+            }
+            
+            setupJoystick() {
+                if (!this.joystick.knob) return;
+                
+                // Touch events
+                this.joystick.knob.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    this.startJoystick(e.touches[0]);
+                });
+                
+                this.joystick.knob.addEventListener('touchmove', (e) => {
+                    e.preventDefault();
+                    this.updateJoystick(e.touches[0]);
+                });
+                
+                this.joystick.knob.addEventListener('touchend', (e) => {
+                    e.preventDefault();
+                    this.endJoystick();
+                });
+                
+                // Mouse events voor desktop testing
+                this.joystick.knob.addEventListener('mousedown', (e) => {
+                    e.preventDefault();
+                    this.startJoystick(e);
+                });
+                
+                document.addEventListener('mousemove', (e) => {
+                    if (this.joystick.isActive) {
+                        e.preventDefault();
+                        this.updateJoystick(e);
+                    }
+                });
+                
+                document.addEventListener('mouseup', (e) => {
+                    if (this.joystick.isActive) {
+                        e.preventDefault();
+                        this.endJoystick();
+                    }
+                });
+                
+                // Voorkom context menu
+                this.joystick.knob.addEventListener('contextmenu', (e) => {
+                    e.preventDefault();
+                });
+            }
+            
+            startJoystick(touch) {
+                this.joystick.isActive = true;
+                this.joystick.knob.classList.add('active');
+                
+                const rect = this.joystick.container.getBoundingClientRect();
+                this.joystick.centerX = rect.left + rect.width / 2;
+                this.joystick.centerY = rect.top + rect.height / 2;
+                
+                this.updateJoystick(touch);
+            }
+            
+            updateJoystick(touch) {
+                if (!this.joystick.isActive) return;
+                
+                const clientX = touch.clientX || touch.pageX;
+                const clientY = touch.clientY || touch.pageY;
+                
+                const deltaX = clientX - this.joystick.centerX;
+                const deltaY = clientY - this.joystick.centerY;
+                const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+                
+                let limitedX = deltaX;
+                let limitedY = deltaY;
+                
+                if (distance > this.joystick.maxDistance) {
+                    limitedX = (deltaX / distance) * this.joystick.maxDistance;
+                    limitedY = (deltaY / distance) * this.joystick.maxDistance;
+                }
+                
+                this.joystick.knob.style.transform = `translate(calc(-50% + ${limitedX}px), calc(-50% + ${limitedY}px))`;
+                
+                this.joystick.currentX = limitedX / this.joystick.maxDistance;
+                this.joystick.currentY = limitedY / this.joystick.maxDistance;
+                
+                this.updateGameControlsFromJoystick();
+            }
+            
+            endJoystick() {
+                this.joystick.isActive = false;
+                this.joystick.knob.classList.remove('active');
+                this.joystick.knob.style.transform = 'translate(-50%, -50%)';
+                this.joystick.currentX = 0;
+                this.joystick.currentY = 0;
+            }
+            
+            updateGameControlsFromJoystick() {
+                const threshold = 0.3;
+                const distance = Math.sqrt(this.joystick.currentX * this.joystick.currentX + this.joystick.currentY * this.joystick.currentY);
+                
+                if (distance > threshold) {
+                    const angle = Math.atan2(-this.joystick.currentY, this.joystick.currentX);
+                    let degrees = (angle * 180 / Math.PI + 360) % 360;
+                    
+                    if (degrees >= 315 || degrees <= 45) {
+                        this.handleInput('arrowright');
+                    } else if (degrees >= 45 && degrees <= 135) {
+                        this.handleInput('arrowup');
+                    } else if (degrees >= 135 && degrees <= 225) {
+                        this.handleInput('arrowleft');
+                    } else if (degrees >= 225 && degrees <= 315) {
+                        this.handleInput('arrowdown');
+                    }
+                }
+            }
+            
+            handleInput(key) {
+                const inputMap = {
+                    'arrowup': { x: 0, y: -1 },
+                    'arrowdown': { x: 0, y: 1 },
+                    'arrowleft': { x: -1, y: 0 },
+                    'arrowright': { x: 1, y: 0 },
+                    'w': { x: 0, y: -1 },
+                    's': { x: 0, y: 1 },
+                    'a': { x: -1, y: 0 },
+                    'd': { x: 1, y: 0 }
+                };
+                
+                const newDirection = inputMap[key];
+                if (!newDirection) return;
+                
+                // Voorkom 180° omkering
+                if (newDirection.x === -this.direction.x && newDirection.y === -this.direction.y) {
+                    return;
+                }
+                
+                // Voeg toe aan input buffer
+                this.inputBuffer.push(newDirection);
+            }
+            
+            startCountdown() {
+                const overlay = document.getElementById('countdownOverlay');
+                const text = document.getElementById('countdownText');
+                let count = 3;
+                
+                overlay.classList.add('show');
+                
+                const countdown = setInterval(() => {
+                    text.textContent = count;
+                    
+                    if (count === 0) {
+                        text.textContent = 'START!';
+                        setTimeout(() => {
+                            overlay.classList.remove('show');
+                            this.startGame();
+                        }, 1000);
+                        clearInterval(countdown);
+                    }
+                    count--;
+                }, 1000);
+            }
+            
+            startGame() {
+                this.initGame();
+                this.gameRunning = true;
+                this.gamePaused = false;
+                this.gameOver = false;
+                this.lastTime = performance.now();
+                this.gameLoop();
+            }
+            
+            initGame() {
+                // Reset snake
+                this.snake = [
+                    { x: Math.floor(this.tileCount / 2), y: Math.floor(this.tileCount / 2) },
+                    { x: Math.floor(this.tileCount / 2) - 1, y: Math.floor(this.tileCount / 2) },
+                    { x: Math.floor(this.tileCount / 2) - 2, y: Math.floor(this.tileCount / 2) }
+                ];
+                
+                this.direction = { x: 1, y: 0 };
+                this.nextDirection = { x: 1, y: 0 };
+                this.inputBuffer = [];
+                this.score = 0;
+                this.updateScore();
+                
+                this.spawnApple();
+            }
+            
+            spawnApple() {
+                let newApple;
+                let attempts = 0;
+                
+                do {
+                    newApple = {
+                        x: Math.floor(Math.random() * this.tileCount),
+                        y: Math.floor(Math.random() * this.tileCount)
+                    };
+                    attempts++;
+                } while (this.isSnakePosition(newApple) && attempts < 100);
+                
+                this.apple = newApple;
+            }
+            
+            isSnakePosition(pos) {
+                return this.snake.some(segment => segment.x === pos.x && segment.y === pos.y);
+            }
+            
+            update() {
+                if (!this.gameRunning || this.gamePaused) return;
+                
+                // Verwerk input buffer
+                if (this.inputBuffer.length > 0) {
+                    this.nextDirection = this.inputBuffer.shift();
+                }
+                
+                // Update direction
+                this.direction = { ...this.nextDirection };
+                
+                // Bereken nieuwe head positie
+                const head = { ...this.snake[0] };
+                head.x += this.direction.x;
+                head.y += this.direction.y;
+                
+                // Wrap-around of collision check
+                if (this.settings.wrapAround) {
+                    head.x = (head.x + this.tileCount) % this.tileCount;
+                    head.y = (head.y + this.tileCount) % this.tileCount;
+                } else {
+                    if (head.x < 0 || head.x >= this.tileCount || head.y < 0 || head.y >= this.tileCount) {
+                        this.endGame();
+                        return;
+                    }
+                }
+                
+                // Check collision met eigen lichaam
+                if (this.isSnakePosition(head)) {
+                    this.endGame();
+                    return;
+                }
+                
+                // Voeg nieuwe head toe
+                this.snake.unshift(head);
+                
+                // Check apple collision
+                if (head.x === this.apple.x && head.y === this.apple.y) {
+                    this.score += 10;
+                    this.updateScore();
+                    this.spawnApple();
+                    
+                    // Verhoog snelheid lichtjes
+                    if (this.tickInterval > 100) {
+                        this.tickInterval = Math.max(100, this.tickInterval - 2);
+                    }
+                } else {
+                    // Verwijder staart
+                    this.snake.pop();
+                }
+            }
+            
+            draw() {
+                // Clear canvas
+                this.ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+                this.ctx.fillRect(0, 0, this.canvas.width / (window.devicePixelRatio || 1), this.canvas.height / (window.devicePixelRatio || 1));
+                
+                // Draw grid
+                if (this.settings.showGrid) {
+                    this.drawGrid();
+                }
+                
+                // Draw apple
+                this.drawApple();
+                
+                // Draw snake
+                this.drawSnake();
+            }
+            
+            drawGrid() {
+                this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)'; // var(--grid)
+                this.ctx.lineWidth = 1;
+                
+                for (let x = 0; x <= this.tileCount; x++) {
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(x * this.tileSize, 0);
+                    this.ctx.lineTo(x * this.tileSize, this.tileCount * this.tileSize);
+                    this.ctx.stroke();
+                }
+                
+                for (let y = 0; y <= this.tileCount; y++) {
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(0, y * this.tileSize);
+                    this.ctx.lineTo(this.tileCount * this.tileSize, y * this.tileSize);
+                    this.ctx.stroke();
+                }
+            }
+            
+            drawApple() {
+                const x = this.apple.x * this.tileSize;
+                const y = this.apple.y * this.tileSize;
+                const centerX = x + this.tileSize / 2;
+                const centerY = y + this.tileSize / 2;
+                
+                // Pulsing effect voor de emoji
+                const pulse = 1 + Math.sin(Date.now() * 0.005) * 0.15;
+                const fontSize = this.tileSize * 0.8 * pulse;
+                
+                // Save context state
+                this.ctx.save();
+                
+                // Draw apple emoji
+                this.ctx.font = `${fontSize}px Arial`;
+                this.ctx.textAlign = 'center';
+                this.ctx.textBaseline = 'middle';
+                
+                // Add subtle glow effect
+                this.ctx.shadowColor = 'rgba(255, 107, 107, 0.5)';
+                this.ctx.shadowBlur = 10;
+                
+                this.ctx.fillText('🍎', centerX, centerY);
+                
+                // Restore context state (resets all properties including font, textAlign, textBaseline, shadow)
+                this.ctx.restore();
+            }
+            
+            drawSnake() {
+                this.snake.forEach((segment, index) => {
+                    const x = segment.x * this.tileSize;
+                    const y = segment.y * this.tileSize;
+                    
+                    if (index === 0) {
+                        // Snake head
+                        this.ctx.fillStyle = '#45a049'; // var(--snake-head)
+                        this.ctx.fillRect(x + 1, y + 1, this.tileSize - 2, this.tileSize - 2);
+                        
+                        // Direction indicator
+                        this.ctx.fillStyle = '#ffd700'; // var(--accent)
+                        const centerX = x + this.tileSize / 2;
+                        const centerY = y + this.tileSize / 2;
+                        const indicatorSize = 4;
+                        
+                        if (this.direction.x === 1) {
+                            this.ctx.fillRect(centerX + 2, centerY - indicatorSize/2, indicatorSize, indicatorSize);
+                        } else if (this.direction.x === -1) {
+                            this.ctx.fillRect(centerX - 6, centerY - indicatorSize/2, indicatorSize, indicatorSize);
+                        } else if (this.direction.y === -1) {
+                            this.ctx.fillRect(centerX - indicatorSize/2, centerY - 6, indicatorSize, indicatorSize);
+                        } else if (this.direction.y === 1) {
+                            this.ctx.fillRect(centerX - indicatorSize/2, centerY + 2, indicatorSize, indicatorSize);
+                        }
+                    } else {
+                        // Snake body
+                        this.ctx.fillStyle = '#4CAF50'; // var(--snake)
+                        this.ctx.fillRect(x + 2, y + 2, this.tileSize - 4, this.tileSize - 4);
+                    }
+                });
+            }
+            
+            gameLoop(currentTime = 0) {
+                if (!this.gameRunning) return;
+                
+                const deltaTime = currentTime - this.lastTime;
+                this.lastTime = currentTime;
+                this.accumulator += deltaTime;
+                
+                // Fixed timestep updates
+                while (this.accumulator >= this.tickInterval) {
+                    this.update();
+                    this.accumulator -= this.tickInterval;
+                }
+                
+                this.draw();
+                requestAnimationFrame((time) => this.gameLoop(time));
+            }
+            
+            endGame() {
+                this.gameRunning = false;
+                this.gameOver = true;
+                
+                const isNewRecord = this.score > this.highScore;
+                if (isNewRecord) {
+                    this.highScore = this.score;
+                    this.updateHighScore();
+                    this.showConfetti();
+                    document.getElementById('newRecord').style.display = 'block';
+                } else {
+                    document.getElementById('newRecord').style.display = 'none';
+                }
+                
+                this.saveScores();
+                
+                document.getElementById('finalScore').textContent = `Score: ${this.score}`;
+                document.getElementById('gameOverOverlay').classList.add('show');
+            }
+            
+            restartGame() {
+                document.getElementById('gameOverOverlay').classList.remove('show');
+                this.startCountdown();
+            }
+            
+            updateScore() {
+                document.getElementById('currentScore').textContent = this.score;
+            }
+            
+            updateHighScore() {
+                document.getElementById('highScore').textContent = this.highScore;
+            }
+            
+            updateSpeed() {
+                const speedMap = {
+                    'slow': 150,
+                    'normal': 120,
+                    'fast': 100
+                };
+                this.tickInterval = speedMap[this.settings.speed];
+            }
+            
+            showSettings() {
+                document.getElementById('settingsModal').classList.add('show');
+            }
+            
+            hideSettings() {
+                document.getElementById('settingsModal').classList.remove('show');
+            }
+            
+            toggleFullscreen() {
+                if (!document.fullscreenElement) {
+                    document.documentElement.requestFullscreen();
+                } else {
+                    document.exitFullscreen();
+                }
+            }
+            
+            resetScores() {
+                if (confirm('Weet je zeker dat je alle scores wilt resetten?')) {
+                    this.highScore = 0;
+                    this.updateHighScore();
+                    this.saveScores();
+                    alert('Scores zijn gereset!');
+                }
+            }
+            
+            showConfetti() {
+                for (let i = 0; i < 50; i++) {
+                    setTimeout(() => {
+                        this.createConfettiParticle();
+                    }, i * 50);
+                }
+            }
+            
+            createConfettiParticle() {
+                const particle = document.createElement('div');
+                particle.className = 'confetti';
+                particle.style.left = Math.random() * window.innerWidth + 'px';
+                particle.style.backgroundColor = ['var(--accent)', 'var(--apple)', 'var(--snake)', '#ff6b6b', '#4CAF50'][Math.floor(Math.random() * 5)];
+                document.body.appendChild(particle);
+                
+                setTimeout(() => {
+                    particle.remove();
+                }, 3000);
+            }
+            
+            isTouchDevice() {
+                return (('ontouchstart' in window) ||
+                       (navigator.maxTouchPoints > 0) ||
+                       (navigator.msMaxTouchPoints > 0));
+            }
+            
+            // LocalStorage functions
+            loadSettings() {
+                try {
+                    const saved = localStorage.getItem('snakeGameSettings');
+                    if (saved) {
+                        this.settings = { ...this.settings, ...JSON.parse(saved) };
+                    }
+                } catch (e) {
+                    console.warn('Kon instellingen niet laden:', e);
+                }
+                
+                // Apply settings to UI
+                document.getElementById('showGrid').checked = this.settings.showGrid;
+                document.getElementById('wrapAround').checked = this.settings.wrapAround;
+                document.getElementById('gameSpeed').value = this.settings.speed;
+                this.updateSpeed();
+            }
+            
+            saveSettings() {
+                try {
+                    localStorage.setItem('snakeGameSettings', JSON.stringify(this.settings));
+                } catch (e) {
+                    console.warn('Kon instellingen niet opslaan:', e);
+                }
+            }
+            
+            loadScores() {
+                try {
+                    const saved = localStorage.getItem('snakeGameHighScore');
+                    if (saved) {
+                        this.highScore = parseInt(saved) || 0;
+                        this.updateHighScore();
+                    }
+                } catch (e) {
+                    console.warn('Kon scores niet laden:', e);
+                }
+            }
+            
+            saveScores() {
+                try {
+                    localStorage.setItem('snakeGameHighScore', this.highScore.toString());
+                } catch (e) {
+                    console.warn('Kon scores niet opslaan:', e);
+                }
+            }
+        }
+        
+        // ===========================================
+        // SERVICE WORKER REGISTRATIE
+        // ===========================================
+        
+        // Registreer service worker voor offline functionaliteit
+        if ('serviceWorker' in navigator) {
+            // Maak een inline service worker
+            const serviceWorkerCode = `
+                self.addEventListener('install', (event) => {
+                    event.waitUntil(
+                        caches.open('snake-game-v1').then((cache) => {
+                            return cache.addAll(['/tobygames/snake.html']);
+                        })
+                    );
+                });
+                
+                self.addEventListener('fetch', (event) => {
+                    event.respondWith(
+                        caches.match(event.request).then((response) => {
+                            return response || fetch(event.request);
+                        })
+                    );
+                });
+            `;
+            
+            // Maak blob URL voor service worker
+            const blob = new Blob([serviceWorkerCode], { type: 'application/javascript' });
+            const serviceWorkerUrl = URL.createObjectURL(blob);
+            
+            // Registreer service worker
+            navigator.serviceWorker.register(serviceWorkerUrl).then((registration) => {
+                console.log('Service Worker geregistreerd:', registration);
+            }).catch((error) => {
+                console.warn('Service Worker registratie mislukt:', error);
+            });
+        }
+        
+        // ===========================================
+        // GAME INITIALISATIE
+        // ===========================================
+        
+        // Start het spel wanneer de pagina geladen is
+        window.addEventListener('load', () => {
+            new SnakeGame();
+        });
+    </script>
+</body>
+</html>

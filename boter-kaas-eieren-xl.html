@@ -1,0 +1,946 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Boter Kaas en Eieren XL</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #333;
+            position: relative;
+        }
+
+        .back-to-home {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50px;
+            padding: 12px 20px;
+            text-decoration: none;
+            color: #4a5568;
+            font-weight: bold;
+            font-size: 1em;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .back-to-home:hover {
+            background: rgba(255, 255, 255, 1);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+            text-decoration: none;
+            color: #2d3748;
+        }
+
+        .back-to-home:active {
+            transform: translateY(0);
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            max-width: 600px;
+            width: 90%;
+            text-align: center;
+        }
+
+        h1 {
+            color: #4a5568;
+            margin-bottom: 20px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .instructions {
+            background: #f7fafc;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-size: 1.1em;
+            color: #2d3748;
+            border-left: 4px solid #667eea;
+        }
+
+        .scoreboard {
+            background: #edf2f7;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #2d3748;
+        }
+
+        .game-board {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 8px;
+            margin: 20px auto;
+            max-width: 400px;
+            aspect-ratio: 1;
+        }
+
+        .cell {
+            background: #f7fafc;
+            border: 3px solid #e2e8f0;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            min-height: 80px;
+            user-select: none;
+        }
+
+        .cell:hover {
+            background: #edf2f7;
+            border-color: #cbd5e0;
+            transform: scale(1.05);
+        }
+
+        .cell:active {
+            transform: scale(0.95);
+        }
+
+        .cell.x {
+            color: #e53e3e;
+            background: #fed7d7;
+            border-color: #feb2b2;
+        }
+
+        .cell.o {
+            color: #3182ce;
+            background: #bee3f8;
+            border-color: #90cdf4;
+        }
+
+        .cell.winning {
+            background: #fef5e7 !important;
+            border-color: #f6ad55 !important;
+            box-shadow: 0 0 20px rgba(246, 173, 85, 0.6);
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        .buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            font-size: 1.1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            min-width: 150px;
+        }
+
+        .btn:hover {
+            background: #5a67d8;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn.secondary {
+            background: #718096;
+        }
+
+        .btn.secondary:hover {
+            background: #4a5568;
+        }
+
+        .start-screen {
+            text-align: center;
+        }
+
+        .mode-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-top: 30px;
+        }
+
+        .mode-btn {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 20px 40px;
+            border-radius: 15px;
+            font-size: 1.3em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+
+        .mode-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 30px rgba(0,0,0,0.2);
+        }
+
+        .winner-message {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+            font-size: 3em;
+            font-weight: bold;
+            z-index: 1000;
+            text-align: center;
+            animation: winnerPop 0.5s ease-out;
+        }
+
+        @keyframes winnerPop {
+            0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0; }
+            100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+        }
+
+        .confetti {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 999;
+        }
+
+        .confetti-piece {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background: #f39c12;
+            animation: confettiFall 3s linear infinite;
+        }
+
+        @keyframes confettiFall {
+            0% {
+                transform: translateY(-100vh) rotate(0deg);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(100vh) rotate(720deg);
+                opacity: 0;
+            }
+        }
+
+        .smartphone-warning {
+            display: none;
+            background: #fed7d7;
+            color: #c53030;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px;
+            text-align: center;
+            font-size: 1.2em;
+            border: 2px solid #feb2b2;
+        }
+
+        .game-info {
+            margin-bottom: 20px;
+            font-size: 1.2em;
+            color: #4a5568;
+        }
+
+        @media (max-width: 767px) {
+            .smartphone-warning {
+                display: block;
+            }
+            
+            .container {
+                display: none;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .cell {
+                min-height: 60px;
+                font-size: 2em;
+            }
+            
+            .back-to-home {
+                top: 10px;
+                left: 10px;
+                padding: 10px 16px;
+                font-size: 0.9em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <a href="index.html" class="back-to-home">
+        🏠 Terug naar TobyGames
+    </a>
+    
+    <div class="smartphone-warning">
+        📱 Dit spel werkt het beste op een computer of tablet. Smartphones worden niet ondersteund.
+    </div>
+
+    <div class="container">
+        <div id="startScreen" class="start-screen">
+            <h1>🎮 Boter Kaas en Eieren XL</h1>
+            <div class="instructions">
+                Speel op een 5x5 bord! Vier op een rij wint. X begint altijd.
+            </div>
+            <div class="mode-buttons">
+                <button class="mode-btn" onclick="startGame('local')">
+                    👥 Speel tegen iemand naast je
+                </button>
+                <button class="mode-btn" onclick="startGame('ai')">
+                    🤖 Speel tegen de computer
+                </button>
+            </div>
+        </div>
+
+        <div id="gameScreen" style="display: none;">
+            <h1>🎮 Boter Kaas en Eieren XL</h1>
+            <div class="instructions">
+                Klik op een vakje om je zet te doen. Vier op een rij wint!
+            </div>
+            <div class="scoreboard">
+                Score — X: <span id="scoreX">0</span> | O: <span id="scoreO">0</span>
+            </div>
+            <div class="game-info" id="gameInfo">
+                Speler X is aan de beurt
+            </div>
+            <div class="game-board" id="gameBoard"></div>
+            <div class="buttons">
+                <button class="btn" onclick="resetGame()">🔄 Opnieuw spelen</button>
+                <button class="btn secondary" onclick="backToStart()">🏠 Terug naar start</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="confetti" class="confetti"></div>
+
+    <script>
+        // Game state
+        let gameState = {
+            board: Array(25).fill(''),
+            currentPlayer: 'X',
+            gameMode: 'local', // 'local' or 'ai'
+            gameActive: false,
+            scores: { X: 0, O: 0 }
+        };
+
+        // Initialize game
+        function initGame() {
+            createBoard();
+            updateScoreboard();
+        }
+
+        // Create 5x5 game board
+        function createBoard() {
+            const board = document.getElementById('gameBoard');
+            board.innerHTML = '';
+            
+            for (let i = 0; i < 25; i++) {
+                const cell = document.createElement('div');
+                cell.className = 'cell';
+                cell.dataset.index = i;
+                cell.addEventListener('click', () => makeMove(i));
+                board.appendChild(cell);
+            }
+        }
+
+        // Start game with selected mode
+        function startGame(mode) {
+            gameState.gameMode = mode;
+            gameState.board = Array(25).fill('');
+            gameState.currentPlayer = 'X';
+            gameState.gameActive = true;
+            
+            document.getElementById('startScreen').style.display = 'none';
+            document.getElementById('gameScreen').style.display = 'block';
+            
+            createBoard();
+            updateGameInfo();
+        }
+
+        // Make a move
+        function makeMove(index) {
+            if (!gameState.gameActive || gameState.board[index] !== '') {
+                return;
+            }
+
+            gameState.board[index] = gameState.currentPlayer;
+            updateBoard();
+            
+            if (checkWin()) {
+                endGame(gameState.currentPlayer);
+                return;
+            }
+            
+            if (checkDraw()) {
+                endGame(null);
+                return;
+            }
+            
+            gameState.currentPlayer = gameState.currentPlayer === 'X' ? 'O' : 'X';
+            updateGameInfo();
+            
+            // AI move if playing against computer
+            if (gameState.gameMode === 'ai' && gameState.currentPlayer === 'O' && gameState.gameActive) {
+                setTimeout(() => {
+                    makeAIMove();
+                }, 500);
+            }
+        }
+
+        // AI move with medium difficulty - 10ms time limit, 15% randomization
+        // Decision ladder: win > block > block open-3 > strengthen lines > center > fork prevention > heuristic
+        function makeAIMove() {
+            if (!gameState.gameActive) return;
+            
+            const startTime = performance.now();
+            let move = -1;
+            
+            // 1. Direct win: if AI can make 4 in a row in 1 move, do it
+            move = findImmediateWin('O');
+            if (move !== -1) {
+                makeMove(move);
+                return;
+            }
+            
+            // 2. Direct block: if player can make 4 in 1 move, block it
+            move = findImmediateBlock('X');
+            if (move !== -1) {
+                makeMove(move);
+                return;
+            }
+            
+            // 3. Block player's open-3
+            move = findOpen3Block('X');
+            if (move !== -1) {
+                makeMove(move);
+                return;
+            }
+            
+            // 4. Strengthen own lines (create open-3 or extend open-2)
+            move = findLineStrengthening('O');
+            if (move !== -1) {
+                makeMove(move);
+                return;
+            }
+            
+            // 5. Center pressure and intersections
+            move = findCenterMove();
+            if (move !== -1) {
+                makeMove(move);
+                return;
+            }
+            
+            // 6. Simple fork prevention
+            move = findForkPrevention();
+            if (move !== -1) {
+                makeMove(move);
+                return;
+            }
+            
+            // 7. Heuristic choice with randomization (15% noise, 10ms limit)
+            move = findHeuristicMove(startTime);
+            if (move !== -1) {
+                makeMove(move);
+            }
+        }
+
+        // Find immediate win for given player (4 in a row)
+        function findImmediateWin(player) {
+            for (let i = 0; i < 25; i++) {
+                if (gameState.board[i] === '') {
+                    gameState.board[i] = player;
+                    if (checkWin()) {
+                        gameState.board[i] = '';
+                        return i;
+                    }
+                    gameState.board[i] = '';
+                }
+            }
+            return -1;
+        }
+
+        // Find immediate block for given player (4 in a row)
+        function findImmediateBlock(player) {
+            return findImmediateWin(player);
+        }
+
+        // Block player's open-3 (3 stones with 1 empty, at least one side free)
+        function findOpen3Block(player) {
+            const windows = listWindows();
+            for (let window of windows) {
+                const stones = window.map(i => gameState.board[i]);
+                const emptyCount = stones.filter(s => s === '').length;
+                const playerCount = stones.filter(s => s === player).length;
+                
+                if (playerCount === 3 && emptyCount === 1) {
+                    // Check if at least one side is free
+                    if (isWindowOpen(window)) {
+                        const emptyIndex = window.find(i => gameState.board[i] === '');
+                        if (emptyIndex !== undefined) {
+                            return emptyIndex;
+                        }
+                    }
+                }
+            }
+            return -1;
+        }
+
+        // Strengthen own lines by creating open-3 or extending open-2
+        function findLineStrengthening(player) {
+            const windows = listWindows();
+            let bestMove = -1;
+            let bestScore = -1;
+            
+            for (let window of windows) {
+                const stones = window.map(i => gameState.board[i]);
+                const emptyCount = stones.filter(s => s === '').length;
+                const playerCount = stones.filter(s => s === player).length;
+                
+                if (playerCount >= 2 && emptyCount >= 2 && isWindowOpen(window)) {
+                    const emptyIndices = window.filter(i => gameState.board[i] === '');
+                    for (let emptyIndex of emptyIndices) {
+                        const score = playerCount === 3 ? 120 : 60; // open-3 vs open-2
+                        if (score > bestScore) {
+                            bestScore = score;
+                            bestMove = emptyIndex;
+                        }
+                    }
+                }
+            }
+            return bestMove;
+        }
+
+        // Find center move (center > center-adjacent > intersections)
+        function findCenterMove() {
+            const center = 12;
+            if (gameState.board[center] === '') {
+                return center;
+            }
+            
+            // Center-adjacent positions
+            const centerAdjacent = [7, 11, 13, 17];
+            const available = centerAdjacent.filter(i => gameState.board[i] === '');
+            if (available.length > 0) {
+                return available[Math.floor(Math.random() * available.length)];
+            }
+            
+            // Intersections (positions that are part of multiple lines)
+            const intersections = [6, 8, 16, 18];
+            const availableIntersections = intersections.filter(i => gameState.board[i] === '');
+            if (availableIntersections.length > 0) {
+                return availableIntersections[Math.floor(Math.random() * availableIntersections.length)];
+            }
+            
+            return -1;
+        }
+
+        // Simple fork prevention - avoid moves that give player >1 immediate win next turn
+        function findForkPrevention() {
+            const emptyCells = [];
+            for (let i = 0; i < 25; i++) {
+                if (gameState.board[i] === '') {
+                    emptyCells.push(i);
+                }
+            }
+            
+            for (let cell of emptyCells) {
+                gameState.board[cell] = 'O';
+                const playerWins = findImmediateWin('X');
+                gameState.board[cell] = '';
+                
+                if (playerWins !== -1) {
+                    // This move would give player a win, skip it
+                    continue;
+                }
+                
+                // Check if this move creates multiple threats for player
+                let threatCount = 0;
+                for (let otherCell of emptyCells) {
+                    if (otherCell !== cell) {
+                        gameState.board[otherCell] = 'X';
+                        if (checkWin()) {
+                            threatCount++;
+                        }
+                        gameState.board[otherCell] = '';
+                    }
+                }
+                
+                if (threatCount <= 1) {
+                    return cell; // Safe move
+                }
+            }
+            return -1;
+        }
+
+        // Heuristic move with randomization and time limit
+        function findHeuristicMove(startTime) {
+            const emptyCells = [];
+            for (let i = 0; i < 25; i++) {
+                if (gameState.board[i] === '') {
+                    emptyCells.push(i);
+                }
+            }
+            
+            if (emptyCells.length === 0) return -1;
+            
+            const scoredMoves = [];
+            
+            for (let cell of emptyCells) {
+                if (performance.now() - startTime > 10) break; // 10ms limit
+                
+                const score = scoreMove(cell);
+                scoredMoves.push({ cell, score });
+            }
+            
+            // Sort by score (highest first)
+            scoredMoves.sort((a, b) => b.score - a.score);
+            
+            if (scoredMoves.length === 0) return -1;
+            
+            // 15% chance to pick from top 2-3 moves instead of best
+            if (Math.random() < 0.15 && scoredMoves.length > 1) {
+                const topCount = Math.min(3, scoredMoves.length);
+                const randomIndex = Math.floor(Math.random() * topCount);
+                return scoredMoves[randomIndex].cell;
+            }
+            
+            return scoredMoves[0].cell;
+        }
+
+        // Score a move using heuristics
+        function scoreMove(cell) {
+            let score = 0;
+            
+            // Test the move
+            gameState.board[cell] = 'O';
+            
+            // +1000 if move directly wins
+            if (checkWin()) {
+                gameState.board[cell] = '';
+                return 1000;
+            }
+            
+            // Count own open-3s and open-2s
+            const windows = listWindows();
+            for (let window of windows) {
+                if (window.includes(cell)) {
+                    const stones = window.map(i => gameState.board[i]);
+                    const emptyCount = stones.filter(s => s === '').length;
+                    const playerCount = stones.filter(s => s === 'O').length;
+                    
+                    if (isWindowOpen(window)) {
+                        if (playerCount === 3 && emptyCount === 1) {
+                            score += 120; // open-3
+                        } else if (playerCount === 2 && emptyCount === 2) {
+                            score += 60; // open-2
+                        }
+                    }
+                }
+            }
+            
+            // +25 if move borders center or crosses two potential lines
+            const center = 12;
+            const centerAdjacent = [7, 11, 13, 17];
+            if (cell === center || centerAdjacent.includes(cell)) {
+                score += 25;
+            }
+            
+            // Test player's response
+            gameState.board[cell] = 'X';
+            
+            // Count player's open-3s and open-2s
+            for (let window of windows) {
+                if (window.includes(cell)) {
+                    const stones = window.map(i => gameState.board[i]);
+                    const emptyCount = stones.filter(s => s === '').length;
+                    const playerCount = stones.filter(s => s === 'X').length;
+                    
+                    if (isWindowOpen(window)) {
+                        if (playerCount === 3 && emptyCount === 1) {
+                            score -= 150; // block player open-3
+                        } else if (playerCount === 2 && emptyCount === 2) {
+                            score -= 60; // block player open-2
+                        }
+                    }
+                }
+            }
+            
+            // Check for fork creation
+            const playerWins = findImmediateWin('X');
+            if (playerWins !== -1) {
+                score -= 200; // creates player fork
+            }
+            
+            // Reset board
+            gameState.board[cell] = '';
+            
+            // Add small noise ±3
+            score += (Math.random() - 0.5) * 6;
+            
+            return score;
+        }
+
+        // List all 4-cell windows in 4 directions
+        function listWindows() {
+            const windows = [];
+            
+            // Horizontal windows
+            for (let row = 0; row < 5; row++) {
+                for (let col = 0; col < 2; col++) {
+                    const window = [];
+                    for (let i = 0; i < 4; i++) {
+                        window.push(row * 5 + col + i);
+                    }
+                    windows.push(window);
+                }
+            }
+            
+            // Vertical windows
+            for (let col = 0; col < 5; col++) {
+                for (let row = 0; row < 2; row++) {
+                    const window = [];
+                    for (let i = 0; i < 4; i++) {
+                        window.push((row + i) * 5 + col);
+                    }
+                    windows.push(window);
+                }
+            }
+            
+            // Diagonal ↘ windows
+            for (let row = 0; row < 2; row++) {
+                for (let col = 0; col < 2; col++) {
+                    const window = [];
+                    for (let i = 0; i < 4; i++) {
+                        window.push((row + i) * 5 + col + i);
+                    }
+                    windows.push(window);
+                }
+            }
+            
+            // Diagonal ↙ windows
+            for (let row = 0; row < 2; row++) {
+                for (let col = 3; col < 5; col++) {
+                    const window = [];
+                    for (let i = 0; i < 4; i++) {
+                        window.push((row + i) * 5 + col - i);
+                    }
+                    windows.push(window);
+                }
+            }
+            
+            return windows;
+        }
+
+        // Check if a window is open (at least one side free within board)
+        function isWindowOpen(window) {
+            // Check if window is at board edge (automatically open)
+            const minRow = Math.min(...window.map(i => Math.floor(i / 5)));
+            const maxRow = Math.max(...window.map(i => Math.floor(i / 5)));
+            const minCol = Math.min(...window.map(i => i % 5));
+            const maxCol = Math.max(...window.map(i => i % 5));
+            
+            return minRow === 0 || maxRow === 4 || minCol === 0 || maxCol === 4;
+        }
+
+        // Check for win condition (4 in a row)
+        function checkWin() {
+            const board = gameState.board;
+            
+            // All possible winning combinations for 4 in a row in 5x5 grid
+            const winPatterns = [
+                // Horizontal
+                [0,1,2,3], [1,2,3,4],
+                [5,6,7,8], [6,7,8,9],
+                [10,11,12,13], [11,12,13,14],
+                [15,16,17,18], [16,17,18,19],
+                [20,21,22,23], [21,22,23,24],
+                
+                // Vertical
+                [0,5,10,15], [5,10,15,20],
+                [1,6,11,16], [6,11,16,21],
+                [2,7,12,17], [7,12,17,22],
+                [3,8,13,18], [8,13,18,23],
+                [4,9,14,19], [9,14,19,24],
+                
+                // Diagonal (main diagonal)
+                [0,6,12,18], [6,12,18,24],
+                [1,7,13,19],
+                [5,11,17,23],
+                
+                // Diagonal (anti-diagonal)
+                [4,8,12,16], [8,12,16,20],
+                [3,7,11,15],
+                [9,13,17,21]
+            ];
+            
+            for (let pattern of winPatterns) {
+                const [a, b, c, d] = pattern;
+                if (board[a] && board[a] === board[b] && board[b] === board[c] && board[c] === board[d]) {
+                    // Mark winning cells
+                    document.querySelector(`[data-index="${a}"]`).classList.add('winning');
+                    document.querySelector(`[data-index="${b}"]`).classList.add('winning');
+                    document.querySelector(`[data-index="${c}"]`).classList.add('winning');
+                    document.querySelector(`[data-index="${d}"]`).classList.add('winning');
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        // Check for draw
+        function checkDraw() {
+            return gameState.board.every(cell => cell !== '');
+        }
+
+        // End game
+        function endGame(winner) {
+            gameState.gameActive = false;
+            
+            if (winner) {
+                gameState.scores[winner]++;
+                showWinner(winner);
+                createConfetti();
+            } else {
+                showWinner('Gelijkspel!');
+            }
+            
+            updateScoreboard();
+        }
+
+        // Show winner message
+        function showWinner(winner) {
+            const message = document.createElement('div');
+            message.className = 'winner-message';
+            message.setAttribute('aria-live', 'assertive');
+            
+            if (winner === 'X' || winner === 'O') {
+                message.textContent = `${winner} wint!`;
+            } else {
+                message.textContent = winner;
+            }
+            
+            document.body.appendChild(message);
+            
+            setTimeout(() => {
+                document.body.removeChild(message);
+            }, 3000);
+        }
+
+        // Create confetti animation
+        function createConfetti() {
+            const confetti = document.getElementById('confetti');
+            confetti.innerHTML = '';
+            
+            const colors = ['#f39c12', '#e74c3c', '#3498db', '#2ecc71', '#9b59b6', '#f1c40f'];
+            
+            for (let i = 0; i < 50; i++) {
+                const piece = document.createElement('div');
+                piece.className = 'confetti-piece';
+                piece.style.left = Math.random() * 100 + '%';
+                piece.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                piece.style.animationDelay = Math.random() * 3 + 's';
+                piece.style.animationDuration = (Math.random() * 2 + 2) + 's';
+                confetti.appendChild(piece);
+            }
+            
+            setTimeout(() => {
+                confetti.innerHTML = '';
+            }, 5000);
+        }
+
+        // Update board display
+        function updateBoard() {
+            for (let i = 0; i < 25; i++) {
+                const cell = document.querySelector(`[data-index="${i}"]`);
+                cell.textContent = gameState.board[i];
+                cell.className = 'cell';
+                if (gameState.board[i] === 'X') {
+                    cell.classList.add('x');
+                } else if (gameState.board[i] === 'O') {
+                    cell.classList.add('o');
+                }
+            }
+        }
+
+        // Update game info
+        function updateGameInfo() {
+            const info = document.getElementById('gameInfo');
+            if (gameState.gameMode === 'ai' && gameState.currentPlayer === 'O') {
+                info.textContent = 'Computer denkt...';
+            } else {
+                info.textContent = `Speler ${gameState.currentPlayer} is aan de beurt`;
+            }
+        }
+
+        // Update scoreboard
+        function updateScoreboard() {
+            document.getElementById('scoreX').textContent = gameState.scores.X;
+            document.getElementById('scoreO').textContent = gameState.scores.O;
+        }
+
+        // Reset current game
+        function resetGame() {
+            gameState.board = Array(25).fill('');
+            gameState.currentPlayer = 'X';
+            gameState.gameActive = true;
+            
+            createBoard();
+            updateGameInfo();
+        }
+
+        // Back to start screen
+        function backToStart() {
+            document.getElementById('startScreen').style.display = 'block';
+            document.getElementById('gameScreen').style.display = 'none';
+        }
+
+        // Initialize game on load
+        document.addEventListener('DOMContentLoaded', initGame);
+    </script>
+</body>
+</html>

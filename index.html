@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TobyGames.nl - Speel de leukste games!</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+        
+        .header {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 2rem 0;
+            text-align: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .header h1 {
+            font-size: 3rem;
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            margin-bottom: 0.5rem;
+        }
+        
+        .header p {
+            font-size: 1.2rem;
+            color: rgba(255, 255, 255, 0.9);
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 3rem 2rem;
+        }
+        
+        .games-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+            justify-items: center;
+        }
+        
+        .game-card {
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            position: relative;
+        }
+        
+        .game-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+        }
+        
+        .game-preview {
+            height: 200px;
+            background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 4rem;
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .game-info {
+            padding: 1.5rem;
+        }
+        
+        .game-title {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 0.5rem;
+        }
+        
+        .game-description {
+            color: #666;
+            line-height: 1.6;
+            margin-bottom: 1rem;
+        }
+        
+        .game-features {
+            list-style: none;
+            margin-bottom: 1.5rem;
+        }
+        
+        .game-features li {
+            color: #555;
+            margin-bottom: 0.3rem;
+            padding-left: 1.2rem;
+            position: relative;
+        }
+        
+        .game-features li:before {
+            content: "🎯";
+            position: absolute;
+            left: 0;
+        }
+        
+        .play-button {
+            display: inline-block;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            padding: 12px 30px;
+            border-radius: 25px;
+            text-decoration: none;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .play-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+            text-decoration: none;
+            color: white;
+        }
+        
+        
+        .status-badge {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: #27ae60;
+            color: white;
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+        
+        
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .container {
+                padding: 2rem 1rem;
+            }
+            
+            .games-grid {
+                grid-template-columns: 1fr;
+                gap: 1.5rem;
+                padding: 0 1rem;
+            }
+            
+            .game-card {
+                max-width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🎮 TobyGames.nl</h1>
+        <p>Speel de leukste games online - Gratis, veilig en zonder reclame, voor altijd!</p>
+    </div>
+    
+    <div class="container">
+        <div class="games-grid">
+            <!-- Dierenklikker Game -->
+            <div class="game-card">
+                <div class="status-badge">Nieuw!</div>
+                <div class="game-preview" style="background: linear-gradient(45deg, #1a6b3c, #43a047);">
+                    🐜🐌🐸🐔🐱🐕🐴🐘🐋🐉
+                </div>
+                <div class="game-info">
+                    <h3 class="game-title">Dierenklikker</h3>
+                    <p class="game-description">
+                        Klik op dieren om punten te verdienen! Koop nieuwe dieren, ontgrendel upgrades,
+                        speel mini-spelletjes en evolueer je dierentuin. Hoeveel dieren kun jij verzamelen?
+                    </p>
+                    <ul class="game-features">
+                        <li>10 diersoorten om te ontgrendelen</li>
+                        <li>Tientallen upgrades en prestaties</li>
+                        <li>Mini-spelletjes voor bonuspunten</li>
+                        <li>Savegame downloaden en hacken!</li>
+                    </ul>
+                    <a href="dierenklikker.html" class="play-button">🐾 Speel Nu!</a>
+                </div>
+            </div>
+
+            <!-- Neuswormen Game -->
+            <div class="game-card">
+                <div class="status-badge">Nieuw!</div>
+                <div class="game-preview" style="background: linear-gradient(45deg, #E0F0FA, #C8DFF0);">
+                    👃🪱
+                </div>
+                <div class="game-info">
+                    <h3 class="game-title">Neuswormen</h3>
+                    <p class="game-description">
+                        Trek wormpjes uit een gigantische neus met je pincet en gooi ze in de emmer!
+                        Hoe meer wormpjes je vangt, hoe hoger je score. Pas op, ze kronkelen flink tegen!
+                    </p>
+                    <ul class="game-features">
+                        <li>Grappige pincet-besturing</li>
+                        <li>Wormpjes met eigen persoonlijkheid</li>
+                        <li>Realistische worm-fysica</li>
+                        <li>Score systeem met effecten</li>
+                    </ul>
+                    <a href="worms.html" class="play-button">👃 Speel Nu!</a>
+                </div>
+            </div>
+
+            <!-- Winkeltje Game -->
+            <div class="game-card">
+                <div class="status-badge">Beschikbaar</div>
+                <div class="game-preview" style="background: linear-gradient(45deg, #f093fb, #f5576c);">
+                    🛒
+                </div>
+                <div class="game-info">
+                    <h3 class="game-title">Winkeltje</h3>
+                    <p class="game-description">
+                        Run je eigen winkel! Help klanten door de gevraagde artikelen naar de kassa te brengen.
+                        Champignons kosten €1, tomaten €5. Pas op dat klanten niet te lang wachten, anders vertrekken ze zonder te betalen!
+                    </p>
+                    <ul class="game-features">
+                        <li>Top-down 2D winkel management</li>
+                        <li>Draag tot 3 items tegelijk</li>
+                        <li>Klanten met geduld meter</li>
+                        <li>Steeds sneller wordende gameplay</li>
+                    </ul>
+                    <a href="winkeltje.html" class="play-button">🛒 Speel Nu!</a>
+                </div>
+            </div>
+
+            <!-- Boter Kaas en Eieren XL Game -->
+            <div class="game-card">
+                <div class="status-badge">Beschikbaar</div>
+                <div class="game-preview" style="background: linear-gradient(45deg, #4ecdc4, #44a08d);">
+                    ⭕❌
+                </div>
+                <div class="game-info">
+                    <h3 class="game-title">Boter Kaas en Eieren XL</h3>
+                    <p class="game-description">
+                        De klassieke strategie game, maar dan op een groter 5x5 bord!
+                        Speel tegen een vriend of daag de computer uit. Vier op een rij wint!
+                    </p>
+                    <ul class="game-features">
+                        <li>5x5 bord voor meer uitdaging</li>
+                        <li>Speel tegen vrienden of computer</li>
+                        <li>Slimme AI tegenstander</li>
+                        <li>Score bijhouden en confetti bij winst</li>
+                    </ul>
+                    <a href="boter-kaas-eieren-xl.html" class="play-button">🎯 Speel Nu!</a>
+                </div>
+            </div>
+
+            <!-- Snake Game -->
+            <div class="game-card">
+                <div class="status-badge">Beschikbaar</div>
+                <div class="game-preview" style="background: linear-gradient(45deg, #1e3c72, #2a5298);">
+                    🐍
+                </div>
+                <div class="game-info">
+                    <h3 class="game-title">Snake</h3>
+                    <p class="game-description">
+                        De klassieke Snake game! Bestuur je slang, eet appels en word steeds langer.
+                        Pas op dat je niet in je eigen staart bijt! Perfect voor alle leeftijden.
+                    </p>
+                    <ul class="game-features">
+                        <li>Klassieke Snake gameplay</li>
+                        <li>Touch controls voor mobiel</li>
+                        <li>Instelbare snelheid en instellingen</li>
+                        <li>High score tracking en confetti</li>
+                    </ul>
+                    <a href="snake.html" class="play-button">🐍 Speel Nu!</a>
+                </div>
+            </div>
+
+            <!-- Politie Jacht Game -->
+            <div class="game-card">
+                <div class="status-badge">Beschikbaar</div>
+                <div class="game-preview">
+                    🚔
+                </div>
+                <div class="game-info">
+                    <h3 class="game-title">Politie Jacht</h3>
+                    <p class="game-description">
+                        Een spannende race game waarbij je moet ontsnappen aan de politie!
+                        Test je rijvaardigheden, verzamel sterretjes voor extra punten en probeer zo lang mogelijk te overleven.
+                    </p>
+                    <ul class="game-features">
+                        <li>Spannende achtervolging gameplay</li>
+                        <li>Verzamel sterretjes voor +10 punten elk</li>
+                        <li>Realistische fysica en besturing</li>
+                        <li>Score systeem voor competitie</li>
+                    </ul>
+                    <a href="politie.html" class="play-button">🚀 Speel Nu!</a>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</body>
+</html>
