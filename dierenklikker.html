@@ -1622,7 +1622,6 @@ function startBuff() {
   if (activeBuff && Date.now() < activeBuff.endsAt) return;
 
   document.getElementById('buff-btn').disabled = true;
-  state.minigames.buffLast = Date.now();
 
   // Pick 4 random animals for flavor
   const shuffled = [...ANIMALS].sort(() => Math.random() - 0.5);
@@ -1644,6 +1643,9 @@ function startBuff() {
 function chooseBuff(buffId) {
   const buff = BUFF_TYPES.find(b => b.id === buffId);
   if (!buff) return;
+
+  // Start cooldown when buff is actually chosen, not when menu opens
+  state.minigames.buffLast = Date.now();
 
   // Apply jackpot immediately
   if (buff.id === 'jackpot') {
