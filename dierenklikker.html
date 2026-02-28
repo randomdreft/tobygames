@@ -91,6 +91,7 @@ body {
 img.emoji {
   height: 1em; width: 1em; margin: 0 .05em 0 .1em;
   vertical-align: -0.1em; display: inline-block;
+  image-rendering: auto;
 }
 #big-animal {
   font-size: clamp(80px, 18vw, 200px); line-height: 1;
@@ -865,6 +866,17 @@ function formatDps(n) {
   if (n < 0.1) return '0';
   if (n < 10) return n.toFixed(1).replace('.', ',');
   return formatNumber(n);
+}
+
+const APPLE_EMOJI_BASE = 'emoji/';
+function parseAppleEmoji(el) {
+  if (typeof twemoji === 'undefined') return;
+  twemoji.parse(el, {
+    callback: function(icon) {
+      return APPLE_EMOJI_BASE + icon + '.png';
+    },
+    ext: '.png'
+  });
 }
 
 function formatTime(seconds) {
@@ -1988,18 +2000,16 @@ function render() {
     if (!el) return;
     const count = state.animals[a.id] || 0;
     const totalPrice = getBulkPrice(a.id, qty);
-    const singlePrice = getAnimalPrice(a.id);
-    const canAffordAny = state.currentPoints >= singlePrice;
     const canAffordAll = state.currentPoints >= totalPrice;
     const visible = isAnimalVisible(a.id);
-    el.classList.toggle('affordable', canAffordAny);
+    el.classList.toggle('affordable', canAffordAll);
     el.classList.toggle('locked', !visible);
     document.getElementById('count-' + a.id).textContent = '×' + count;
     const priceEl = document.getElementById('price-' + a.id);
     const saleBuff = getActiveBuff();
     if (saleBuff && saleBuff.type === 'sale') {
       const unsaledTotal = (() => { let t = 0; for (let i = 0; i < qty; i++) t += Math.ceil(a.basePrice * Math.pow(COST_MULTIPLIER, count + i)); return t; })();
-      const priceColor = canAffordAll ? 'var(--green-light)' : canAffordAny ? '#ffa726' : 'var(--red)';
+      const priceColor = canAffordAll ? 'var(--green-light)' : 'var(--red)';
       priceEl.innerHTML = '<s style="color:#ffa726;opacity:.6;font-size:.85em">' + formatNumber(unsaledTotal) + '</s> <span style="color:' + priceColor + '">' + formatNumber(totalPrice) + '</span>';
     } else {
       priceEl.textContent = formatNumber(totalPrice);
@@ -2089,8 +2099,8 @@ function render() {
   // Stats
   renderStats();
 
-  // Consistent emoji rendering
-  if (typeof twemoji !== 'undefined') twemoji.parse(document.body, { folder: 'svg', ext: '.svg' });
+  // Consistent Apple emoji rendering
+  parseAppleEmoji(document.body);
 }
 
 function updateCooldown(btnId, textId, lastPlayed, cooldown, active) {

@@ -67,7 +67,8 @@ Race-game waarbij je moet ontsnappen aan de politie. Verzamel sterretjes voor bo
 - **Nul tracking** — geen analytics, geen cookies, geen ads
 - **Vanilla stack** — HTML5 + CSS3 + JavaScript, meer heb je niet nodig
 - **Mobile-friendly** — touch controls waar nodig
-- **Offline** — download het bestand, speel het zonder internet
+- **Apple emojis** — Dierenklikker gebruikt lokaal gehoste Apple-emojis (`emoji/`) voor consistente weergave op alle platforms. Twemoji-library als parser (CDN).
+- **Offline** — download het bestand, speel het zonder internet (emoji-map meenemen voor Dierenklikker)
 
 ## Zelf draaien
 
