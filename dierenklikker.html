@@ -98,7 +98,7 @@ img.emoji {
   transition: transform 0.08s; filter: drop-shadow(0 4px 20px rgba(0,0,0,0.3));
   animation: idle-pulse 3s ease-in-out infinite;
 }
-#big-animal img.emoji { filter: drop-shadow(0 4px 20px rgba(0,0,0,0.3)); }
+#big-animal img { width: 1em; height: 1em; image-rendering: auto; }
 #big-animal:active { transform: scale(0.88); }
 @keyframes idle-pulse {
   0%, 100% { transform: scale(1); }
@@ -869,6 +869,10 @@ function formatDps(n) {
 }
 
 const APPLE_EMOJI_BASE = 'emoji/';
+const HIRES_EMOJI = {
+  '🐜':'1f41c','🐌':'1f40c','🐸':'1f438','🐔':'1f414','🐱':'1f431',
+  '🐕':'1f415','🐴':'1f434','🐘':'1f418','🐋':'1f40b','🐉':'1f409'
+};
 function parseAppleEmoji(el) {
   if (typeof twemoji === 'undefined') return;
   twemoji.parse(el, {
@@ -1113,6 +1117,7 @@ function doImport() {
   closeModal('import-modal');
   saveGame();
   buildShop();
+  parseAppleEmoji(document.body);
   showToast('Savegame geladen!');
 }
 
@@ -1121,6 +1126,7 @@ function resetGame() {
   state = defaultState();
   localStorage.removeItem('dierenklikker_save');
   buildShop();
+  parseAppleEmoji(document.body);
   showToast('Spel gereset!');
 }
 
@@ -1481,6 +1487,7 @@ function startCatcher() {
     const el = document.createElement('div');
     el.className = 'catch-animal';
     el.textContent = emoji;
+    parseAppleEmoji(el);
     el.style.left = Math.random() * 85 + '%';
     el.style.top = Math.random() * 85 + '%';
     el.onclick = function() {
@@ -1631,6 +1638,7 @@ function startBuff() {
   });
   html += '</div>';
   game.innerHTML = html;
+  parseAppleEmoji(game);
 }
 
 function chooseBuff(buffId) {
@@ -1697,7 +1705,9 @@ function nextSortAnimal() {
     }
   }
   sortCurrent = sortBag.shift();
-  document.getElementById('sort-current').textContent = sortCurrent.emoji;
+  const sortEl = document.getElementById('sort-current');
+  sortEl.textContent = sortCurrent.emoji;
+  parseAppleEmoji(sortEl);
   document.getElementById('sort-name').textContent = sortCurrent.name;
   // Reset button styles
   document.querySelectorAll('.sort-cat-btn').forEach(b => {
@@ -1807,6 +1817,7 @@ function doPrestige() {
   closeModal('prestige-modal');
   saveGame();
   buildShop();
+  parseAppleEmoji(document.body);
   showToast('⭐ Geëvolueerd! +' + newStars + ' sterren!');
 }
 
@@ -1984,9 +1995,18 @@ function render() {
   const dps = getTotalDps();
   document.getElementById('dps-display').textContent = formatDps(dps) + ' per seconde';
 
-  // Big animal
+  // Big animal (hires image, no twemoji)
   const highest = getHighestAnimal();
-  document.getElementById('big-animal').textContent = highest.emoji;
+  const bigEl = document.getElementById('big-animal');
+  const hiresCode = HIRES_EMOJI[highest.emoji];
+  if (hiresCode) {
+    const src = 'emoji-hires/' + hiresCode + '.png';
+    if (!bigEl.querySelector('img') || bigEl.querySelector('img').src.indexOf(hiresCode) === -1) {
+      bigEl.innerHTML = '<img src="' + src + '" alt="' + highest.name + '" style="width:1em;height:1em">';
+    }
+  } else {
+    bigEl.textContent = highest.emoji;
+  }
   document.getElementById('animal-name').textContent = highest.name;
   document.getElementById('click-info').textContent = '+' + formatNumber(Math.floor(getClickValue())) + ' per klik';
 
@@ -2099,8 +2119,8 @@ function render() {
   // Stats
   renderStats();
 
-  // Consistent Apple emoji rendering
-  parseAppleEmoji(document.body);
+  // Parse only dynamic emoji elements (buff indicator)
+  if (curBuff && buffInd) parseAppleEmoji(buffInd);
 }
 
 function updateCooldown(btnId, textId, lastPlayed, cooldown, active) {
@@ -2156,6 +2176,7 @@ function updateOrbiters() {
     const el = document.createElement('div');
     el.className = 'orbiter';
     el.textContent = a.emoji;
+    parseAppleEmoji(el);
     const radius = Math.min(area.offsetWidth, area.offsetHeight) * 0.35;
     el.style.setProperty('--radius', radius + 'px');
     el.style.setProperty('--dur', (8 + i * 2) + 's');
@@ -2277,6 +2298,9 @@ function init() {
   loadGame();
   buildShop();
   render();
+
+  // One-time Apple emoji parse for all static UI elements
+  parseAppleEmoji(document.body);
 
   // Game tick (100ms)
   setInterval(gameLoop, TICK_INTERVAL);
