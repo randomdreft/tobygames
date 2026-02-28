@@ -1,6 +1,6 @@
 # TobyGames - Speloverzicht
 
-Alle spellen op [tobygames.nl](https://tobygames.nl). Elk spel is een enkel HTML-bestand met inline CSS en JavaScript, zonder externe dependencies.
+Alle spellen op [tobygames.nl](https://tobygames.nl). Elk spel is een enkel HTML-bestand met inline CSS en JavaScript, zonder externe dependencies (behalve dierenklikker die lokale Apple-emoji afbeeldingen gebruikt uit `emoji/`).
 
 ## Spellen
 
@@ -47,6 +47,17 @@ Vier buffs beschikbaar via de Buff Chooser (elk 30 seconden actief):
 - Reset dieren en punten, maar behoud sterren (+5% DPS per ster)
 - Aantal sterren gebaseerd op totaal verdiende punten (log10)
 - Bij voldoende sterren behoud je ook bepaalde upgrades
+
+### Bulk-kopen
+- Na eerste evolutie verschijnen 1×/10×/100× knoppen boven de dierenwinkel
+- Bij gedeeltelijke betaalbaarheid (bijv. 10× geselecteerd maar 3 betaalbaar): koopt alsnog de 3
+- Prijsweergave toont totaalprijs voor het geselecteerde aantal
+
+### Emojis
+- Apple-emojis lokaal gehost in `emoji/` (3793 PNG bestanden, 27 MB)
+- Bron: `emoji-datasource-apple@16.0.0` (npm)
+- Twemoji-library (CDN) wordt gebruikt als parser om emoji-tekens te vervangen door `<img>` tags
+- Geen afhankelijkheid van externe CDN voor de afbeeldingen zelf
 
 ### Opslag
 - Automatische save elke 30 seconden via localStorage
