@@ -1855,8 +1855,11 @@ function buyUpgrade(upgradeId) {
   }
   state.currentPoints -= u.cost;
   state.upgrades[upgradeId] = 1;
+  const panel = document.getElementById('right-panel');
+  const scrollY = panel.scrollTop;
   buildUpgradeShop();
   parseAppleEmoji(document.getElementById('tab-upgrades'));
+  panel.scrollTop = scrollY;
 }
 
 function findUpgrade(id) {
@@ -1952,7 +1955,7 @@ function startCatcher() {
   document.getElementById('catcher-timer').textContent = '15';
   document.getElementById('catcher-field').innerHTML = '';
 
-  const allEmoji = ANIMALS.map(a => a.emoji);
+  const allEmoji = [...new Set([...ANIMALS.map(a => a.emoji), ...INTRUDER_GROUPS.flatMap(g => g.animals)])];
   let timeLeft = 15;
 
   // Spawn animals
