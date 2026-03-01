@@ -3483,7 +3483,8 @@ document.addEventListener('mouseout', function(e) {
   if (item) tooltipEl.style.display = 'none';
 });
 function positionTooltip(e) {
-  const tw = 270, th = tooltipEl.offsetHeight || 60;
+  const tw = tooltipEl.offsetWidth || 200;
+  const th = tooltipEl.offsetHeight || 60;
   let x = e.clientX + 14, y = e.clientY + 14;
   if (x + tw > window.innerWidth) x = e.clientX - tw - 14;
   if (y + th > window.innerHeight) y = e.clientY - th - 14;
