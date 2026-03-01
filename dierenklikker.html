@@ -271,6 +271,66 @@ img.emoji {
   font-size: 14px; font-weight: 600;
 }
 
+/* Tellen game */
+#tellen-flash {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px;
+  padding: 10px; background: rgba(0,0,0,0.2); border-radius: 10px; margin-bottom: 8px;
+}
+.tellen-cell { font-size: 28px; text-align: center; aspect-ratio: 1; display: flex; align-items: center; justify-content: center; }
+.tellen-cell img { height: 28px; width: 28px; }
+#tellen-prompt { text-align: center; font-size: 16px; font-weight: 600; padding: 12px; }
+.tellen-answers { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.tellen-ans {
+  padding: 14px; border: 2px solid var(--panel-border); border-radius: 10px;
+  background: rgba(0,0,0,0.15); color: var(--text); font-size: 18px; font-weight: 700;
+  cursor: pointer; transition: all 0.15s; text-align: center;
+}
+.tellen-ans:hover { border-color: var(--gold); background: rgba(255,215,0,0.1); }
+.tellen-ans.correct { border-color: var(--green); background: rgba(67,160,71,0.3); }
+.tellen-ans.wrong { border-color: var(--red); background: rgba(239,83,80,0.3); }
+
+/* Indringer game */
+.indringer-grid {
+  display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 8px;
+}
+.indringer-card {
+  padding: 16px 8px; border: 2px solid var(--panel-border); border-radius: 12px;
+  background: rgba(0,0,0,0.15); text-align: center; cursor: pointer; transition: all 0.15s;
+}
+.indringer-card:hover { border-color: var(--gold); transform: scale(1.03); }
+.indringer-card.correct { border-color: var(--green); background: rgba(67,160,71,0.3); }
+.indringer-card.wrong { border-color: var(--red); background: rgba(239,83,80,0.3); }
+.indringer-emoji { font-size: 36px; }
+.indringer-emoji img { height: 36px; width: 36px; }
+
+/* Groter/kleiner game */
+.groter-pair { display: flex; gap: 8px; margin-bottom: 8px; }
+.groter-choice {
+  flex: 1; padding: 16px 8px; border: 2px solid var(--panel-border); border-radius: 12px;
+  background: rgba(0,0,0,0.15); text-align: center; cursor: pointer; transition: all 0.15s;
+}
+.groter-choice:hover { border-color: var(--gold); transform: scale(1.03); }
+.groter-choice.correct { border-color: var(--green); background: rgba(67,160,71,0.3); }
+.groter-choice.wrong { border-color: var(--red); background: rgba(239,83,80,0.3); }
+.groter-emoji { font-size: 40px; }
+.groter-emoji img { height: 40px; width: 40px; }
+.groter-name { font-size: 14px; font-weight: 600; margin-top: 4px; }
+#groter-question { text-align: center; font-size: 15px; font-weight: 600; margin-bottom: 8px; }
+
+/* Voedsel game */
+.voedsel-animal { text-align: center; font-size: 48px; margin-bottom: 4px; }
+.voedsel-animal img { height: 48px; width: 48px; }
+.voedsel-name { text-align: center; font-size: 16px; font-weight: 600; margin-bottom: 8px; }
+.voedsel-options { display: flex; gap: 6px; margin-bottom: 8px; }
+.voedsel-opt {
+  flex: 1; padding: 12px 6px; border: 2px solid var(--panel-border); border-radius: 10px;
+  background: rgba(0,0,0,0.15); color: var(--text); font-size: 13px; font-weight: 600;
+  cursor: pointer; transition: all 0.15s; text-align: center;
+}
+.voedsel-opt:hover { border-color: var(--gold); background: rgba(255,215,0,0.1); }
+.voedsel-opt.correct { border-color: var(--green); background: rgba(67,160,71,0.3); }
+.voedsel-opt.wrong { border-color: var(--red); background: rgba(239,83,80,0.3); }
+
 /* Stats */
 .stat-heading {
   font-size: 13px; font-weight: 700; color: var(--gold);
@@ -472,6 +532,14 @@ img.emoji {
     </div>
 
     <div id="mid-games" class="mid-content active">
+      <div class="minigame-box" id="mg-tellen">
+        <h3>🔢 Dieren Tellen</h3>
+        <div class="mg-lock-msg" id="lock-tellen"></div>
+        <button class="mg-btn" id="tellen-btn" onclick="startTellen()">Start Tellen!</button>
+        <div id="tellen-cooldown" class="cooldown-text"></div>
+        <div id="tellen-game" style="display:none"></div>
+      </div>
+
       <div class="minigame-box" id="mg-quiz">
         <h3>🧠 Dierenquiz</h3>
         <div class="mg-lock-msg" id="lock-quiz"></div>
@@ -494,6 +562,21 @@ img.emoji {
         </div>
       </div>
 
+      <div class="minigame-box" id="mg-indringer">
+        <h3>🚫 De Indringer</h3>
+        <div class="mg-lock-msg" id="lock-indringer"></div>
+        <button class="mg-btn" id="indringer-btn" onclick="startIndringer()">Zoek de Indringer!</button>
+        <div id="indringer-cooldown" class="cooldown-text"></div>
+        <div id="indringer-game" style="display:none">
+          <div id="indringer-prompt" style="text-align:center;font-size:14px;font-weight:600;margin-bottom:6px">Welk dier hoort er niet bij?</div>
+          <div id="indringer-grid" class="indringer-grid"></div>
+          <div id="indringer-hud" style="display:flex;justify-content:space-between;font-size:14px;font-weight:600">
+            <span>Score: <b id="indringer-score">0</b></span>
+            <span>Tijd: <b id="indringer-timer">10</b>s</span>
+          </div>
+        </div>
+      </div>
+
       <div class="minigame-box" id="mg-math">
         <h3>🔢 Dieren Wiskunde</h3>
         <div class="mg-lock-msg" id="lock-math"></div>
@@ -502,12 +585,41 @@ img.emoji {
         <div id="math-game" style="display:none"></div>
       </div>
 
+      <div class="minigame-box" id="mg-groter">
+        <h3>⚖️ Groter of Kleiner</h3>
+        <div class="mg-lock-msg" id="lock-groter"></div>
+        <button class="mg-btn" id="groter-btn" onclick="startGroter()">Wie is zwaarder?</button>
+        <div id="groter-cooldown" class="cooldown-text"></div>
+        <div id="groter-game" style="display:none">
+          <div id="groter-question">Welk dier is zwaarder?</div>
+          <div id="groter-pair" class="groter-pair"></div>
+          <div id="groter-hud" style="display:flex;justify-content:space-between;font-size:14px;font-weight:600">
+            <span>Goed: <b id="groter-score">0</b>/10</span>
+            <span>Fout: <b id="groter-mistakes">0</b>/3</span>
+          </div>
+        </div>
+      </div>
+
       <div class="minigame-box" id="mg-buff">
         <h3>✨ Buff Kiezer</h3>
         <div class="mg-lock-msg" id="lock-buff"></div>
         <button class="mg-btn" id="buff-btn" onclick="startBuff()">Kies je Buff!</button>
         <div id="buff-cooldown" class="cooldown-text"></div>
         <div id="buff-game" style="display:none"></div>
+      </div>
+
+      <div class="minigame-box" id="mg-voedsel">
+        <h3>🍽️ Wat Eet Ik?</h3>
+        <div class="mg-lock-msg" id="lock-voedsel"></div>
+        <button class="mg-btn" id="voedsel-btn" onclick="startVoedsel()">Start!</button>
+        <div id="voedsel-cooldown" class="cooldown-text"></div>
+        <div id="voedsel-game" style="display:none">
+          <div id="voedsel-field"></div>
+          <div id="voedsel-hud" style="display:flex;justify-content:space-between;font-size:14px;font-weight:600">
+            <span>Goed: <b id="voedsel-score">0</b></span>
+            <span>Fout: <b id="voedsel-mistakes">0</b>/3</span>
+          </div>
+        </div>
       </div>
 
       <div class="minigame-box" id="mg-sort">
@@ -648,13 +760,21 @@ const MATH_COOLDOWN = 180000;    // 3 min
 const BUFF_COOLDOWN = 240000;    // 4 min
 const SORT_COOLDOWN = 300000;    // 5 min
 const MEMORY_COOLDOWN = 300000;  // 5 min
+const TELLEN_COOLDOWN = 180000;  // 3 min
+const INDRINGER_COOLDOWN = 240000; // 4 min
+const GROTER_COOLDOWN = 240000;  // 4 min
+const VOEDSEL_COOLDOWN = 180000; // 3 min
 const BUFF_DURATION = 30000;     // 30 sec
 
 const MINIGAME_UNLOCKS = [
+  {id:'tellen', reqAnimal:'mier', label:'Koop een Mier'},
   {id:'quiz', reqAnimal:'slak', label:'Koop een Slak'},
   {id:'catcher', reqAnimal:'kikker', label:'Koop een Kikker'},
+  {id:'indringer', reqAnimal:'kip', label:'Koop een Kip'},
   {id:'math', reqAnimal:'kat', label:'Koop een Kat'},
+  {id:'groter', reqAnimal:'hond', label:'Koop een Hond'},
   {id:'buff', reqAnimal:'paard', label:'Koop een Paard'},
+  {id:'voedsel', reqAnimal:'olifant', label:'Koop een Olifant'},
   {id:'sort', reqAnimal:'walvis', label:'Koop een Walvis'},
   {id:'memory', reqAnimal:'draak', label:'Koop een Draak'}
 ];
@@ -684,6 +804,62 @@ const MEMORY_POOL = [
   '🐜','🐢','🐍','🦎','🐙','🦑','🦐','🦀','🐡','🐠','🐟','🐬','🐳','🐋','🦈','🐊',
   '🐘','🦏','🦛','🐪','🐫','🦒','🐃','🐄','🐎','🐖','🐑','🐐','🦌','🐕','🐈','🐓',
   '🦃','🕊️','🐇','🦝','🦨','🦡','🐁','🐀','🐿️','🦔'
+];
+
+const ANIMAL_WEIGHTS = [
+  {emoji:'🐜',name:'Mier',kg:0.001},{emoji:'🐛',name:'Rups',kg:0.005},
+  {emoji:'🐌',name:'Slak',kg:0.01},{emoji:'🐝',name:'Bij',kg:0.0001},
+  {emoji:'🐸',name:'Kikker',kg:0.03},{emoji:'🐭',name:'Muis',kg:0.02},
+  {emoji:'🐹',name:'Hamster',kg:0.04},{emoji:'🐔',name:'Kip',kg:3},
+  {emoji:'🐰',name:'Konijn',kg:2},{emoji:'🐱',name:'Kat',kg:4},
+  {emoji:'🐶',name:'Hond',kg:20},{emoji:'🦊',name:'Vos',kg:6},
+  {emoji:'🐷',name:'Varken',kg:100},{emoji:'🐑',name:'Schaap',kg:60},
+  {emoji:'🐐',name:'Geit',kg:50},{emoji:'🦌',name:'Hert',kg:70},
+  {emoji:'🐺',name:'Wolf',kg:40},{emoji:'🦁',name:'Leeuw',kg:190},
+  {emoji:'🐯',name:'Tijger',kg:220},{emoji:'🐻',name:'Beer',kg:300},
+  {emoji:'🐴',name:'Paard',kg:500},{emoji:'🐄',name:'Koe',kg:700},
+  {emoji:'🐊',name:'Krokodil',kg:400},{emoji:'🐘',name:'Olifant',kg:5000},
+  {emoji:'🦈',name:'Haai',kg:1000},{emoji:'🐬',name:'Dolfijn',kg:200},
+  {emoji:'🐋',name:'Walvis',kg:100000},{emoji:'🦒',name:'Giraffe',kg:1200},
+  {emoji:'🦏',name:'Neushoorn',kg:2000},{emoji:'🐧',name:'Pinguïn',kg:30}
+];
+
+const FOOD_QUIZ = [
+  {emoji:'🐸',name:'Kikker',food:'🐛 Insecten',wrong:['🥕 Wortels','🌾 Graan','🍌 Bananen']},
+  {emoji:'🐱',name:'Kat',food:'🐟 Vis',wrong:['🌿 Gras','🍌 Bananen','🌾 Graan']},
+  {emoji:'🐶',name:'Hond',food:'🥩 Vlees',wrong:['🌿 Gras','🌾 Graan','🍯 Honing']},
+  {emoji:'🐰',name:'Konijn',food:'🥕 Wortels',wrong:['🥩 Vlees','🐟 Vis','🍯 Honing']},
+  {emoji:'🐻',name:'Beer',food:'🍯 Honing',wrong:['🌾 Graan','🥕 Wortels','🐟 Vis']},
+  {emoji:'🐼',name:'Panda',food:'🎋 Bamboe',wrong:['🥩 Vlees','🐟 Vis','🍯 Honing']},
+  {emoji:'🐵',name:'Aap',food:'🍌 Bananen',wrong:['🐟 Vis','🥩 Vlees','🌾 Graan']},
+  {emoji:'🐔',name:'Kip',food:'🌾 Graan',wrong:['🐟 Vis','🍯 Honing','🍌 Bananen']},
+  {emoji:'🦊',name:'Vos',food:'🐭 Muizen',wrong:['🌿 Gras','🥕 Wortels','🌾 Graan']},
+  {emoji:'🐴',name:'Paard',food:'🌿 Gras',wrong:['🥩 Vlees','🐟 Vis','🍯 Honing']},
+  {emoji:'🐄',name:'Koe',food:'🌿 Gras',wrong:['🥩 Vlees','🐟 Vis','🐛 Insecten']},
+  {emoji:'🐑',name:'Schaap',food:'🌿 Gras',wrong:['🐟 Vis','🥩 Vlees','🍯 Honing']},
+  {emoji:'🐷',name:'Varken',food:'🥕 Groente',wrong:['🍯 Honing','🐭 Muizen','🎋 Bamboe']},
+  {emoji:'🦉',name:'Uil',food:'🐭 Muizen',wrong:['🌿 Gras','🌾 Graan','🥕 Wortels']},
+  {emoji:'🐧',name:'Pinguïn',food:'🐟 Vis',wrong:['🌿 Gras','🌾 Graan','🍌 Bananen']},
+  {emoji:'🐬',name:'Dolfijn',food:'🐟 Vis',wrong:['🌿 Gras','🥕 Wortels','🍌 Bananen']},
+  {emoji:'🐘',name:'Olifant',food:'🍃 Bladeren',wrong:['🥩 Vlees','🐟 Vis','🍯 Honing']},
+  {emoji:'🐿️',name:'Eekhoorn',food:'🥜 Noten',wrong:['🐟 Vis','🥩 Vlees','🌾 Graan']},
+  {emoji:'🐝',name:'Bij',food:'🌻 Nectar',wrong:['🥩 Vlees','🐟 Vis','🥕 Wortels']},
+  {emoji:'🦈',name:'Haai',food:'🐟 Vis',wrong:['🌿 Gras','🌾 Graan','🥕 Wortels']},
+  {emoji:'🐍',name:'Slang',food:'🐭 Muizen',wrong:['🌿 Gras','🌾 Graan','🍌 Bananen']},
+  {emoji:'🐊',name:'Krokodil',food:'🥩 Vlees',wrong:['🌿 Gras','🥕 Wortels','🌾 Graan']},
+  {emoji:'🐢',name:'Schildpad',food:'🍃 Bladeren',wrong:['🥩 Vlees','🐭 Muizen','🍯 Honing']},
+  {emoji:'🐺',name:'Wolf',food:'🥩 Vlees',wrong:['🌿 Gras','🌾 Graan','🥕 Wortels']}
+];
+
+const INTRUDER_GROUPS = [
+  {name:'Boerderij',animals:['🐔','🐷','🐄','🐑','🐴','🐐']},
+  {name:'Huisdieren',animals:['🐱','🐶','🐹','🐰','🐠','🐦']},
+  {name:'Zeedieren',animals:['🐟','🐬','🐳','🦈','🐙','🦐']},
+  {name:'Insecten',animals:['🐛','🐝','🐜','🦋','🐞']},
+  {name:'Bosdieren',animals:['🦊','🐻','🦌','🐺','🐿️','🦉']},
+  {name:'Jungle',animals:['🐵','🦁','🐯','🐘','🦒','🐍']},
+  {name:'Vogels',animals:['🦅','🦉','🐧','🦆','🕊️','🦃']},
+  {name:'Reptielen',animals:['🐊','🐢','🐍','🦎']}
 ];
 
 const ANIMALS = [
@@ -887,9 +1063,13 @@ function defaultState() {
       mathPlayed: 0, mathCorrect: 0, mathWrong: 0,
       buffPlayed: 0,
       sortPlayed: 0, sortCorrect: 0, sortBestStreak: 0,
-      memoryPlayed: 0, memoryPairsFound: 0, memoryWon: 0
+      memoryPlayed: 0, memoryPairsFound: 0, memoryWon: 0,
+      tellenPlayed: 0, tellenCorrect: 0, tellenWrong: 0,
+      indringerPlayed: 0, indringerBest: 0,
+      groterPlayed: 0, groterCorrect: 0, groterWrong: 0,
+      voedselPlayed: 0, voedselCorrect: 0, voedselWrong: 0
     },
-    minigames: { quizLast: 0, catcherLast: 0, mathLast: 0, buffLast: 0, sortLast: 0, memoryLast: 0 },
+    minigames: { quizLast: 0, catcherLast: 0, mathLast: 0, buffLast: 0, sortLast: 0, memoryLast: 0, tellenLast: 0, indringerLast: 0, groterLast: 0, voedselLast: 0 },
     lastTick: Date.now()
   };
   ANIMALS.forEach(a => s.animals[a.id] = 0);
@@ -1008,6 +1188,10 @@ function stateToIni() {
   lines.push('buff_laatst=' + state.minigames.buffLast);
   lines.push('sorteren_laatst=' + state.minigames.sortLast);
   lines.push('memory_laatst=' + state.minigames.memoryLast);
+  lines.push('tellen_laatst=' + state.minigames.tellenLast);
+  lines.push('indringer_laatst=' + state.minigames.indringerLast);
+  lines.push('groter_laatst=' + state.minigames.groterLast);
+  lines.push('voedsel_laatst=' + state.minigames.voedselLast);
   return lines.join('\n');
 }
 
@@ -1114,6 +1298,10 @@ function iniToState(text) {
   s.minigames.buffLast = safeInt(dm.buff_laatst || dm.tellen_laatst, 0, 0);
   s.minigames.sortLast = safeInt(dm.sorteren_laatst, 0, 0);
   s.minigames.memoryLast = safeInt(dm.memory_laatst, 0, 0);
+  s.minigames.tellenLast = safeInt(dm.tellen_laatst, 0, 0);
+  s.minigames.indringerLast = safeInt(dm.indringer_laatst, 0, 0);
+  s.minigames.groterLast = safeInt(dm.groter_laatst, 0, 0);
+  s.minigames.voedselLast = safeInt(dm.voedsel_laatst, 0, 0);
 
   // Ensure totalEarned >= currentPoints
   if (s.totalEarned < s.currentPoints) s.totalEarned = s.currentPoints;
@@ -1982,6 +2170,369 @@ function endMemory(won) {
   saveGame();
 }
 
+/* Dieren Tellen */
+let tellenActive = false;
+let tellenTarget = '';
+let tellenCount = 0;
+
+function startTellen() {
+  if (tellenActive || !isMinigameUnlocked('tellen')) return;
+  if (Date.now() - state.minigames.tellenLast < TELLEN_COOLDOWN) return;
+  tellenActive = true;
+  document.getElementById('tellen-btn').disabled = true;
+  const game = document.getElementById('tellen-game');
+  game.style.display = 'block';
+
+  // Pick target animal
+  const pool = MEMORY_POOL.filter(e => !e.includes('\uFE0F') && e.length <= 2); // clean single emojis
+  tellenTarget = pool[Math.floor(Math.random() * pool.length)];
+  tellenCount = 1 + Math.floor(Math.random() * 5); // 1-5
+
+  // Build grid: 16 cells, tellenCount of them are target
+  const cells = [];
+  for (let i = 0; i < tellenCount; i++) cells.push(tellenTarget);
+  while (cells.length < 16) {
+    const r = pool[Math.floor(Math.random() * pool.length)];
+    if (r !== tellenTarget) cells.push(r);
+  }
+  cells.sort(() => Math.random() - 0.5);
+
+  // Phase 1: show target
+  game.innerHTML = '<div id="tellen-prompt">Let op de ' + tellenTarget + '!</div>';
+  parseAppleEmoji(game);
+
+  setTimeout(() => {
+    // Phase 2: flash grid
+    let html = '<div id="tellen-flash">';
+    cells.forEach(c => html += '<div class="tellen-cell">' + c + '</div>');
+    html += '</div>';
+    game.innerHTML = html;
+    parseAppleEmoji(game);
+
+    setTimeout(() => {
+      // Phase 3: ask question
+      const options = new Set([tellenCount]);
+      while (options.size < 4) {
+        let fake = tellenCount + Math.floor(Math.random() * 5) - 2;
+        if (fake < 0) fake = 0;
+        if (fake > 8) fake = 8;
+        if (fake !== tellenCount) options.add(fake);
+      }
+      const sorted = [...options].sort((a,b) => a - b);
+      let qhtml = '<div id="tellen-prompt">Hoeveel ' + tellenTarget + ' zag je?</div>';
+      qhtml += '<div class="tellen-answers">';
+      sorted.forEach(n => {
+        qhtml += '<button class="tellen-ans" onclick="answerTellen(' + n + ')">' + n + '</button>';
+      });
+      qhtml += '</div>';
+      game.innerHTML = qhtml;
+      parseAppleEmoji(game);
+    }, 3000);
+  }, 2000);
+}
+
+function answerTellen(n) {
+  if (!tellenActive) return;
+  tellenActive = false;
+  state.minigames.tellenLast = Date.now();
+  state.stats.tellenPlayed++;
+
+  const buttons = document.querySelectorAll('.tellen-ans');
+  buttons.forEach(b => {
+    b.onclick = null;
+    b.style.pointerEvents = 'none';
+    if (parseInt(b.textContent) === tellenCount) b.classList.add('correct');
+    if (parseInt(b.textContent) === n && n !== tellenCount) b.classList.add('wrong');
+  });
+
+  if (n === tellenCount) {
+    state.stats.tellenCorrect++;
+    const bonus = getTotalDps() * 600;
+    state.currentPoints += bonus;
+    state.totalEarned += bonus;
+    state.allTime.totalEarned += bonus;
+    const prompt = document.getElementById('tellen-prompt');
+    if (prompt) prompt.innerHTML = '<span style="color:var(--green-light)">Goed! +' + formatNumber(bonus) + ' punten!</span>';
+  } else {
+    state.stats.tellenWrong++;
+    const prompt = document.getElementById('tellen-prompt');
+    if (prompt) prompt.innerHTML = '<span style="color:var(--red)">Helaas! Het waren er ' + tellenCount + '.</span>';
+  }
+
+  setTimeout(() => {
+    document.getElementById('tellen-game').style.display = 'none';
+    document.getElementById('tellen-btn').disabled = false;
+  }, 2500);
+  saveGame();
+}
+
+/* De Indringer */
+let indringerActive = false;
+let indringerScore = 0;
+let indringerInterval = null;
+let indringerCorrectIdx = -1;
+
+function startIndringer() {
+  if (indringerActive || !isMinigameUnlocked('indringer')) return;
+  if (Date.now() - state.minigames.indringerLast < INDRINGER_COOLDOWN) return;
+  indringerActive = true;
+  indringerScore = 0;
+  document.getElementById('indringer-btn').disabled = true;
+  document.getElementById('indringer-game').style.display = 'block';
+  document.getElementById('indringer-score').textContent = '0';
+  document.getElementById('indringer-timer').textContent = '10';
+
+  nextIndringer();
+  let timeLeft = 10;
+  indringerInterval = setInterval(() => {
+    timeLeft--;
+    document.getElementById('indringer-timer').textContent = timeLeft;
+    if (timeLeft <= 0) endIndringer();
+  }, 1000);
+}
+
+function nextIndringer() {
+  // Pick 2 different groups
+  const g1idx = Math.floor(Math.random() * INTRUDER_GROUPS.length);
+  let g2idx;
+  do { g2idx = Math.floor(Math.random() * INTRUDER_GROUPS.length); } while (g2idx === g1idx);
+  const group = INTRUDER_GROUPS[g1idx];
+  const other = INTRUDER_GROUPS[g2idx];
+
+  // 3 from group, 1 intruder
+  const shuffled = [...group.animals].sort(() => Math.random() - 0.5);
+  const three = shuffled.slice(0, 3);
+  const intruder = other.animals[Math.floor(Math.random() * other.animals.length)];
+
+  const cards = [...three, intruder].sort(() => Math.random() - 0.5);
+  indringerCorrectIdx = cards.indexOf(intruder);
+
+  const grid = document.getElementById('indringer-grid');
+  grid.innerHTML = '';
+  cards.forEach((emoji, i) => {
+    const card = document.createElement('div');
+    card.className = 'indringer-card';
+    card.innerHTML = '<div class="indringer-emoji">' + emoji + '</div>';
+    card.onclick = () => answerIndringer(i);
+    grid.appendChild(card);
+  });
+  parseAppleEmoji(grid);
+}
+
+function answerIndringer(idx) {
+  if (!indringerActive) return;
+  const cards = document.querySelectorAll('.indringer-card');
+  if (idx === indringerCorrectIdx) {
+    indringerScore++;
+    document.getElementById('indringer-score').textContent = indringerScore;
+    cards[idx].classList.add('correct');
+    setTimeout(nextIndringer, 250);
+  } else {
+    cards[idx].classList.add('wrong');
+    cards[indringerCorrectIdx].classList.add('correct');
+    endIndringer();
+  }
+}
+
+function endIndringer() {
+  indringerActive = false;
+  state.minigames.indringerLast = Date.now();
+  state.stats.indringerPlayed++;
+  if (indringerScore > state.stats.indringerBest) state.stats.indringerBest = indringerScore;
+  clearInterval(indringerInterval);
+
+  const bonus = getTotalDps() * 60 * indringerScore;
+  state.currentPoints += bonus;
+  state.totalEarned += bonus;
+  state.allTime.totalEarned += bonus;
+
+  const grid = document.getElementById('indringer-grid');
+  grid.innerHTML = '<div style="grid-column:1/-1;font-size:18px;font-weight:700;padding:20px;text-align:center">' +
+    '<div>' + indringerScore + ' indringers gevonden!</div>' +
+    '<div style="color:var(--gold);margin-top:8px">+' + formatNumber(bonus) + ' punten</div></div>';
+
+  setTimeout(() => {
+    document.getElementById('indringer-game').style.display = 'none';
+    document.getElementById('indringer-btn').disabled = false;
+  }, 3000);
+  saveGame();
+}
+
+/* Groter of Kleiner */
+let groterActive = false;
+let groterScore = 0;
+let groterMistakes = 0;
+let groterRound = 0;
+let groterPair = null;
+
+function startGroter() {
+  if (groterActive || !isMinigameUnlocked('groter')) return;
+  if (Date.now() - state.minigames.groterLast < GROTER_COOLDOWN) return;
+  groterActive = true;
+  groterScore = 0;
+  groterMistakes = 0;
+  groterRound = 0;
+  document.getElementById('groter-btn').disabled = true;
+  document.getElementById('groter-game').style.display = 'block';
+  document.getElementById('groter-score').textContent = '0';
+  document.getElementById('groter-mistakes').textContent = '0';
+  nextGroter();
+}
+
+function nextGroter() {
+  groterRound++;
+  if (groterRound > 10 || groterMistakes >= 3) { endGroter(); return; }
+  // Pick 2 different animals
+  const shuffled = [...ANIMAL_WEIGHTS].sort(() => Math.random() - 0.5);
+  let a = shuffled[0], b = shuffled[1];
+  // Ensure they're not too similar
+  if (Math.abs(a.kg - b.kg) / Math.max(a.kg, b.kg) < 0.3) {
+    b = shuffled[2] || b;
+  }
+  groterPair = [a, b];
+  const questions = ['Welk dier is zwaarder?', 'Welk dier weegt meer?', 'Welke is de zwaarste?'];
+  document.getElementById('groter-question').textContent = questions[Math.floor(Math.random() * questions.length)];
+
+  const pair = document.getElementById('groter-pair');
+  pair.innerHTML = '';
+  [a, b].forEach((animal, i) => {
+    const div = document.createElement('div');
+    div.className = 'groter-choice';
+    div.innerHTML = '<div class="groter-emoji">' + animal.emoji + '</div><div class="groter-name">' + animal.name + '</div>';
+    div.onclick = () => answerGroter(i);
+    pair.appendChild(div);
+  });
+  parseAppleEmoji(pair);
+}
+
+function answerGroter(idx) {
+  if (!groterActive) return;
+  const [a, b] = groterPair;
+  const heavier = a.kg >= b.kg ? 0 : 1;
+  const choices = document.querySelectorAll('.groter-choice');
+  choices.forEach(c => { c.onclick = null; c.style.pointerEvents = 'none'; });
+  choices[heavier].classList.add('correct');
+
+  if (idx === heavier) {
+    groterScore++;
+    state.stats.groterCorrect++;
+    document.getElementById('groter-score').textContent = groterScore;
+  } else {
+    groterMistakes++;
+    state.stats.groterWrong++;
+    choices[idx].classList.add('wrong');
+    document.getElementById('groter-mistakes').textContent = groterMistakes;
+  }
+  setTimeout(nextGroter, 600);
+}
+
+function endGroter() {
+  groterActive = false;
+  state.minigames.groterLast = Date.now();
+  state.stats.groterPlayed++;
+
+  const bonus = getTotalDps() * 60 * groterScore;
+  state.currentPoints += bonus;
+  state.totalEarned += bonus;
+  state.allTime.totalEarned += bonus;
+
+  const pair = document.getElementById('groter-pair');
+  pair.innerHTML = '<div style="grid-column:1/-1;font-size:18px;font-weight:700;padding:20px;text-align:center">' +
+    '<div>' + groterScore + '/10 goed!</div>' +
+    '<div style="color:var(--gold);margin-top:8px">+' + formatNumber(bonus) + ' punten</div></div>';
+
+  setTimeout(() => {
+    document.getElementById('groter-game').style.display = 'none';
+    document.getElementById('groter-btn').disabled = false;
+  }, 3000);
+  saveGame();
+}
+
+/* Wat Eet Ik? */
+let voedselActive = false;
+let voedselScore = 0;
+let voedselMistakes = 0;
+let voedselRound = 0;
+let voedselBag = [];
+let voedselCurrent = null;
+
+function startVoedsel() {
+  if (voedselActive || !isMinigameUnlocked('voedsel')) return;
+  if (Date.now() - state.minigames.voedselLast < VOEDSEL_COOLDOWN) return;
+  voedselActive = true;
+  voedselScore = 0;
+  voedselMistakes = 0;
+  voedselRound = 0;
+  voedselBag = [...FOOD_QUIZ].sort(() => Math.random() - 0.5);
+  document.getElementById('voedsel-btn').disabled = true;
+  document.getElementById('voedsel-game').style.display = 'block';
+  document.getElementById('voedsel-score').textContent = '0';
+  document.getElementById('voedsel-mistakes').textContent = '0';
+  nextVoedsel();
+}
+
+function nextVoedsel() {
+  voedselRound++;
+  if (voedselRound > 10 || voedselMistakes >= 3) { endVoedsel(); return; }
+  if (voedselBag.length === 0) voedselBag = [...FOOD_QUIZ].sort(() => Math.random() - 0.5);
+  voedselCurrent = voedselBag.shift();
+
+  const field = document.getElementById('voedsel-field');
+  const wrongPick = voedselCurrent.wrong.sort(() => Math.random() - 0.5).slice(0, 2);
+  const options = [voedselCurrent.food, ...wrongPick].sort(() => Math.random() - 0.5);
+
+  let html = '<div class="voedsel-animal">' + voedselCurrent.emoji + '</div>';
+  html += '<div class="voedsel-name">' + voedselCurrent.name + ' eet...</div>';
+  html += '<div class="voedsel-options">';
+  options.forEach(opt => {
+    html += '<button class="voedsel-opt" onclick="answerVoedsel(this,\'' + opt.replace(/'/g, "\\'") + '\')">' + opt + '</button>';
+  });
+  html += '</div>';
+  field.innerHTML = html;
+  parseAppleEmoji(field);
+}
+
+function answerVoedsel(btn, answer) {
+  if (!voedselActive) return;
+  const buttons = document.querySelectorAll('.voedsel-opt');
+  buttons.forEach(b => { b.onclick = null; b.style.pointerEvents = 'none'; });
+  buttons.forEach(b => { if (b.textContent === voedselCurrent.food) b.classList.add('correct'); });
+
+  if (answer === voedselCurrent.food) {
+    voedselScore++;
+    state.stats.voedselCorrect++;
+    document.getElementById('voedsel-score').textContent = voedselScore;
+  } else {
+    voedselMistakes++;
+    state.stats.voedselWrong++;
+    btn.classList.add('wrong');
+    document.getElementById('voedsel-mistakes').textContent = voedselMistakes;
+  }
+  setTimeout(nextVoedsel, 600);
+}
+
+function endVoedsel() {
+  voedselActive = false;
+  state.minigames.voedselLast = Date.now();
+  state.stats.voedselPlayed++;
+
+  const bonus = getTotalDps() * 60 * voedselScore;
+  state.currentPoints += bonus;
+  state.totalEarned += bonus;
+  state.allTime.totalEarned += bonus;
+
+  const field = document.getElementById('voedsel-field');
+  field.innerHTML = '<div style="font-size:18px;font-weight:700;padding:20px;text-align:center">' +
+    '<div>' + voedselScore + ' goed!</div>' +
+    '<div style="color:var(--gold);margin-top:8px">+' + formatNumber(bonus) + ' punten</div></div>';
+
+  setTimeout(() => {
+    document.getElementById('voedsel-game').style.display = 'none';
+    document.getElementById('voedsel-btn').disabled = false;
+  }, 3000);
+  saveGame();
+}
+
 /* ================================================================
    SECTIE 9: EVOLUTIE (PRESTIGE)
    ================================================================ */
@@ -2360,6 +2911,10 @@ function render() {
   updateCooldown('buff-btn', 'buff-cooldown', state.minigames.buffLast, BUFF_COOLDOWN, false);
   updateCooldown('sort-btn', 'sort-cooldown', state.minigames.sortLast, SORT_COOLDOWN, sortActive);
   updateCooldown('memory-btn', 'memory-cooldown', state.minigames.memoryLast, MEMORY_COOLDOWN, memoryActive);
+  updateCooldown('tellen-btn', 'tellen-cooldown', state.minigames.tellenLast, TELLEN_COOLDOWN, tellenActive);
+  updateCooldown('indringer-btn', 'indringer-cooldown', state.minigames.indringerLast, INDRINGER_COOLDOWN, indringerActive);
+  updateCooldown('groter-btn', 'groter-cooldown', state.minigames.groterLast, GROTER_COOLDOWN, groterActive);
+  updateCooldown('voedsel-btn', 'voedsel-cooldown', state.minigames.voedselLast, VOEDSEL_COOLDOWN, voedselActive);
 
   // Buff indicator
   const buffInd = document.getElementById('buff-indicator');
@@ -2425,14 +2980,18 @@ function renderStats() {
   html += row('Evoluties', state.prestige.timesReset + 'x');
 
   const s = state.stats;
-  const totalMgPlayed = s.quizPlayed + s.catcherPlayed + s.mathPlayed + s.buffPlayed + s.sortPlayed + s.memoryPlayed;
+  const totalMgPlayed = s.quizPlayed + s.catcherPlayed + s.mathPlayed + s.buffPlayed + s.sortPlayed + s.memoryPlayed + s.tellenPlayed + s.indringerPlayed + s.groterPlayed + s.voedselPlayed;
   html += heading('Minigames');
   html += row('Totaal gespeeld', totalMgPlayed + 'x');
+  if (s.tellenPlayed) html += row('🔢 Tellen', s.tellenCorrect + '/' + s.tellenPlayed + ' goed');
   if (s.quizPlayed) html += row('🧠 Quiz', s.quizCorrect + '/' + s.quizPlayed + ' goed');
-  if (s.mathPlayed) html += row('🔢 Wiskunde', s.mathCorrect + '/' + s.mathPlayed + ' goed');
   if (s.catcherPlayed) html += row('🎯 Vanger', s.catcherCaught + ' gevangen (' + s.catcherPlayed + 'x)');
-  if (s.sortPlayed) html += row('🗂️ Sorteren', s.sortCorrect + ' goed (beste: ' + s.sortBestStreak + ')');
+  if (s.indringerPlayed) html += row('🚫 Indringer', 'beste: ' + s.indringerBest + ' (' + s.indringerPlayed + 'x)');
+  if (s.mathPlayed) html += row('🔢 Wiskunde', s.mathCorrect + '/' + s.mathPlayed + ' goed');
+  if (s.groterPlayed) html += row('⚖️ Groter/Kleiner', s.groterCorrect + ' goed, ' + s.groterWrong + ' fout');
   if (s.buffPlayed) html += row('✨ Buffs', s.buffPlayed + 'x gekozen');
+  if (s.voedselPlayed) html += row('🍽️ Wat Eet Ik?', s.voedselCorrect + '/' + (s.voedselCorrect+s.voedselWrong) + ' goed');
+  if (s.sortPlayed) html += row('🗂️ Sorteren', s.sortCorrect + ' goed (beste: ' + s.sortBestStreak + ')');
   if (s.memoryPlayed) html += row('🃏 Memory', s.memoryWon + '/' + s.memoryPlayed + ' gewonnen');
 
   list.innerHTML = html;
