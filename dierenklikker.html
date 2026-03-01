@@ -2747,17 +2747,19 @@ function endRace() {
   const won = winner === raceChoice;
   if (won) state.stats.raceWon++;
 
-  const bonus = getTotalDps() * (won ? 120 : 20);
-  state.currentPoints += bonus;
-  state.totalEarned += bonus;
-  state.allTime.totalEarned += bonus;
+  const bonus = won ? getTotalDps() * 120 : 0;
+  if (bonus > 0) {
+    state.currentPoints += bonus;
+    state.totalEarned += bonus;
+    state.allTime.totalEarned += bonus;
+  }
 
   const winName = raceHorses[winner].emoji + ' ' + raceHorses[winner].name;
   const msg = won
     ? '<div style="color:var(--gold);font-size:18px;font-weight:700">Jouw paard wint!</div>'
-    : '<div style="font-size:18px;font-weight:700">' + winName + ' wint!</div>';
+    : '<div style="color:var(--red);font-size:18px;font-weight:700">' + winName + ' wint... Jammer!</div>';
   document.getElementById('race-status').innerHTML = msg +
-    '<div style="color:var(--gold);margin-top:4px">+' + formatNumber(bonus) + ' punten</div>';
+    (bonus > 0 ? '<div style="color:var(--gold);margin-top:4px">+' + formatNumber(bonus) + ' punten</div>' : '<div style="color:var(--text-dim);margin-top:4px">Geen punten</div>');
 
   setTimeout(() => {
     document.getElementById('race-game').style.display = 'none';
