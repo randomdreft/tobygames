@@ -3150,9 +3150,24 @@ function buildUpgradeShop() {
   container.innerHTML = html;
 }
 
+function upgradeEffect(u) {
+  if (u.mult) return 'DPS ×' + u.mult;
+  if (u.addClick) return '+' + u.addClick + ' per klik';
+  if (u.dpsPercent) return '+' + u.dpsPercent + '% van DPS per klik';
+  if (u.addPercent) return 'Alle DPS +' + u.addPercent + '%';
+  if (u.multiply) return 'Alle DPS ×' + u.multiply;
+  if (u.offlinePct) return u.offlinePct + '% DPS offline';
+  return '';
+}
+
 function upgradeItemHtml(u, animal) {
+  const bought = !!state.upgrades[u.id];
   const reqText = animal ? ' (nodig: ' + u.req + ' ' + animal.plural + ')' : '';
-  const tip = escHtml(u.name) + '|' + escHtml(u.desc + reqText);
+  const effect = upgradeEffect(u);
+  const tipDesc = bought
+    ? escHtml(u.desc + (effect ? ' — Effect: ' + effect : ''))
+    : escHtml(u.desc + reqText);
+  const tip = escHtml(u.name) + '|' + tipDesc;
   return '<div class="shop-item" id="upg-' + u.id + '" onclick="buyUpgrade(\'' + u.id + '\')" data-tip="' + tip + '">' +
     '<div class="shop-info">' +
     '<div class="shop-name">' + u.name + '</div>' +
