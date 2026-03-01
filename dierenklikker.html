@@ -742,7 +742,7 @@ img.emoji {
           <div id="memory-grid"></div>
           <div id="memory-hud">
             <span>Paren: <b id="memory-pairs">0</b>/8</span>
-            <span>Fouten: <b id="memory-mistakes">0</b>/3</span>
+            <span>Fouten: <b id="memory-mistakes">0</b></span>
           </div>
         </div>
       </div>
@@ -1428,7 +1428,7 @@ function iniToState(text) {
   s.minigames.quizLast = safeInt(dm.quiz_laatst || dm.quiz_last_played, 0, 0);
   s.minigames.catcherLast = safeInt(dm.vanger_laatst || dm.vanger_last_played || dm.catcher_last_played, 0, 0);
   s.minigames.mathLast = safeInt(dm.wiskunde_laatst, 0, 0);
-  s.minigames.buffLast = safeInt(dm.buff_laatst || dm.tellen_laatst, 0, 0);
+  s.minigames.buffLast = safeInt(dm.buff_laatst, 0, 0);
   s.minigames.sortLast = safeInt(dm.sorteren_laatst, 0, 0);
   s.minigames.memoryLast = safeInt(dm.memory_laatst, 0, 0);
   s.minigames.tellenLast = safeInt(dm.tellen_laatst, 0, 0);
@@ -1855,6 +1855,8 @@ function buyUpgrade(upgradeId) {
   }
   state.currentPoints -= u.cost;
   state.upgrades[upgradeId] = 1;
+  buildUpgradeShop();
+  parseAppleEmoji(document.getElementById('tab-upgrades'));
 }
 
 function findUpgrade(id) {
@@ -2211,6 +2213,7 @@ function sortAnswer(category) {
   } else {
     // Wrong answer: show correct category, then end the game
     sortActive = false; // prevent further clicks
+    clearInterval(sortInterval); // stop timer to prevent double endSort
     if (btn) btn.classList.add('wrong');
     document.querySelectorAll('.sort-cat-btn').forEach(b => {
       if (b.getAttribute('onclick').includes(sortCurrent.cat)) b.classList.add('correct');
