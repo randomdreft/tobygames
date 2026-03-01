@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Dierenklikker - TobyGames</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐉</text></svg>">
 <script src="https://cdn.jsdelivr.net/npm/@twemoji/api@latest/dist/twemoji.min.js" crossorigin="anonymous"></script>
 <style>
 :root {
@@ -249,6 +250,12 @@ img.emoji {
 }
 
 /* Stats */
+.stat-heading {
+  font-size: 13px; font-weight: 700; color: var(--gold);
+  margin: 10px 0 4px; padding-bottom: 3px;
+  border-bottom: 1px solid rgba(255,215,0,0.2);
+}
+.stat-heading:first-child { margin-top: 0; }
 .stat-row {
   display: flex; justify-content: space-between; padding: 4px 0;
   font-size: 13px; border-bottom: 1px solid rgba(255,255,255,0.05);
@@ -825,6 +832,7 @@ function defaultState() {
     upgrades: {},
     achievements: {},
     prestige: { stars: 0, timesReset: 0 },
+    allTime: { totalClicks: 0, totalEarned: 0, totalAnimals: 0, playTimeSeconds: 0 },
     minigames: { quizLast: 0, catcherLast: 0, mathLast: 0, buffLast: 0, sortLast: 0 },
     lastTick: Date.now()
   };
@@ -928,6 +936,12 @@ function stateToIni() {
   lines.push('sterren=' + state.prestige.stars);
   lines.push('keer_geevolueerd=' + state.prestige.timesReset);
   lines.push('');
+  lines.push('[allertijden]');
+  lines.push('totaal_klikken=' + state.allTime.totalClicks);
+  lines.push('totaal_verdiend=' + Math.floor(state.allTime.totalEarned));
+  lines.push('totaal_dieren=' + state.allTime.totalAnimals);
+  lines.push('speeltijd=' + Math.floor(state.allTime.playTimeSeconds));
+  lines.push('');
   lines.push('[minispellen]');
   lines.push('quiz_laatst=' + state.minigames.quizLast);
   lines.push('vanger_laatst=' + state.minigames.catcherLast);
@@ -1019,6 +1033,13 @@ function iniToState(text) {
   s.prestige.stars = safeInt(de.sterren || de.stars, 0, 0);
   s.prestige.timesReset = safeInt(de.keer_geevolueerd || de.times_reset, 0, 0);
 
+  // All-time stats
+  const at = ini.allertijden || {};
+  s.allTime.totalClicks = safeInt(at.totaal_klikken, 0, 0);
+  s.allTime.totalEarned = safeFloat(at.totaal_verdiend, 0, 0);
+  s.allTime.totalAnimals = safeInt(at.totaal_dieren, 0, 0);
+  s.allTime.playTimeSeconds = safeFloat(at.speeltijd, 0, 0);
+
   // Minigames
   const dm = ini.minispellen || ini.minigames || {};
   s.minigames.quizLast = safeInt(dm.quiz_laatst || dm.quiz_last_played, 0, 0);
@@ -1029,6 +1050,13 @@ function iniToState(text) {
 
   // Ensure totalEarned >= currentPoints
   if (s.totalEarned < s.currentPoints) s.totalEarned = s.currentPoints;
+
+  // Ensure allTime >= current run values (migration for existing saves)
+  if (s.allTime.totalClicks < s.totalClicks) s.allTime.totalClicks = s.totalClicks;
+  if (s.allTime.totalEarned < s.totalEarned) s.allTime.totalEarned = s.totalEarned;
+  if (s.allTime.playTimeSeconds < s.playTimeSeconds) s.allTime.playTimeSeconds = s.playTimeSeconds;
+  const curTotalAnimals = ANIMALS.reduce((sum, a) => sum + (s.animals[a.id]||0), 0);
+  if (s.allTime.totalAnimals < curTotalAnimals) s.allTime.totalAnimals = curTotalAnimals;
 
   s.lastTick = Date.now();
   return s;
@@ -1069,6 +1097,7 @@ function loadGame() {
           if (earnings > 0) {
             state.currentPoints += earnings;
             state.totalEarned += earnings;
+            state.allTime.totalEarned += earnings;
             showOfflineModal(earnings, elapsed);
           }
         }
@@ -1332,6 +1361,8 @@ function doClick(event) {
   state.currentPoints += value;
   state.totalEarned += value;
   state.totalClicks++;
+  state.allTime.totalEarned += value;
+  state.allTime.totalClicks++;
 
   // Particle
   const area = document.getElementById('click-area');
@@ -1367,6 +1398,7 @@ function buyAnimal(animalId) {
     if (state.currentPoints < price) break;
     state.currentPoints -= price;
     state.animals[animalId] = (state.animals[animalId] || 0) + 1;
+    state.allTime.totalAnimals++;
     bought++;
   }
 }
@@ -1453,6 +1485,7 @@ function answerQuiz(chosen, correct) {
     const bonus = getTotalDps() * 600; // 10 minutes DPS
     state.currentPoints += bonus;
     state.totalEarned += bonus;
+    state.allTime.totalEarned += bonus;
     result.innerHTML = '<div class="quiz-result" style="background:rgba(67,160,71,0.2);color:var(--green-light)">Goed! +' + formatNumber(bonus) + ' punten!</div>';
   } else {
     result.innerHTML = '<div class="quiz-result" style="background:rgba(239,83,80,0.2);color:var(--red)">Helaas, fout!</div>';
@@ -1518,6 +1551,7 @@ function endCatcher() {
   const bonus = getTotalDps() * 60 * catcherScore; // each caught = 1 min DPS
   state.currentPoints += bonus;
   state.totalEarned += bonus;
+  state.allTime.totalEarned += bonus;
 
   const field = document.getElementById('catcher-field');
   field.innerHTML = '<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;font-size:18px;font-weight:700">' +
@@ -1601,6 +1635,7 @@ function answerMath(chosen, correct) {
     const bonus = getTotalDps() * 600;
     state.currentPoints += bonus;
     state.totalEarned += bonus;
+    state.allTime.totalEarned += bonus;
     result.innerHTML = '<div class="quiz-result" style="background:rgba(67,160,71,0.2);color:var(--green-light)">Goed! +' + formatNumber(bonus) + ' punten!</div>';
   } else {
     result.innerHTML = '<div class="quiz-result" style="background:rgba(239,83,80,0.2);color:var(--red)">Helaas, fout!</div>';
@@ -1652,6 +1687,7 @@ function chooseBuff(buffId) {
     const bonus = getTotalDps() * 30; // 30 seconds DPS
     state.currentPoints += bonus;
     state.totalEarned += bonus;
+    state.allTime.totalEarned += bonus;
     showToast(buff.emoji + ' Jackpot! +' + formatNumber(bonus) + ' punten!');
   } else {
     // Set timed buff
@@ -1745,6 +1781,7 @@ function endSort() {
   const bonus = getTotalDps() * 60 * sortScore;
   state.currentPoints += bonus;
   state.totalEarned += bonus;
+  state.allTime.totalEarned += bonus;
 
   const field = document.getElementById('sort-field');
   field.innerHTML = '<div style="font-size:18px;font-weight:700;padding:20px">' +
@@ -1806,10 +1843,13 @@ function doPrestige() {
     GLOBAL_UPGRADES.forEach(u => { if (state.upgrades[u.id]) keepUpgrades[u.id] = 1; });
   }
 
+  const keepAllTime = {...state.allTime};
+
   state = defaultState();
   state.achievements = keepAch;
   state.prestige = keepPrestige;
   state.upgrades = keepUpgrades;
+  state.allTime = keepAllTime;
 
   // Award first prestige achievement
   if (!state.achievements['eerste_evolutie']) {
@@ -2144,20 +2184,30 @@ function renderStats() {
   if (!list) return;
   const totalAnimals = ANIMALS.reduce((s, a) => s + (state.animals[a.id]||0), 0);
   const achCount = Object.keys(state.achievements).filter(k => state.achievements[k]).length;
-  const stats = [
-    ['Totaal geklikt', formatNumber(state.totalClicks)],
-    ['Totaal verdiend', formatNumber(Math.floor(state.totalEarned))],
-    ['Totaal dieren', formatNumber(totalAnimals)],
-    ['Dieren per klik', formatNumber(Math.floor(getClickValue()))],
-    ['Prestaties', achCount + '/' + achievementDefs.length + ' (+' + (achCount * 2) + '% DPS)'],
-    ['Evolutiesterren', state.prestige.stars + ' ⭐ (+' + (state.prestige.stars * 5) + '%)'],
-    ['Offline bonus', getOfflinePercent() + '%'],
-    ['Speeltijd', formatTime(state.playTimeSeconds)],
-    ['Evoluties', state.prestige.timesReset + 'x']
-  ];
-  list.innerHTML = stats.map(([l,v]) =>
-    '<div class="stat-row"><span class="stat-label">' + l + '</span><span>' + v + '</span></div>'
-  ).join('');
+
+  const row = (l, v) => '<div class="stat-row"><span class="stat-label">' + l + '</span><span>' + v + '</span></div>';
+  const heading = (t) => '<div class="stat-heading">' + t + '</div>';
+
+  let html = heading('Deze evolutie');
+  html += row('Totaal geklikt', formatNumber(state.totalClicks));
+  html += row('Totaal verdiend', formatNumber(Math.floor(state.totalEarned)));
+  html += row('Totaal dieren', formatNumber(totalAnimals));
+  html += row('Speeltijd', formatTime(state.playTimeSeconds));
+
+  html += heading('Allertijden');
+  html += row('Totaal geklikt', formatNumber(state.allTime.totalClicks));
+  html += row('Totaal verdiend', formatNumber(Math.floor(state.allTime.totalEarned)));
+  html += row('Totaal dieren', formatNumber(state.allTime.totalAnimals));
+  html += row('Speeltijd', formatTime(state.allTime.playTimeSeconds));
+
+  html += heading('Algemeen');
+  html += row('Dieren per klik', formatNumber(Math.floor(getClickValue())));
+  html += row('Prestaties', achCount + '/' + achievementDefs.length + ' (+' + (achCount * 2) + '% DPS)');
+  html += row('Evolutiesterren', state.prestige.stars + ' ⭐ (+' + (state.prestige.stars * 5) + '%)');
+  html += row('Offline bonus', getOfflinePercent() + '%');
+  html += row('Evoluties', state.prestige.timesReset + 'x');
+
+  list.innerHTML = html;
 }
 
 let orbiters = [];
@@ -2278,6 +2328,8 @@ function tick() {
   state.currentPoints += earned;
   state.totalEarned += earned;
   state.playTimeSeconds += dt;
+  state.allTime.totalEarned += earned;
+  state.allTime.playTimeSeconds += dt;
 }
 
 let lastAchCheck = 0;
