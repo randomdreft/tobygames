@@ -374,7 +374,10 @@ img.emoji {
 .shop-item.affordable { border-color: rgba(67,160,71,0.4); }
 .shop-item.affordable:hover { border-color: var(--green); }
 .shop-item.locked { opacity: 0.35; pointer-events: none; }
-.shop-item.bought { opacity: 0.5; border-color: var(--gold); pointer-events: none; }
+.shop-item.bought { opacity: 0.5; border-color: var(--gold); pointer-events: none; padding: 4px 10px; margin-bottom: 2px; }
+.shop-item.bought .shop-flavor, .shop-item.bought .shop-dps { display: none; }
+.shop-item.bought .shop-name { font-size: 12px; }
+.shop-item.bought .shop-price { font-size: 11px; padding: 3px 8px; min-width: auto; }
 .shop-emoji { font-size: 32px; flex-shrink: 0; }
 .shop-info { flex: 1; min-width: 0; }
 .shop-name { font-size: 14px; font-weight: 600; }
@@ -869,74 +872,98 @@ const ANIMALS = [
   {id:'mier', emoji:'🐜', name:'Mier', plural:'mieren', flavor:'Sjouwt kruimels voor je',
    baseDps:0.1, basePrice:15, upgrades:[
      {id:'mier_1', name:'Sterkere kaakjes', desc:'Mieren bijten harder', req:10, cost:1e3, mult:2},
-     {id:'mier_2', name:'Vliegende mieren', desc:'Mieren met vleugels!', req:50, cost:5e4, mult:3},
-     {id:'mier_3', name:'Robotmieren', desc:'Bleep bloop kruip kruip', req:200, cost:1e7, mult:10}
+     {id:'mier_2', name:'Mierenkolonie', desc:'Samen staan we sterk!', req:25, cost:8e3, mult:2},
+     {id:'mier_3', name:'Vliegende mieren', desc:'Mieren met vleugels!', req:50, cost:5e4, mult:3},
+     {id:'mier_4', name:'Vuurmieren', desc:'Au au au!', req:100, cost:5e5, mult:3},
+     {id:'mier_5', name:'Robotmieren', desc:'Bleep bloop kruip kruip', req:250, cost:1e7, mult:5}
    ]},
   {id:'slak', emoji:'🐌', name:'Slak', plural:'slakken', flavor:'Langzaam maar zeker',
    baseDps:0.5, basePrice:100, upgrades:[
      {id:'slak_1', name:'Turbo slijmspoor', desc:'Sneller glijden!', req:10, cost:5e3, mult:2},
-     {id:'slak_2', name:'Racehelm', desc:'Vroom vroom slak', req:50, cost:2.5e5, mult:3},
-     {id:'slak_3', name:'Raketslakken', desc:'3... 2... 1... Lancering!', req:200, cost:5e7, mult:10}
+     {id:'slak_2', name:'Schelpschild', desc:'Extra bescherming!', req:25, cost:4e4, mult:2},
+     {id:'slak_3', name:'Racehelm', desc:'Vroom vroom slak', req:50, cost:2.5e5, mult:3},
+     {id:'slak_4', name:'Slakkenturbo', desc:'Nitro boost!', req:100, cost:2.5e6, mult:3},
+     {id:'slak_5', name:'Raketslakken', desc:'3... 2... 1... Lancering!', req:250, cost:5e7, mult:5}
    ]},
   {id:'kikker', emoji:'🐸', name:'Kikker', plural:'kikkers', flavor:'Vangt punten met zijn tong',
    baseDps:4, basePrice:1100, upgrades:[
      {id:'kikker_1', name:'Plakkerige tong', desc:'Vangt twee keer zoveel', req:10, cost:5e4, mult:2},
-     {id:'kikker_2', name:'Ninja kikker', desc:'Onzichtbaar en dodelijk', req:50, cost:2.5e6, mult:3},
-     {id:'kikker_3', name:'Gifkikker', desc:'Mooi maar gevaarlijk!', req:200, cost:5e8, mult:10}
+     {id:'kikker_2', name:'Springkracht', desc:'Hoger springen!', req:25, cost:4e5, mult:2},
+     {id:'kikker_3', name:'Ninja kikker', desc:'Onzichtbaar en dodelijk', req:50, cost:2.5e6, mult:3},
+     {id:'kikker_4', name:'Kikkerkoning', desc:'Alle kikkers gehoorzamen!', req:100, cost:2.5e7, mult:3},
+     {id:'kikker_5', name:'Gifkikker', desc:'Mooi maar gevaarlijk!', req:250, cost:5e8, mult:5}
    ]},
   {id:'kip', emoji:'🐔', name:'Kip', plural:'kippen', flavor:'Legt gouden eieren',
    baseDps:10, basePrice:12000, upgrades:[
      {id:'kip_1', name:'Gouden eieren', desc:'Elk ei is goud waard', req:10, cost:5e5, mult:2},
-     {id:'kip_2', name:'Turbo kip', desc:'Rent sneller dan je denkt', req:50, cost:2.5e7, mult:3},
-     {id:'kip_3', name:'Dino-kip', desc:'T-Rex maar dan met veren', req:200, cost:5e9, mult:10}
+     {id:'kip_2', name:'Dubbele dooiers', desc:'Twee keer zoveel per ei!', req:25, cost:4e6, mult:2},
+     {id:'kip_3', name:'Turbo kip', desc:'Rent sneller dan je denkt', req:50, cost:2.5e7, mult:3},
+     {id:'kip_4', name:'Kippenbrigade', desc:'Een leger van kippen!', req:100, cost:2.5e8, mult:3},
+     {id:'kip_5', name:'Dino-kip', desc:'T-Rex maar dan met veren', req:250, cost:5e9, mult:5}
    ]},
   {id:'kat', emoji:'🐱', name:'Kat', plural:'katten', flavor:'Slaapt 18u per dag, maar die 6u...',
    baseDps:40, basePrice:130000, upgrades:[
      {id:'kat_1', name:'Kattenkruid', desc:'Extra gemotiveerd!', req:10, cost:5e6, mult:2},
-     {id:'kat_2', name:'Laserkat', desc:'Pew pew pew!', req:50, cost:2.5e8, mult:3},
-     {id:'kat_3', name:'Superkat', desc:'Met cape en masker', req:200, cost:5e10, mult:10}
+     {id:'kat_2', name:'Negen levens', desc:'Nooit meer stoppen!', req:25, cost:4e7, mult:2},
+     {id:'kat_3', name:'Laserkat', desc:'Pew pew pew!', req:50, cost:2.5e8, mult:3},
+     {id:'kat_4', name:'Kattenopperhoofd', desc:'Alle katten volgen mij!', req:100, cost:2.5e9, mult:3},
+     {id:'kat_5', name:'Superkat', desc:'Met cape en masker', req:250, cost:5e10, mult:5}
    ]},
   {id:'hond', emoji:'🐕', name:'Hond', plural:'honden', flavor:'Brave boy! Apporteert punten',
    baseDps:100, basePrice:1400000, upgrades:[
      {id:'hond_1', name:'Bot van goud', desc:'Het beste speeltje', req:10, cost:5e7, mult:2},
-     {id:'hond_2', name:'Politiehond', desc:'Pakt de boeven!', req:50, cost:2.5e9, mult:3},
-     {id:'hond_3', name:'Robothond', desc:'Woef. Woef. Systeem actief.', req:200, cost:5e11, mult:10}
+     {id:'hond_2', name:'Speurhond', desc:'Vindt verborgen schatten!', req:25, cost:4e8, mult:2},
+     {id:'hond_3', name:'Politiehond', desc:'Pakt de boeven!', req:50, cost:2.5e9, mult:3},
+     {id:'hond_4', name:'Reddingshond', desc:'Redt iedereen!', req:100, cost:2.5e10, mult:3},
+     {id:'hond_5', name:'Robothond', desc:'Woef. Woef. Systeem actief.', req:250, cost:5e11, mult:5}
    ]},
-  {id:'pinguin', emoji:'🐧', name:'Pinguïn', plural:'pinguïns', flavor:'Glijdt over het ijs voor punten',
+  {id:'lama', emoji:'🦙', name:'Lama', plural:"lama's", flavor:'Spuugt punten in het rond',
    baseDps:200, basePrice:5000000, upgrades:[
-     {id:'pinguin_1', name:'Vissnack', desc:'Eet vis voor extra kracht', req:10, cost:2e8, mult:2},
-     {id:'pinguin_2', name:'Buikschuiver', desc:'Glijdt supersnel!', req:50, cost:1e10, mult:3},
-     {id:'pinguin_3', name:'Keizerspinguïn', desc:'De grootste en sterkste!', req:200, cost:2e12, mult:10}
+     {id:'lama_1', name:'Zachte wol', desc:'Warme wol = meer kracht', req:10, cost:2e8, mult:2},
+     {id:'lama_2', name:'Bergbeklimmer', desc:'Klautert overal omhoog!', req:25, cost:1.5e9, mult:2},
+     {id:'lama_3', name:'Spuugkanon', desc:'Ptoe ptoe ptoe!', req:50, cost:1e10, mult:3},
+     {id:'lama_4', name:'Lamaleider', desc:'De baas van de kudde!', req:100, cost:1e11, mult:3},
+     {id:'lama_5', name:'Alpaca leger', desc:'Een heel leger pluizige soldaten', req:250, cost:2e12, mult:5}
    ]},
   {id:'paard', emoji:'🐴', name:'Paard', plural:'paarden', flavor:'Galoppeert door je puntenteller',
    baseDps:400, basePrice:20000000, upgrades:[
      {id:'paard_1', name:'Gouden hoefijzers', desc:'Brengt extra geluk!', req:10, cost:7.5e8, mult:2},
-     {id:'paard_2', name:'Eenhoorn', desc:'Magisch en glitterig', req:50, cost:4e10, mult:3},
-     {id:'paard_3', name:'Pegasus', desc:'Vliegt door de wolken', req:200, cost:8e12, mult:10}
+     {id:'paard_2', name:'Renpaard', desc:'Snelste van de stal!', req:25, cost:6e9, mult:2},
+     {id:'paard_3', name:'Eenhoorn', desc:'Magisch en glitterig', req:50, cost:4e10, mult:3},
+     {id:'paard_4', name:'Nachtmerrie', desc:'Angstaanjagend sterk!', req:100, cost:4e11, mult:3},
+     {id:'paard_5', name:'Pegasus', desc:'Vliegt door de wolken', req:250, cost:8e12, mult:5}
    ]},
   {id:'panda', emoji:'🐼', name:'Panda', plural:"panda's", flavor:'Eet bamboe, verdient punten',
    baseDps:2000, basePrice:80000000, upgrades:[
      {id:'panda_1', name:'Bamboe buffet', desc:'Eet meer bamboe!', req:10, cost:3e9, mult:2},
-     {id:'panda_2', name:'Kung Fu Panda', desc:'Skadoosh!', req:50, cost:1.5e11, mult:3},
-     {id:'panda_3', name:'Rode panda', desc:'Schattig maar dodelijk', req:200, cost:3e13, mult:10}
+     {id:'panda_2', name:'Pandakracht', desc:'Sterker dan je denkt!', req:25, cost:2.5e10, mult:2},
+     {id:'panda_3', name:'Kung Fu Panda', desc:'Skadoosh!', req:50, cost:1.5e11, mult:3},
+     {id:'panda_4', name:'Pandameester', desc:'De ultieme strijder!', req:100, cost:1.5e12, mult:3},
+     {id:'panda_5', name:'Rode panda', desc:'Schattig maar dodelijk', req:250, cost:3e13, mult:5}
    ]},
   {id:'olifant', emoji:'🐘', name:'Olifant', plural:'olifanten', flavor:'Vergeet nooit een punt',
    baseDps:6666, basePrice:330000000, upgrades:[
      {id:'olifant_1', name:'Geheugentraining', desc:'Onthoudt nog meer punten', req:10, cost:1.2e10, mult:2},
-     {id:'olifant_2', name:'Mammoet', desc:'IJstijd editie!', req:50, cost:6e11, mult:3},
-     {id:'olifant_3', name:'Mecha-olifant', desc:'Groter. Sterker. Metaler.', req:200, cost:1.2e14, mult:10}
+     {id:'olifant_2', name:'Slurf-upgrade', desc:'Extra lange slurf!', req:25, cost:1e11, mult:2},
+     {id:'olifant_3', name:'Mammoet', desc:'IJstijd editie!', req:50, cost:6e11, mult:3},
+     {id:'olifant_4', name:'Oorlogsolifant', desc:'Niets houdt hem tegen!', req:100, cost:6e12, mult:3},
+     {id:'olifant_5', name:'Mecha-olifant', desc:'Groter. Sterker. Metaler.', req:250, cost:1.2e14, mult:5}
    ]},
   {id:'walvis', emoji:'🐋', name:'Walvis', plural:'walvissen', flavor:'Slurpt oceanen vol punten',
    baseDps:98765, basePrice:5100000000, upgrades:[
      {id:'walvis_1', name:'Krillfeest', desc:'All-you-can-eat buffet', req:10, cost:1.8e11, mult:2},
-     {id:'walvis_2', name:'Narwal', desc:'De eenhoorn van de zee', req:50, cost:9e12, mult:3},
-     {id:'walvis_3', name:'Megalodon', desc:'De grootste ooit!', req:200, cost:2e15, mult:10}
+     {id:'walvis_2', name:'Sonar', desc:'Vindt overal punten!', req:25, cost:1.4e12, mult:2},
+     {id:'walvis_3', name:'Narwal', desc:'De eenhoorn van de zee', req:50, cost:9e12, mult:3},
+     {id:'walvis_4', name:'Blauwe vinvis', desc:'De allergrootste!', req:100, cost:9e13, mult:3},
+     {id:'walvis_5', name:'Megalodon', desc:'De grootste ooit!', req:250, cost:2e15, mult:5}
    ]},
   {id:'draak', emoji:'🐉', name:'Draak', plural:'draken', flavor:'Mythisch. Legendarisch. Duur.',
    baseDps:999999, basePrice:75000000000, upgrades:[
      {id:'draak_1', name:'Vuurspuwen', desc:'Alles brandt!', req:10, cost:2.7e12, mult:2},
-     {id:'draak_2', name:'IJsdraak', desc:'Bevriest de concurrentie', req:50, cost:1.35e14, mult:3},
-     {id:'draak_3', name:'Kosmische draak', desc:'Heerser van het universum', req:200, cost:2.7e16, mult:10}
+     {id:'draak_2', name:'Drakenei', desc:'Nog meer draken!', req:25, cost:2e13, mult:2},
+     {id:'draak_3', name:'IJsdraak', desc:'Bevriest de concurrentie', req:50, cost:1.35e14, mult:3},
+     {id:'draak_4', name:'Drakenkoning', desc:'Alle draken buigen!', req:100, cost:1.35e15, mult:3},
+     {id:'draak_5', name:'Kosmische draak', desc:'Heerser van het universum', req:250, cost:2.7e16, mult:5}
    ]}
 ];
 
@@ -1130,7 +1157,7 @@ function formatDps(n) {
 const APPLE_EMOJI_BASE = 'emoji/';
 const HIRES_EMOJI = {
   '🐜':'1f41c','🐌':'1f40c','🐸':'1f438','🐔':'1f414','🐱':'1f431',
-  '🐕':'1f415','🐧':'1f427','🐴':'1f434','🐼':'1f43c','🐘':'1f418','🐋':'1f40b','🐉':'1f409'
+  '🐕':'1f415','🦙':'1f999','🐴':'1f434','🐼':'1f43c','🐘':'1f418','🐋':'1f40b','🐉':'1f409'
 };
 function parseAppleEmoji(el) {
   if (typeof twemoji === 'undefined') return;
@@ -1317,6 +1344,29 @@ function iniToState(text) {
   s.minigames.indringerLast = safeInt(dm.indringer_laatst, 0, 0);
   s.minigames.groterLast = safeInt(dm.groter_laatst, 0, 0);
   s.minigames.voedselLast = safeInt(dm.voedsel_laatst, 0, 0);
+
+  // === Migration v1 → v2: positional remap (10 → 12 dieren) ===
+  const saveVersion = safeInt((ini.meta || {}).versie, 1, 1);
+  if (saveVersion < 2) {
+    // v1 slots 7-10: paard, olifant, walvis, draak
+    // v2 slots 7-12: lama, paard, panda, olifant, walvis, draak
+    // Remap: paard→lama, olifant→paard, walvis→panda, draak→olifant
+    const remap = [['draak','olifant'],['walvis','panda'],['olifant','paard'],['paard','lama']];
+    // Animals (reverse order to avoid overwriting)
+    remap.forEach(([from, to]) => {
+      s.animals[to] = s.animals[from] || 0;
+      s.animals[from] = 0;
+    });
+    // Upgrades (remap _1 through _5)
+    remap.forEach(([from, to]) => {
+      for (let i = 1; i <= 5; i++) {
+        if (s.upgrades[from + '_' + i]) {
+          s.upgrades[to + '_' + i] = 1;
+          delete s.upgrades[from + '_' + i];
+        }
+      }
+    });
+  }
 
   // Ensure totalEarned >= currentPoints
   if (s.totalEarned < s.currentPoints) s.totalEarned = s.currentPoints;
@@ -1557,7 +1607,7 @@ function buildAchievementDefs() {
   // Total animals
   const totalMilestones = [
     [10, 'Mini dierentuin'], [50, 'Dierenverzamelaar'], [100, 'Dierentuin directeur'],
-    [500, 'Dierenrijk'], [1000, 'Dierenwereld'], [5000, 'Dierenplaneet']
+    [500, 'Dierenrijk'], [1000, 'Dierenwereld'], [3000, 'Dierenplaneet']
   ];
   totalMilestones.forEach(([n, name]) => {
     defs.push({
@@ -1575,7 +1625,7 @@ function buildAchievementDefs() {
     defs.push({
       id: 'klik_' + n, emoji: '👆', name: name,
       desc: formatNumber(n) + ' keer geklikt!', group: 'Klikken',
-      check: () => state.totalClicks >= n
+      check: () => state.allTime.totalClicks >= n
     });
   });
   // Points milestones
@@ -2693,11 +2743,22 @@ function buildUpgradeShop() {
   OFFLINE_UPGRADES.forEach(u => { html += upgradeItemHtml(u); });
   html += '</div>';
 
-  // Per-animal upgrades
+  // Per-animal upgrades (pending first, bought collapsed at bottom)
   ANIMALS.forEach(a => {
-    html += '<div class="upgrade-category"><h3>' + a.emoji + ' ' + a.name + '-upgrades</h3>';
-    a.upgrades.forEach(u => { html += upgradeItemHtml(u, a); });
-    html += '</div>';
+    const bought = a.upgrades.filter(u => state.upgrades[u.id]).length;
+    const total = a.upgrades.length;
+    const allDone = bought === total;
+    const progress = ' <span style="color:var(--text-dim);font-size:12px">(' + bought + '/' + total + ')</span>';
+    if (allDone) {
+      html += '<div class="upgrade-category"><h3 style="opacity:0.5">' + a.emoji + ' ' + a.name + '-upgrades' + progress + ' ✓</h3></div>';
+    } else {
+      html += '<div class="upgrade-category"><h3>' + a.emoji + ' ' + a.name + '-upgrades' + progress + '</h3>';
+      // Pending upgrades first
+      a.upgrades.filter(u => !state.upgrades[u.id]).forEach(u => { html += upgradeItemHtml(u, a); });
+      // Bought upgrades after
+      a.upgrades.filter(u => state.upgrades[u.id]).forEach(u => { html += upgradeItemHtml(u, a); });
+      html += '</div>';
+    }
   });
 
   container.innerHTML = html;
