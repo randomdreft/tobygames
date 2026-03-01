@@ -749,7 +749,7 @@ img.emoji {
    SECTIE 1: SPELGEGEVENS
    ================================================================ */
 
-const SAVE_VERSION = 1;
+const SAVE_VERSION = 2;
 const COST_MULTIPLIER = 1.15;
 const ACHIEVEMENT_BONUS = 0.02; // +2% DPS per achievement
 const PRESTIGE_BONUS = 0.05;    // +5% DPS per star
@@ -902,11 +902,23 @@ const ANIMALS = [
      {id:'hond_2', name:'Politiehond', desc:'Pakt de boeven!', req:50, cost:2.5e9, mult:3},
      {id:'hond_3', name:'Robothond', desc:'Woef. Woef. Systeem actief.', req:200, cost:5e11, mult:10}
    ]},
+  {id:'pinguin', emoji:'🐧', name:'Pinguïn', plural:'pinguïns', flavor:'Glijdt over het ijs voor punten',
+   baseDps:200, basePrice:5000000, upgrades:[
+     {id:'pinguin_1', name:'Vissnack', desc:'Eet vis voor extra kracht', req:10, cost:2e8, mult:2},
+     {id:'pinguin_2', name:'Buikschuiver', desc:'Glijdt supersnel!', req:50, cost:1e10, mult:3},
+     {id:'pinguin_3', name:'Keizerspinguïn', desc:'De grootste en sterkste!', req:200, cost:2e12, mult:10}
+   ]},
   {id:'paard', emoji:'🐴', name:'Paard', plural:'paarden', flavor:'Galoppeert door je puntenteller',
    baseDps:400, basePrice:20000000, upgrades:[
      {id:'paard_1', name:'Gouden hoefijzers', desc:'Brengt extra geluk!', req:10, cost:7.5e8, mult:2},
      {id:'paard_2', name:'Eenhoorn', desc:'Magisch en glitterig', req:50, cost:4e10, mult:3},
      {id:'paard_3', name:'Pegasus', desc:'Vliegt door de wolken', req:200, cost:8e12, mult:10}
+   ]},
+  {id:'panda', emoji:'🐼', name:'Panda', plural:"panda's", flavor:'Eet bamboe, verdient punten',
+   baseDps:2000, basePrice:80000000, upgrades:[
+     {id:'panda_1', name:'Bamboe buffet', desc:'Eet meer bamboe!', req:10, cost:3e9, mult:2},
+     {id:'panda_2', name:'Kung Fu Panda', desc:'Skadoosh!', req:50, cost:1.5e11, mult:3},
+     {id:'panda_3', name:'Rode panda', desc:'Schattig maar dodelijk', req:200, cost:3e13, mult:10}
    ]},
   {id:'olifant', emoji:'🐘', name:'Olifant', plural:'olifanten', flavor:'Vergeet nooit een punt',
    baseDps:6666, basePrice:330000000, upgrades:[
@@ -1118,7 +1130,7 @@ function formatDps(n) {
 const APPLE_EMOJI_BASE = 'emoji/';
 const HIRES_EMOJI = {
   '🐜':'1f41c','🐌':'1f40c','🐸':'1f438','🐔':'1f414','🐱':'1f431',
-  '🐕':'1f415','🐴':'1f434','🐘':'1f418','🐋':'1f40b','🐉':'1f409'
+  '🐕':'1f415','🐧':'1f427','🐴':'1f434','🐼':'1f43c','🐘':'1f418','🐋':'1f40b','🐉':'1f409'
 };
 function parseAppleEmoji(el) {
   if (typeof twemoji === 'undefined') return;
