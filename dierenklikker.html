@@ -404,8 +404,18 @@ img.emoji {
 .shop-item.bought .shop-price { color: var(--gold); }
 
 /* Upgrade categories */
-.upgrade-category { margin-bottom: 16px; }
-.upgrade-category h3 { font-size: 14px; color: var(--gold); margin-bottom: 8px; padding-bottom: 4px; border-bottom: 1px solid rgba(255,215,0,0.2); }
+.upgrade-category { margin-bottom: 12px; }
+.upgrade-category h3 {
+  font-size: 14px; color: var(--gold); margin-bottom: 0; padding: 6px 8px;
+  border-bottom: 1px solid rgba(255,215,0,0.2); cursor: pointer; user-select: none;
+  display: flex; align-items: center; gap: 6px; border-radius: 6px;
+  transition: background 0.15s;
+}
+.upgrade-category h3:hover { background: rgba(255,255,255,0.05); }
+.upgrade-category h3 .toggle-arrow { transition: transform 0.2s; font-size: 10px; }
+.upgrade-category.collapsed h3 .toggle-arrow { transform: rotate(-90deg); }
+.upgrade-category .upg-items { overflow: hidden; transition: max-height 0.3s ease; }
+.upgrade-category.collapsed .upg-items { max-height: 0 !important; }
 
 /* Achievements */
 .ach-grid {
@@ -508,6 +518,48 @@ img.emoji {
   #top-bar { padding: 10px 60px 4px; }
   #click-area { max-height: 40vh; }
 }
+
+/* Paardenrace */
+.race-track {
+  background: rgba(0,0,0,0.2); border-radius: 10px; padding: 10px;
+  margin-bottom: 8px; position: relative;
+}
+.race-lane {
+  display: flex; align-items: center; height: 40px; margin-bottom: 4px;
+  background: rgba(255,255,255,0.05); border-radius: 8px; position: relative; overflow: hidden;
+}
+.race-lane:last-child { margin-bottom: 0; }
+.race-horse {
+  position: absolute; font-size: 28px; transition: left 0.15s ease-out; z-index: 1;
+}
+.race-horse img { height: 28px; width: 28px; }
+.race-finish {
+  position: absolute; right: 0; top: 0; bottom: 0; width: 3px;
+  background: repeating-linear-gradient(180deg, #fff 0, #fff 4px, #000 4px, #000 8px);
+}
+.race-pick { display: flex; gap: 8px; margin-bottom: 8px; }
+.race-pick-btn {
+  flex: 1; padding: 12px 8px; border: 2px solid var(--panel-border); border-radius: 10px;
+  background: rgba(0,0,0,0.15); color: var(--text); font-size: 16px;
+  cursor: pointer; transition: all 0.15s; text-align: center;
+}
+.race-pick-btn:hover { border-color: var(--gold); background: rgba(255,215,0,0.1); }
+
+/* Dieren Puzzel */
+.puzzel-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px;
+  background: rgba(0,0,0,0.2); border-radius: 10px; padding: 8px; margin-bottom: 8px;
+}
+.puzzel-tile {
+  aspect-ratio: 1; display: flex; align-items: center; justify-content: center;
+  font-size: 28px; border-radius: 8px; cursor: pointer; transition: all 0.15s;
+  background: rgba(255,255,255,0.1); border: 2px solid rgba(255,255,255,0.15);
+  font-weight: 700;
+}
+.puzzel-tile img { height: 28px; width: 28px; }
+.puzzel-tile:hover { background: rgba(255,255,255,0.2); }
+.puzzel-tile.empty { background: transparent; border-color: transparent; cursor: default; }
+.puzzel-tile.correct { border-color: rgba(67,160,71,0.4); }
 </style>
 </head>
 <body>
@@ -615,6 +667,36 @@ img.emoji {
         <button class="mg-btn" id="buff-btn" onclick="startBuff()">Kies je Buff!</button>
         <div id="buff-cooldown" class="cooldown-text"></div>
         <div id="buff-game" style="display:none"></div>
+      </div>
+
+      <div class="minigame-box" id="mg-race">
+        <h3>🏇 Paardenrace</h3>
+        <div class="mg-lock-msg" id="lock-race"></div>
+        <button class="mg-btn" id="race-btn" onclick="startRace()">Start Race!</button>
+        <div id="race-cooldown" class="cooldown-text"></div>
+        <div id="race-game" style="display:none">
+          <div id="race-pick-phase">
+            <div style="text-align:center;font-size:14px;font-weight:600;margin-bottom:8px">Kies je paard!</div>
+            <div id="race-picks" class="race-pick"></div>
+          </div>
+          <div id="race-track-phase" style="display:none">
+            <div class="race-track" id="race-track"></div>
+            <div style="text-align:center;font-size:14px;font-weight:600;margin-top:4px" id="race-status">De race is begonnen!</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="minigame-box" id="mg-puzzel">
+        <h3>🧩 Dieren Puzzel</h3>
+        <div class="mg-lock-msg" id="lock-puzzel"></div>
+        <button class="mg-btn" id="puzzel-btn" onclick="startPuzzel()">Start Puzzel!</button>
+        <div id="puzzel-cooldown" class="cooldown-text"></div>
+        <div id="puzzel-game" style="display:none">
+          <div id="puzzel-grid" class="puzzel-grid"></div>
+          <div id="puzzel-hud" style="display:flex;justify-content:space-between;font-size:14px;font-weight:600">
+            <span>Zetten: <b id="puzzel-moves">0</b></span>
+          </div>
+        </div>
       </div>
 
       <div class="minigame-box" id="mg-voedsel">
@@ -752,7 +834,7 @@ img.emoji {
    SECTIE 1: SPELGEGEVENS
    ================================================================ */
 
-const SAVE_VERSION = 2;
+const SAVE_VERSION = 3;
 const COST_MULTIPLIER = 1.15;
 const ACHIEVEMENT_BONUS = 0.02; // +2% DPS per achievement
 const PRESTIGE_BONUS = 0.05;    // +5% DPS per star
@@ -773,6 +855,8 @@ const TELLEN_COOLDOWN = 180000;  // 3 min
 const INDRINGER_COOLDOWN = 240000; // 4 min
 const GROTER_COOLDOWN = 240000;  // 4 min
 const VOEDSEL_COOLDOWN = 180000; // 3 min
+const RACE_COOLDOWN = 300000;    // 5 min
+const PUZZEL_COOLDOWN = 300000;  // 5 min
 const BUFF_DURATION = 30000;     // 30 sec
 
 const MINIGAME_UNLOCKS = [
@@ -782,7 +866,9 @@ const MINIGAME_UNLOCKS = [
   {id:'indringer', reqAnimal:'kip', label:'Koop een Kip'},
   {id:'math', reqAnimal:'kat', label:'Koop een Kat'},
   {id:'groter', reqAnimal:'hond', label:'Koop een Hond'},
-  {id:'buff', reqAnimal:'paard', label:'Koop een Paard'},
+  {id:'buff', reqAnimal:'lama', label:'Koop een Lama'},
+  {id:'race', reqAnimal:'paard', label:'Koop een Paard'},
+  {id:'puzzel', reqAnimal:'panda', label:'Koop een Panda'},
   {id:'voedsel', reqAnimal:'olifant', label:'Koop een Olifant'},
   {id:'sort', reqAnimal:'walvis', label:'Koop een Walvis'},
   {id:'memory', reqAnimal:'draak', label:'Koop een Draak'}
@@ -1109,9 +1195,11 @@ function defaultState() {
       tellenPlayed: 0, tellenCorrect: 0, tellenWrong: 0,
       indringerPlayed: 0, indringerBest: 0,
       groterPlayed: 0, groterCorrect: 0, groterWrong: 0,
-      voedselPlayed: 0, voedselCorrect: 0, voedselWrong: 0
+      voedselPlayed: 0, voedselCorrect: 0, voedselWrong: 0,
+      racePlayed: 0, raceWon: 0,
+      puzzelPlayed: 0, puzzelWon: 0, puzzelBestMoves: 0
     },
-    minigames: { quizLast: 0, catcherLast: 0, mathLast: 0, buffLast: 0, sortLast: 0, memoryLast: 0, tellenLast: 0, indringerLast: 0, groterLast: 0, voedselLast: 0 },
+    minigames: { quizLast: 0, catcherLast: 0, mathLast: 0, buffLast: 0, sortLast: 0, memoryLast: 0, tellenLast: 0, indringerLast: 0, groterLast: 0, voedselLast: 0, raceLast: 0, puzzelLast: 0 },
     lastTick: Date.now()
   };
   ANIMALS.forEach(a => s.animals[a.id] = 0);
@@ -1234,6 +1322,8 @@ function stateToIni() {
   lines.push('indringer_laatst=' + state.minigames.indringerLast);
   lines.push('groter_laatst=' + state.minigames.groterLast);
   lines.push('voedsel_laatst=' + state.minigames.voedselLast);
+  lines.push('race_laatst=' + state.minigames.raceLast);
+  lines.push('puzzel_laatst=' + state.minigames.puzzelLast);
   return lines.join('\n');
 }
 
@@ -1344,20 +1434,23 @@ function iniToState(text) {
   s.minigames.indringerLast = safeInt(dm.indringer_laatst, 0, 0);
   s.minigames.groterLast = safeInt(dm.groter_laatst, 0, 0);
   s.minigames.voedselLast = safeInt(dm.voedsel_laatst, 0, 0);
+  s.minigames.raceLast = safeInt(dm.race_laatst, 0, 0);
+  s.minigames.puzzelLast = safeInt(dm.puzzel_laatst, 0, 0);
 
-  // === Migration v1 → v2: positional remap (10 → 12 dieren) ===
+  // === Save migration ===
   const saveVersion = safeInt((ini.meta || {}).versie, 1, 1);
+  const da2 = ini.dieren || ini.animals || {};
+  const du2 = ini.upgrades || {};
+
   if (saveVersion < 2) {
-    // v1 slots 7-10: paard, olifant, walvis, draak
-    // v2 slots 7-12: lama, paard, panda, olifant, walvis, draak
-    // Remap: paard→lama, olifant→paard, walvis→panda, draak→olifant
+    // v1 (10 dieren) → v3 (12 dieren met lama+panda)
+    // Positional remap: paard→lama, olifant→paard, walvis→panda, draak→olifant
+    // Reverse order to avoid overwriting
     const remap = [['draak','olifant'],['walvis','panda'],['olifant','paard'],['paard','lama']];
-    // Animals (reverse order to avoid overwriting)
     remap.forEach(([from, to]) => {
       s.animals[to] = s.animals[from] || 0;
       s.animals[from] = 0;
     });
-    // Upgrades (remap _1 through _5)
     remap.forEach(([from, to]) => {
       for (let i = 1; i <= 5; i++) {
         if (s.upgrades[from + '_' + i]) {
@@ -1366,6 +1459,17 @@ function iniToState(text) {
         }
       }
     });
+  } else if (saveVersion < 3) {
+    // v2 (12 dieren met pinguïn) → v3 (pinguïn wordt lama)
+    // Read pinguin data from raw INI since it's not in ANIMALS anymore
+    if (da2.pinguin !== undefined) {
+      s.animals['lama'] = safeInt(da2.pinguin, 0, 0);
+    }
+    for (let i = 1; i <= 5; i++) {
+      if (safeInt(du2['pinguin_' + i], 0) > 0) {
+        s.upgrades['lama_' + i] = 1;
+      }
+    }
   }
 
   // Ensure totalEarned >= currentPoints
@@ -2527,6 +2631,252 @@ function endGroter() {
   saveGame();
 }
 
+/* Paardenrace */
+let raceActive = false;
+let raceChoice = -1;
+let raceHorses = [];
+let raceTimer = null;
+
+const RACE_NAMES = [
+  {name:'Bliksem', emoji:'⚡'}, {name:'Stormvogel', emoji:'🌪️'}, {name:'Goudvos', emoji:'🦊'},
+  {name:'Schaduw', emoji:'🌙'}, {name:'Donder', emoji:'💥'}, {name:'Komeet', emoji:'☄️'},
+  {name:'Vuurpijl', emoji:'🚀'}, {name:'Windkracht', emoji:'💨'}
+];
+
+function startRace() {
+  if (raceActive || !isMinigameUnlocked('race')) return;
+  if (Date.now() - state.minigames.raceLast < RACE_COOLDOWN) return;
+  raceActive = true;
+  raceChoice = -1;
+  document.getElementById('race-btn').disabled = true;
+  document.getElementById('race-game').style.display = 'block';
+  document.getElementById('race-pick-phase').style.display = 'block';
+  document.getElementById('race-track-phase').style.display = 'none';
+  document.getElementById('race-game').scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+  // Pick 3 random horse names
+  const shuffled = [...RACE_NAMES].sort(() => Math.random() - 0.5);
+  raceHorses = shuffled.slice(0, 3).map((h, i) => ({
+    ...h, pos: 0, speed: 0.7 + Math.random() * 0.6,
+    color: ['#ff6b35','#42a5f5','#66bb6a'][i]
+  }));
+
+  const picks = document.getElementById('race-picks');
+  picks.innerHTML = '';
+  raceHorses.forEach((h, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'race-pick-btn';
+    btn.innerHTML = h.emoji + ' ' + h.name;
+    btn.style.borderColor = h.color + '80';
+    btn.onclick = () => pickHorse(i);
+    picks.appendChild(btn);
+  });
+}
+
+function pickHorse(idx) {
+  raceChoice = idx;
+  document.getElementById('race-pick-phase').style.display = 'none';
+  document.getElementById('race-track-phase').style.display = 'block';
+
+  // Build track
+  const track = document.getElementById('race-track');
+  track.innerHTML = '';
+  raceHorses.forEach((h, i) => {
+    const lane = document.createElement('div');
+    lane.className = 'race-lane';
+    lane.style.borderLeft = '3px solid ' + h.color;
+    const horse = document.createElement('div');
+    horse.className = 'race-horse';
+    horse.id = 'race-horse-' + i;
+    horse.textContent = '🐴';
+    horse.style.left = '0px';
+    const finish = document.createElement('div');
+    finish.className = 'race-finish';
+    const label = document.createElement('span');
+    label.style.cssText = 'position:absolute;left:6px;top:50%;transform:translateY(-50%);font-size:11px;color:' + h.color + ';font-weight:600;z-index:2';
+    label.textContent = h.emoji + ' ' + h.name + (i === raceChoice ? ' (jij!)' : '');
+    lane.appendChild(label);
+    lane.appendChild(horse);
+    lane.appendChild(finish);
+    track.appendChild(lane);
+  });
+  parseAppleEmoji(track);
+
+  document.getElementById('race-status').textContent = '3... 2... 1... START!';
+  // Reset positions
+  raceHorses.forEach(h => h.pos = 0);
+
+  let tick = 0;
+  const maxTicks = 60; // ~6 seconds at 100ms interval
+  raceTimer = setInterval(() => {
+    tick++;
+    const progress = tick / maxTicks;
+    raceHorses.forEach((h, i) => {
+      // Random speed variation, gets more dramatic near end
+      const variation = (Math.random() - 0.45) * (0.5 + progress * 1.5);
+      h.pos += h.speed + variation;
+      if (h.pos < 0) h.pos = 0;
+      // Rubber-banding: leader slows, trailer speeds up slightly
+      const maxPos = Math.max(...raceHorses.map(r => r.pos));
+      const minPos = Math.min(...raceHorses.map(r => r.pos));
+      if (h.pos === maxPos && maxPos - minPos > 3) h.pos -= 0.3;
+      if (h.pos === minPos && maxPos - minPos > 3) h.pos += 0.2;
+      // Render
+      const lane = document.querySelectorAll('.race-lane')[i];
+      const laneW = lane.offsetWidth - 40;
+      const pct = Math.min(h.pos / (maxTicks * 1.0), 1);
+      document.getElementById('race-horse-' + i).style.left = Math.floor(pct * laneW) + 'px';
+    });
+
+    if (tick >= maxTicks) {
+      clearInterval(raceTimer);
+      endRace();
+    }
+  }, 100);
+}
+
+function endRace() {
+  raceActive = false;
+  state.minigames.raceLast = Date.now();
+  state.stats.racePlayed++;
+
+  // Determine winner
+  let maxPos = -1, winner = 0;
+  raceHorses.forEach((h, i) => { if (h.pos > maxPos) { maxPos = h.pos; winner = i; } });
+
+  const won = winner === raceChoice;
+  if (won) state.stats.raceWon++;
+
+  const bonus = getTotalDps() * (won ? 120 : 20);
+  state.currentPoints += bonus;
+  state.totalEarned += bonus;
+  state.allTime.totalEarned += bonus;
+
+  const winName = raceHorses[winner].emoji + ' ' + raceHorses[winner].name;
+  const msg = won
+    ? '<div style="color:var(--gold);font-size:18px;font-weight:700">Jouw paard wint!</div>'
+    : '<div style="font-size:18px;font-weight:700">' + winName + ' wint!</div>';
+  document.getElementById('race-status').innerHTML = msg +
+    '<div style="color:var(--gold);margin-top:4px">+' + formatNumber(bonus) + ' punten</div>';
+
+  setTimeout(() => {
+    document.getElementById('race-game').style.display = 'none';
+    document.getElementById('race-btn').disabled = false;
+  }, 3000);
+  saveGame();
+}
+
+/* Dieren Puzzel */
+let puzzelActive = false;
+let puzzelMoves = 0;
+let puzzelBoard = [];
+const PUZZEL_EMOJIS = ['🐶','🐱','🐭','🐹','🐰','🦊','🐻','🐼','🐨','🐯','🦁','🐮','🐷','🐸','🐵','🐔'];
+
+function startPuzzel() {
+  if (puzzelActive || !isMinigameUnlocked('puzzel')) return;
+  if (Date.now() - state.minigames.puzzelLast < PUZZEL_COOLDOWN) return;
+  puzzelActive = true;
+  puzzelMoves = 0;
+  document.getElementById('puzzel-btn').disabled = true;
+  document.getElementById('puzzel-game').style.display = 'block';
+  document.getElementById('puzzel-moves').textContent = '0';
+  document.getElementById('puzzel-game').scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+  // Pick 8 random emojis for tiles 1-8
+  const shuffled = [...PUZZEL_EMOJIS].sort(() => Math.random() - 0.5);
+  const icons = shuffled.slice(0, 8);
+
+  // Generate solvable puzzle: start solved, then do random moves
+  puzzelBoard = [0, 1, 2, 3, 4, 5, 6, 7, 8]; // 0 = empty
+  let emptyIdx = 8;
+  const adj = [[1,3],[0,2,4],[1,5],[0,4,6],[1,3,5,7],[2,4,8],[3,7],[4,6,8],[5,7]];
+  for (let i = 0; i < 200; i++) {
+    const neighbors = adj[emptyIdx];
+    const pick = neighbors[Math.floor(Math.random() * neighbors.length)];
+    puzzelBoard[emptyIdx] = puzzelBoard[pick];
+    puzzelBoard[pick] = 0;
+    emptyIdx = pick;
+  }
+
+  renderPuzzel(icons);
+}
+
+function renderPuzzel(icons) {
+  if (!icons) {
+    // Reconstruct icons from data attributes
+    const grid = document.getElementById('puzzel-grid');
+    icons = JSON.parse(grid.dataset.icons);
+  }
+  const grid = document.getElementById('puzzel-grid');
+  grid.dataset.icons = JSON.stringify(icons);
+  grid.innerHTML = '';
+  puzzelBoard.forEach((val, idx) => {
+    const tile = document.createElement('div');
+    if (val === 0) {
+      tile.className = 'puzzel-tile empty';
+    } else {
+      tile.className = 'puzzel-tile';
+      if (val === idx + 1 || (val > 0 && puzzelBoard.indexOf(val) === val - 1)) {
+        // Not quite right for checking correctness during play, just visual
+      }
+      tile.textContent = icons[val - 1];
+      tile.onclick = () => puzzelClick(idx);
+    }
+    grid.appendChild(tile);
+  });
+  parseAppleEmoji(grid);
+}
+
+function puzzelClick(idx) {
+  if (!puzzelActive) return;
+  const emptyIdx = puzzelBoard.indexOf(0);
+  // Check adjacency (3x3 grid)
+  const row1 = Math.floor(idx / 3), col1 = idx % 3;
+  const row2 = Math.floor(emptyIdx / 3), col2 = emptyIdx % 3;
+  const dist = Math.abs(row1 - row2) + Math.abs(col1 - col2);
+  if (dist !== 1) return;
+
+  // Swap
+  puzzelBoard[emptyIdx] = puzzelBoard[idx];
+  puzzelBoard[idx] = 0;
+  puzzelMoves++;
+  document.getElementById('puzzel-moves').textContent = puzzelMoves;
+  renderPuzzel();
+
+  // Check win: [1,2,3,4,5,6,7,8,0]
+  const solved = puzzelBoard.every((v, i) => i < 8 ? v === i + 1 : v === 0);
+  if (solved) endPuzzel();
+}
+
+function endPuzzel() {
+  puzzelActive = false;
+  state.minigames.puzzelLast = Date.now();
+  state.stats.puzzelPlayed++;
+  state.stats.puzzelWon++;
+  if (state.stats.puzzelBestMoves === 0 || puzzelMoves < state.stats.puzzelBestMoves) {
+    state.stats.puzzelBestMoves = puzzelMoves;
+  }
+
+  // Bonus: fewer moves = higher multiplier. Perfect is ~24 moves for 3x3
+  const mult = Math.max(0.2, 2 - (puzzelMoves - 20) / 40);
+  const bonus = Math.round(getTotalDps() * 60 * mult);
+  state.currentPoints += bonus;
+  state.totalEarned += bonus;
+  state.allTime.totalEarned += bonus;
+
+  const grid = document.getElementById('puzzel-grid');
+  grid.innerHTML = '<div style="grid-column:1/-1;font-size:18px;font-weight:700;padding:20px;text-align:center">' +
+    '<div style="color:var(--green-light)">Opgelost!</div>' +
+    '<div style="margin-top:4px">' + puzzelMoves + ' zetten</div>' +
+    '<div style="color:var(--gold);margin-top:8px">+' + formatNumber(bonus) + ' punten</div></div>';
+
+  setTimeout(() => {
+    document.getElementById('puzzel-game').style.display = 'none';
+    document.getElementById('puzzel-btn').disabled = false;
+  }, 3000);
+  saveGame();
+}
+
 /* Wat Eet Ik? */
 let voedselActive = false;
 let voedselScore = 0;
@@ -2724,43 +3074,32 @@ function setBuyAmount(n) {
   });
 }
 
+function buildUpgradeCategory(title, upgrades, animal) {
+  const bought = upgrades.filter(u => state.upgrades[u.id]).length;
+  const total = upgrades.length;
+  const allDone = bought === total;
+  const progress = total > 1 ? ' <span style="color:var(--text-dim);font-size:12px">(' + bought + '/' + total + ')</span>' : '';
+  const collapsed = allDone ? ' collapsed' : '';
+  const dimmed = allDone ? ' style="opacity:0.5"' : '';
+  const check = allDone ? ' ✓' : '';
+  let html = '<div class="upgrade-category' + collapsed + '">';
+  html += '<h3' + dimmed + ' onclick="this.parentElement.classList.toggle(\'collapsed\')"><span class="toggle-arrow">▼</span> ' + title + progress + check + '</h3>';
+  html += '<div class="upg-items">';
+  // Always sorted in original order (small to large)
+  upgrades.forEach(u => { html += upgradeItemHtml(u, animal); });
+  html += '</div></div>';
+  return html;
+}
+
 function buildUpgradeShop() {
   const container = document.getElementById('tab-upgrades');
   let html = '';
-
-  // Click upgrades
-  html += '<div class="upgrade-category"><h3>👆 Klik-upgrades</h3>';
-  CLICK_UPGRADES.forEach(u => { html += upgradeItemHtml(u); });
-  html += '</div>';
-
-  // Global upgrades
-  html += '<div class="upgrade-category"><h3>🌍 Globale upgrades</h3>';
-  GLOBAL_UPGRADES.forEach(u => { html += upgradeItemHtml(u); });
-  html += '</div>';
-
-  // Offline upgrades
-  html += '<div class="upgrade-category"><h3>🌙 Offline upgrades</h3>';
-  OFFLINE_UPGRADES.forEach(u => { html += upgradeItemHtml(u); });
-  html += '</div>';
-
-  // Per-animal upgrades (pending first, bought collapsed at bottom)
+  html += buildUpgradeCategory('👆 Klik-upgrades', CLICK_UPGRADES);
+  html += buildUpgradeCategory('🌍 Globale upgrades', GLOBAL_UPGRADES);
+  html += buildUpgradeCategory('🌙 Offline upgrades', OFFLINE_UPGRADES);
   ANIMALS.forEach(a => {
-    const bought = a.upgrades.filter(u => state.upgrades[u.id]).length;
-    const total = a.upgrades.length;
-    const allDone = bought === total;
-    const progress = ' <span style="color:var(--text-dim);font-size:12px">(' + bought + '/' + total + ')</span>';
-    if (allDone) {
-      html += '<div class="upgrade-category"><h3 style="opacity:0.5">' + a.emoji + ' ' + a.name + '-upgrades' + progress + ' ✓</h3></div>';
-    } else {
-      html += '<div class="upgrade-category"><h3>' + a.emoji + ' ' + a.name + '-upgrades' + progress + '</h3>';
-      // Pending upgrades first
-      a.upgrades.filter(u => !state.upgrades[u.id]).forEach(u => { html += upgradeItemHtml(u, a); });
-      // Bought upgrades after
-      a.upgrades.filter(u => state.upgrades[u.id]).forEach(u => { html += upgradeItemHtml(u, a); });
-      html += '</div>';
-    }
+    html += buildUpgradeCategory(a.emoji + ' ' + a.name + '-upgrades', a.upgrades, a);
   });
-
   container.innerHTML = html;
 }
 
@@ -3005,6 +3344,8 @@ function render() {
   updateCooldown('indringer-btn', 'indringer-cooldown', state.minigames.indringerLast, INDRINGER_COOLDOWN, indringerActive);
   updateCooldown('groter-btn', 'groter-cooldown', state.minigames.groterLast, GROTER_COOLDOWN, groterActive);
   updateCooldown('voedsel-btn', 'voedsel-cooldown', state.minigames.voedselLast, VOEDSEL_COOLDOWN, voedselActive);
+  updateCooldown('race-btn', 'race-cooldown', state.minigames.raceLast, RACE_COOLDOWN, raceActive);
+  updateCooldown('puzzel-btn', 'puzzel-cooldown', state.minigames.puzzelLast, PUZZEL_COOLDOWN, puzzelActive);
 
   // Buff indicator
   const buffInd = document.getElementById('buff-indicator');
@@ -3070,7 +3411,7 @@ function renderStats() {
   html += row('Evoluties', state.prestige.timesReset + 'x');
 
   const s = state.stats;
-  const totalMgPlayed = s.quizPlayed + s.catcherPlayed + s.mathPlayed + s.buffPlayed + s.sortPlayed + s.memoryPlayed + s.tellenPlayed + s.indringerPlayed + s.groterPlayed + s.voedselPlayed;
+  const totalMgPlayed = s.quizPlayed + s.catcherPlayed + s.mathPlayed + s.buffPlayed + s.sortPlayed + s.memoryPlayed + s.tellenPlayed + s.indringerPlayed + s.groterPlayed + s.voedselPlayed + s.racePlayed + s.puzzelPlayed;
   html += heading('Minigames');
   html += row('Totaal gespeeld', totalMgPlayed + 'x');
   if (s.tellenPlayed) html += row('🔢 Tellen', s.tellenCorrect + '/' + s.tellenPlayed + ' goed');
@@ -3082,6 +3423,8 @@ function renderStats() {
   if (s.buffPlayed) html += row('✨ Buffs', s.buffPlayed + 'x gekozen');
   if (s.voedselPlayed) html += row('🍽️ Wat Eet Ik?', s.voedselCorrect + '/' + (s.voedselCorrect+s.voedselWrong) + ' goed');
   if (s.sortPlayed) html += row('🗂️ Sorteren', s.sortCorrect + ' goed (beste: ' + s.sortBestStreak + ')');
+  if (s.racePlayed) html += row('🏇 Paardenrace', s.raceWon + '/' + s.racePlayed + ' gewonnen');
+  if (s.puzzelPlayed) html += row('🧩 Puzzel', s.puzzelWon + 'x opgelost (beste: ' + (s.puzzelBestMoves || '-') + ' zetten)');
   if (s.memoryPlayed) html += row('🃏 Memory', s.memoryWon + '/' + s.memoryPlayed + ' gewonnen');
 
   list.innerHTML = html;
