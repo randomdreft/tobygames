@@ -278,6 +278,12 @@ img.emoji {
 }
 .tellen-cell { font-size: 28px; text-align: center; aspect-ratio: 1; display: flex; align-items: center; justify-content: center; }
 .tellen-cell img { height: 28px; width: 28px; }
+.tellen-wiggle { animation: tellen-sway 2s ease-in-out infinite; }
+@keyframes tellen-sway {
+  0%, 100% { transform: translate(0, 0); }
+  25% { transform: translate(var(--dx), var(--dy)); }
+  75% { transform: translate(calc(var(--dx) * -1), calc(var(--dy) * -1)); }
+}
 #tellen-prompt { text-align: center; font-size: 16px; font-weight: 600; padding: 12px; }
 .tellen-answers { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
 .tellen-ans {
@@ -782,7 +788,7 @@ const MINIGAME_UNLOCKS = [
 const BUFF_TYPES = [
   {id:'dps2x', emoji:'🔥', name:'Vuurkracht', desc:'DPS ×2 voor 30 seconden', color:'#ff6b35'},
   {id:'sale', emoji:'🏷️', name:'Uitverkoop', desc:'Alle dieren halve prijs voor 30 sec', color:'#e91e63'},
-  {id:'clickdps', emoji:'⭐', name:'Gouden Regen', desc:'+10% van DPS per klik voor 30 sec', color:'#ffd700'},
+  {id:'clickdps', emoji:'⭐', name:'Gouden Regen', desc:'+5% van DPS per klik voor 30 sec', color:'#ffd700'},
   {id:'jackpot', emoji:'💰', name:'Jackpot', desc:'Direct 30 seconden DPS als bonus!', color:'#66bb6a'}
 ];
 
@@ -807,21 +813,21 @@ const MEMORY_POOL = [
 ];
 
 const ANIMAL_WEIGHTS = [
-  {emoji:'🐜',name:'Mier',kg:0.001},{emoji:'🐛',name:'Rups',kg:0.005},
-  {emoji:'🐌',name:'Slak',kg:0.01},{emoji:'🐝',name:'Bij',kg:0.0001},
+  {emoji:'🐜',name:'Mier',kg:0.000001},{emoji:'🐛',name:'Rups',kg:0.003},
+  {emoji:'🐝',name:'Bij',kg:0.0001},{emoji:'🐌',name:'Slak',kg:0.01},
   {emoji:'🐸',name:'Kikker',kg:0.03},{emoji:'🐭',name:'Muis',kg:0.02},
-  {emoji:'🐹',name:'Hamster',kg:0.04},{emoji:'🐔',name:'Kip',kg:3},
-  {emoji:'🐰',name:'Konijn',kg:2},{emoji:'🐱',name:'Kat',kg:4},
-  {emoji:'🐶',name:'Hond',kg:20},{emoji:'🦊',name:'Vos',kg:6},
-  {emoji:'🐷',name:'Varken',kg:100},{emoji:'🐑',name:'Schaap',kg:60},
-  {emoji:'🐐',name:'Geit',kg:50},{emoji:'🦌',name:'Hert',kg:70},
-  {emoji:'🐺',name:'Wolf',kg:40},{emoji:'🦁',name:'Leeuw',kg:190},
-  {emoji:'🐯',name:'Tijger',kg:220},{emoji:'🐻',name:'Beer',kg:300},
+  {emoji:'🐹',name:'Hamster',kg:0.035},{emoji:'🐔',name:'Kip',kg:3},
+  {emoji:'🐰',name:'Konijn',kg:2},{emoji:'🐱',name:'Kat',kg:4.5},
+  {emoji:'🐶',name:'Hond',kg:25},{emoji:'🦊',name:'Vos',kg:7},
+  {emoji:'🐺',name:'Wolf',kg:45},{emoji:'🐐',name:'Geit',kg:55},
+  {emoji:'🐑',name:'Schaap',kg:65},{emoji:'🦌',name:'Hert',kg:80},
+  {emoji:'🐷',name:'Varken',kg:110},{emoji:'🦁',name:'Leeuw',kg:190},
+  {emoji:'🐯',name:'Tijger',kg:220},{emoji:'🐬',name:'Dolfijn',kg:250},
+  {emoji:'🐻',name:'Beer',kg:350},{emoji:'🐊',name:'Krokodil',kg:450},
   {emoji:'🐴',name:'Paard',kg:500},{emoji:'🐄',name:'Koe',kg:700},
-  {emoji:'🐊',name:'Krokodil',kg:400},{emoji:'🐘',name:'Olifant',kg:5000},
-  {emoji:'🦈',name:'Haai',kg:1000},{emoji:'🐬',name:'Dolfijn',kg:200},
-  {emoji:'🐋',name:'Walvis',kg:100000},{emoji:'🦒',name:'Giraffe',kg:1200},
-  {emoji:'🦏',name:'Neushoorn',kg:2000},{emoji:'🐧',name:'Pinguïn',kg:30}
+  {emoji:'🦈',name:'Haai',kg:1100},{emoji:'🦒',name:'Giraffe',kg:1200},
+  {emoji:'🦏',name:'Neushoorn',kg:2000},{emoji:'🐘',name:'Olifant',kg:5000},
+  {emoji:'🐧',name:'Pinguïn',kg:33},{emoji:'🐋',name:'Walvis',kg:100000}
 ];
 
 const FOOD_QUIZ = [
@@ -852,14 +858,11 @@ const FOOD_QUIZ = [
 ];
 
 const INTRUDER_GROUPS = [
-  {name:'Boerderij',animals:['🐔','🐷','🐄','🐑','🐴','🐐']},
-  {name:'Huisdieren',animals:['🐱','🐶','🐹','🐰','🐠','🐦']},
-  {name:'Zeedieren',animals:['🐟','🐬','🐳','🦈','🐙','🦐']},
-  {name:'Insecten',animals:['🐛','🐝','🐜','🦋','🐞']},
-  {name:'Bosdieren',animals:['🦊','🐻','🦌','🐺','🐿️','🦉']},
-  {name:'Jungle',animals:['🐵','🦁','🐯','🐘','🦒','🐍']},
-  {name:'Vogels',animals:['🦅','🦉','🐧','🦆','🕊️','🦃']},
-  {name:'Reptielen',animals:['🐊','🐢','🐍','🦎']}
+  {name:'Vogels',animals:['🐔','🦅','🦉','🐧','🦆','🕊️','🦃','🐦','🦜','🦢']},
+  {name:'Waterdieren',animals:['🐟','🐬','🐳','🦈','🐙','🐠','🦐','🐋','🦑','🐡']},
+  {name:'Insecten',animals:['🐛','🐝','🐜','🦋','🐞','🦗','🪲','🪳','🦟','🪰']},
+  {name:'Reptielen',animals:['🐊','🐢','🐍','🦎','🐉','🦕']},
+  {name:'Zoogdieren',animals:['🐱','🐶','🐭','🐹','🐰','🐷','🐄','🐑','🐐','🐴','🦁','🐯','🐻','🐺','🦊','🐘','🦏','🦒','🐒','🦌']}
 ];
 
 const ANIMALS = [
@@ -1488,7 +1491,7 @@ function getClickValue() {
   base *= (1 + state.prestige.stars * PRESTIGE_BONUS);
   // Active buff effects on clicks
   const buff = getActiveBuff();
-  if (buff && buff.type === 'clickdps') dpsPct += 10;
+  if (buff && buff.type === 'clickdps') dpsPct += 5;
   return base + getTotalDps() * (dpsPct / 100);
 }
 
@@ -2080,6 +2083,7 @@ function startMemory() {
   memoryFlipped = [];
   document.getElementById('memory-btn').disabled = true;
   document.getElementById('memory-game').style.display = 'block';
+  document.getElementById('memory-game').scrollIntoView({ behavior: 'smooth', block: 'center' });
   document.getElementById('memory-pairs').textContent = '0';
   document.getElementById('memory-mistakes').textContent = '0';
 
@@ -2123,7 +2127,7 @@ function flipCard(index) {
         memoryFlipped = [];
         memoryPairs++;
         document.getElementById('memory-pairs').textContent = memoryPairs;
-        if (memoryPairs === 8) endMemory(true);
+        if (memoryPairs === 8) endMemory();
       }, 400);
     } else {
       // No match
@@ -2137,30 +2141,36 @@ function flipCard(index) {
         cards[b].classList.add('face-down');
         cards[b].textContent = '?';
         memoryFlipped = [];
-        if (memoryMistakes >= 3) endMemory(false);
       }, 700);
     }
   }
 }
 
-function endMemory(won) {
+function endMemory() {
   memoryActive = false;
   state.minigames.memoryLast = Date.now();
   state.stats.memoryPlayed++;
   state.stats.memoryPairsFound += memoryPairs;
-  if (won) state.stats.memoryWon++;
+  if (memoryMistakes === 0) state.stats.memoryWon++;
 
-  const bonus = getTotalDps() * 60 * memoryPairs;
+  // Graduated penalty: multiplier = max(0, 1 - mistakes²/36)
+  // 0 fouten = 100%, 1 = 97%, 2 = 89%, 3 = 75%, 4 = 56%, 5 = 31%, 6+ = 0%
+  const penaltyMult = Math.max(0, 1 - (memoryMistakes * memoryMistakes) / 36);
+  const maxBonus = getTotalDps() * 60 * 8;
+  const bonus = Math.round(maxBonus * penaltyMult);
   state.currentPoints += bonus;
   state.totalEarned += bonus;
   state.allTime.totalEarned += bonus;
 
   const grid = document.getElementById('memory-grid');
-  const msg = won
-    ? '<div style="color:var(--green-light)">Alle paren gevonden!</div>'
-    : '<div style="color:var(--red)">3 fouten — game over!</div>';
+  let msg;
+  if (memoryMistakes === 0) msg = '<div style="color:var(--gold)">Perfect! Geen fouten!</div>';
+  else if (memoryMistakes <= 2) msg = '<div style="color:var(--green-light)">Goed gedaan!</div>';
+  else if (memoryMistakes <= 4) msg = '<div style="color:var(--orange)">Kan beter!</div>';
+  else msg = '<div style="color:var(--red)">Veel fouten gemaakt!</div>';
+  const pctText = Math.round(penaltyMult * 100) + '% bonus';
   grid.innerHTML = '<div style="grid-column:1/-1;font-size:18px;font-weight:700;padding:20px;text-align:center">' +
-    msg + '<div style="margin-top:4px">' + memoryPairs + '/8 paren</div>' +
+    msg + '<div style="margin-top:4px">' + memoryMistakes + ' fout' + (memoryMistakes !== 1 ? 'en' : '') + ' — ' + pctText + '</div>' +
     '<div style="color:var(--gold);margin-top:8px">+' + formatNumber(bonus) + ' punten</div></div>';
 
   setTimeout(() => {
@@ -2197,14 +2207,21 @@ function startTellen() {
   }
   cells.sort(() => Math.random() - 0.5);
 
-  // Phase 1: show target
-  game.innerHTML = '<div id="tellen-prompt">Let op de ' + tellenTarget + '!</div>';
+  // Phase 1: show target (big icon)
+  game.innerHTML = '<div id="tellen-prompt">Let op de:</div>' +
+    '<div style="font-size:64px;text-align:center;margin:8px 0">' + tellenTarget + '</div>';
   parseAppleEmoji(game);
 
   setTimeout(() => {
-    // Phase 2: flash grid
+    // Phase 2: flash grid with wiggle
     let html = '<div id="tellen-flash">';
-    cells.forEach(c => html += '<div class="tellen-cell">' + c + '</div>');
+    cells.forEach((c, i) => {
+      const dx = (Math.random() * 6 - 3).toFixed(1);
+      const dy = (Math.random() * 6 - 3).toFixed(1);
+      const dur = (1.5 + Math.random() * 1.5).toFixed(2);
+      const del = (Math.random() * -2).toFixed(2);
+      html += '<div class="tellen-cell tellen-wiggle" style="--dx:' + dx + 'px;--dy:' + dy + 'px;animation-duration:' + dur + 's;animation-delay:' + del + 's">' + c + '</div>';
+    });
     html += '</div>';
     game.innerHTML = html;
     parseAppleEmoji(game);
@@ -2437,7 +2454,7 @@ function endGroter() {
   state.allTime.totalEarned += bonus;
 
   const pair = document.getElementById('groter-pair');
-  pair.innerHTML = '<div style="grid-column:1/-1;font-size:18px;font-weight:700;padding:20px;text-align:center">' +
+  pair.innerHTML = '<div style="width:100%;font-size:18px;font-weight:700;padding:20px;text-align:center">' +
     '<div>' + groterScore + '/10 goed!</div>' +
     '<div style="color:var(--gold);margin-top:8px">+' + formatNumber(bonus) + ' punten</div></div>';
 
@@ -3052,10 +3069,12 @@ document.addEventListener('mouseout', function(e) {
 function positionTooltip(e) {
   const tw = 270, th = tooltipEl.offsetHeight || 60;
   let x = e.clientX + 14, y = e.clientY + 14;
-  if (x + tw > window.innerWidth) x = e.clientX - tw - 8;
-  if (y + th > window.innerHeight) y = e.clientY - th - 8;
-  tooltipEl.style.left = Math.max(4, x) + 'px';
-  tooltipEl.style.top = Math.max(4, y) + 'px';
+  if (x + tw > window.innerWidth) x = e.clientX - tw - 14;
+  if (y + th > window.innerHeight) y = e.clientY - th - 14;
+  if (x < 4) x = 4;
+  if (y < 4) y = 4;
+  tooltipEl.style.left = x + 'px';
+  tooltipEl.style.top = y + 'px';
 }
 
 function showMidTab(tabId) {
