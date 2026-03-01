@@ -289,8 +289,8 @@ img.emoji {
   display: flex; gap: 4px; margin-bottom: 12px; flex-wrap: wrap;
 }
 .shop-tab {
-  flex: 1; min-width: 60px; padding: 8px 4px; border: none; border-radius: 8px;
-  background: rgba(0,0,0,0.2); color: var(--text-dim); font-size: 13px;
+  flex: 1; min-width: 55px; padding: 8px 2px; border: none; border-radius: 8px;
+  background: rgba(0,0,0,0.2); color: var(--text-dim); font-size: 12px;
   cursor: pointer; transition: all 0.2s; white-space: nowrap;
 }
 .shop-tab.active { background: rgba(255,255,255,0.15); color: var(--gold); }
@@ -555,11 +555,13 @@ img.emoji {
       <button class="shop-tab active" onclick="showShopTab('animals')">🐾 Dieren</button>
       <button class="shop-tab" onclick="showShopTab('upgrades')">⬆️ Upgrades</button>
       <button class="shop-tab" onclick="showShopTab('achievements')">🏆 Prestaties</button>
+      <button class="shop-tab" onclick="showShopTab('evolution')">⭐ Evolutie</button>
       <button class="shop-tab" onclick="showShopTab('options')">⚙️ Opties</button>
     </div>
     <div id="tab-animals" class="tab-content active"></div>
     <div id="tab-upgrades" class="tab-content"></div>
     <div id="tab-achievements" class="tab-content"></div>
+    <div id="tab-evolution" class="tab-content"></div>
     <div id="tab-options" class="tab-content"></div>
   </div>
 </div>
@@ -879,6 +881,14 @@ function defaultState() {
     achievements: {},
     prestige: { stars: 0, timesReset: 0 },
     allTime: { totalClicks: 0, totalEarned: 0, totalAnimals: 0, playTimeSeconds: 0 },
+    stats: {
+      quizPlayed: 0, quizCorrect: 0, quizWrong: 0,
+      catcherPlayed: 0, catcherCaught: 0,
+      mathPlayed: 0, mathCorrect: 0, mathWrong: 0,
+      buffPlayed: 0,
+      sortPlayed: 0, sortCorrect: 0, sortBestStreak: 0,
+      memoryPlayed: 0, memoryPairsFound: 0, memoryWon: 0
+    },
     minigames: { quizLast: 0, catcherLast: 0, mathLast: 0, buffLast: 0, sortLast: 0, memoryLast: 0 },
     lastTick: Date.now()
   };
@@ -988,6 +998,9 @@ function stateToIni() {
   lines.push('totaal_dieren=' + state.allTime.totalAnimals);
   lines.push('speeltijd=' + Math.floor(state.allTime.playTimeSeconds));
   lines.push('');
+  lines.push('[statistieken]');
+  Object.keys(state.stats).forEach(k => lines.push(k + '=' + state.stats[k]));
+  lines.push('');
   lines.push('[minispellen]');
   lines.push('quiz_laatst=' + state.minigames.quizLast);
   lines.push('vanger_laatst=' + state.minigames.catcherLast);
@@ -1086,6 +1099,12 @@ function iniToState(text) {
   s.allTime.totalEarned = safeFloat(at.totaal_verdiend, 0, 0);
   s.allTime.totalAnimals = safeInt(at.totaal_dieren, 0, 0);
   s.allTime.playTimeSeconds = safeFloat(at.speeltijd, 0, 0);
+
+  // Stats
+  const st = ini.statistieken || {};
+  Object.keys(s.stats).forEach(k => {
+    if (st[k.toLowerCase()] !== undefined) s.stats[k] = safeInt(st[k.toLowerCase()], 0, 0);
+  });
 
   // Minigames
   const dm = ini.minispellen || ini.minigames || {};
@@ -1519,6 +1538,7 @@ function answerQuiz(chosen, correct) {
   if (!quizActive) return;
   quizActive = false;
   state.minigames.quizLast = Date.now();
+  state.stats.quizPlayed++;
 
   const buttons = document.querySelectorAll('.quiz-answer');
   buttons.forEach((b, i) => {
@@ -1530,12 +1550,14 @@ function answerQuiz(chosen, correct) {
 
   const result = document.getElementById('quiz-result');
   if (chosen === correct) {
+    state.stats.quizCorrect++;
     const bonus = getTotalDps() * 600; // 10 minutes DPS
     state.currentPoints += bonus;
     state.totalEarned += bonus;
     state.allTime.totalEarned += bonus;
     result.innerHTML = '<div class="quiz-result" style="background:rgba(67,160,71,0.2);color:var(--green-light)">Goed! +' + formatNumber(bonus) + ' punten!</div>';
   } else {
+    state.stats.quizWrong++;
     result.innerHTML = '<div class="quiz-result" style="background:rgba(239,83,80,0.2);color:var(--red)">Helaas, fout!</div>';
   }
 
@@ -1593,6 +1615,8 @@ function startCatcher() {
 function endCatcher() {
   catcherActive = false;
   state.minigames.catcherLast = Date.now();
+  state.stats.catcherPlayed++;
+  state.stats.catcherCaught += catcherScore;
   clearInterval(catcherInterval);
   clearInterval(catcherSpawnInterval);
 
@@ -1670,6 +1694,7 @@ function answerMath(chosen, correct) {
   if (!mathActive) return;
   mathActive = false;
   state.minigames.mathLast = Date.now();
+  state.stats.mathPlayed++;
 
   const buttons = document.querySelectorAll('#math-game .quiz-answer');
   buttons.forEach((b, i) => {
@@ -1680,12 +1705,14 @@ function answerMath(chosen, correct) {
 
   const result = document.getElementById('math-result');
   if (chosen === correct) {
+    state.stats.mathCorrect++;
     const bonus = getTotalDps() * 600;
     state.currentPoints += bonus;
     state.totalEarned += bonus;
     state.allTime.totalEarned += bonus;
     result.innerHTML = '<div class="quiz-result" style="background:rgba(67,160,71,0.2);color:var(--green-light)">Goed! +' + formatNumber(bonus) + ' punten!</div>';
   } else {
+    state.stats.mathWrong++;
     result.innerHTML = '<div class="quiz-result" style="background:rgba(239,83,80,0.2);color:var(--red)">Helaas, fout!</div>';
   }
   setTimeout(() => {
@@ -1729,6 +1756,7 @@ function chooseBuff(buffId) {
 
   // Start cooldown when buff is actually chosen, not when menu opens
   state.minigames.buffLast = Date.now();
+  state.stats.buffPlayed++;
 
   // Apply jackpot immediately
   if (buff.id === 'jackpot') {
@@ -1823,6 +1851,9 @@ function sortAnswer(category) {
 function endSort() {
   sortActive = false;
   state.minigames.sortLast = Date.now();
+  state.stats.sortPlayed++;
+  state.stats.sortCorrect += sortScore;
+  if (sortScore > state.stats.sortBestStreak) state.stats.sortBestStreak = sortScore;
   clearInterval(sortInterval);
   sortCurrent = null;
 
@@ -1927,6 +1958,9 @@ function flipCard(index) {
 function endMemory(won) {
   memoryActive = false;
   state.minigames.memoryLast = Date.now();
+  state.stats.memoryPlayed++;
+  state.stats.memoryPairsFound += memoryPairs;
+  if (won) state.stats.memoryWon++;
 
   const bonus = getTotalDps() * 60 * memoryPairs;
   state.currentPoints += bonus;
@@ -1937,7 +1971,7 @@ function endMemory(won) {
   const msg = won
     ? '<div style="color:var(--green-light)">Alle paren gevonden!</div>'
     : '<div style="color:var(--red)">3 fouten — game over!</div>';
-  grid.innerHTML = '<div style="font-size:18px;font-weight:700;padding:20px;text-align:center">' +
+  grid.innerHTML = '<div style="grid-column:1/-1;font-size:18px;font-weight:700;padding:20px;text-align:center">' +
     msg + '<div style="margin-top:4px">' + memoryPairs + '/8 paren</div>' +
     '<div style="color:var(--gold);margin-top:8px">+' + formatNumber(bonus) + ' punten</div></div>';
 
@@ -1995,12 +2029,14 @@ function doPrestige() {
   }
 
   const keepAllTime = {...state.allTime};
+  const keepStats = {...state.stats};
 
   state = defaultState();
   state.achievements = keepAch;
   state.prestige = keepPrestige;
   state.upgrades = keepUpgrades;
   state.allTime = keepAllTime;
+  state.stats = keepStats;
 
   // Award first prestige achievement
   if (!state.achievements['eerste_evolutie']) {
@@ -2022,6 +2058,7 @@ function buildShop() {
   buildAnimalShop();
   buildUpgradeShop();
   buildAchievements();
+  buildEvolution();
   buildOptions();
 }
 
@@ -2134,6 +2171,64 @@ function buildAchievements() {
   container.innerHTML = html;
 }
 
+function buildEvolution() {
+  const container = document.getElementById('tab-evolution');
+  let html = '<div class="opt-section">';
+
+  if (state.prestige.stars > 0) {
+    html += '<div style="text-align:center;font-size:20px;margin-bottom:12px">';
+    html += '⭐'.repeat(Math.min(state.prestige.stars, 20)) + '<br>';
+    html += '<b>' + state.prestige.stars + ' sterren</b> (+' + (state.prestige.stars * 5) + '% op alles)';
+    html += '</div>';
+  }
+
+  html += '<div class="prestige-info">';
+  html += '<b>Hoe werkt Evolutie?</b><br>';
+  html += 'Als je van elk dier minstens eentje hebt (tot en met de Draak!), mag je je dierentuin laten <b>evolueren</b>.<br><br>';
+  html += 'Dat betekent: je begint opnieuw, maar je krijgt er <b>evolutiesterren ⭐</b> voor!<br>';
+  html += 'Elke ster maakt al je dieren <b>+5% sterker</b>, voor altijd.<br><br>';
+
+  html += '<b>Hoeveel sterren krijg je?</b><br>';
+  html += 'Dat hangt af van hoeveel punten je hebt verdiend:<br>';
+  html += '<span style="color:var(--gold)">10 miljard = 1⭐ · 100 miljard = 2⭐ · 1 biljoen = 3⭐</span><br>';
+  html += 'Steeds ×10 meer punten = weer een ster erbij!<br><br>';
+
+  const previewStars = getPrestigeStars();
+  if (state.totalEarned > 0) {
+    html += '<b>Jouw score:</b> ' + formatNumber(Math.floor(state.totalEarned)) + ' verdiend';
+    if (previewStars > 0) {
+      html += ' → <span style="color:var(--gold)">' + previewStars + ' nieuwe ⭐</span>';
+    }
+    html += '<br><br>';
+  }
+
+  html += '<b style="color:var(--green-light)">Dit houd je:</b> sterren, prestaties<br>';
+  html += '<b style="color:var(--red)">Dit raak je kwijt:</b> dieren, punten, dier-upgrades<br><br>';
+
+  html += '<b>Bonussen bij genoeg sterren:</b><br>';
+  html += prestigeKeepLine(state.prestige.stars, PRESTIGE_KEEP_OFFLINE, 'Offline upgrades bewaren', '🌙');
+  html += prestigeKeepLine(state.prestige.stars, PRESTIGE_KEEP_CLICK, 'Klik-upgrades bewaren', '👆');
+  html += prestigeKeepLine(state.prestige.stars, PRESTIGE_KEEP_GLOBAL, 'Globale upgrades bewaren', '🌍');
+
+  if (previewStars > 0 && state.prestige.stars + previewStars > state.prestige.stars) {
+    const afterStars = state.prestige.stars + previewStars;
+    const gained = [];
+    if (afterStars >= PRESTIGE_KEEP_OFFLINE && state.prestige.stars < PRESTIGE_KEEP_OFFLINE) gained.push('🌙 Offline');
+    if (afterStars >= PRESTIGE_KEEP_CLICK && state.prestige.stars < PRESTIGE_KEEP_CLICK) gained.push('👆 Klik');
+    if (afterStars >= PRESTIGE_KEEP_GLOBAL && state.prestige.stars < PRESTIGE_KEEP_GLOBAL) gained.push('🌍 Globaal');
+    if (gained.length > 0) {
+      html += '<br><span style="color:var(--gold)">Na evolutie unlock je: ' + gained.join(', ') + '</span><br>';
+    }
+  }
+
+  html += '<br><span style="color:var(--text-dim)">Tip: na evolutie ga je veel sneller! Elke keer verdien je meer sterren.</span>';
+  html += '</div>';
+  html += '<button class="opt-btn prestige-btn" id="prestige-btn" onclick="showPrestigeModal()">⭐ Evolueer!</button>';
+  html += '</div>';
+
+  container.innerHTML = html;
+}
+
 function buildOptions() {
   const container = document.getElementById('tab-options');
   let html = '';
@@ -2144,36 +2239,6 @@ function buildOptions() {
   html += '<button class="opt-btn" onclick="exportSave()">Downloaden als bestand</button>';
   html += '<button class="opt-btn" onclick="showImportModal()">Importeer savegame</button>';
   html += '<button class="opt-btn danger" onclick="resetGame()">Spel resetten</button>';
-  html += '</div>';
-
-  // Prestige
-  html += '<div class="opt-section"><h3>⭐ Evolutie</h3>';
-  html += '<div class="prestige-info">';
-  if (state.prestige.stars > 0) {
-    html += 'Je hebt <b>' + state.prestige.stars + ' ⭐</b> (+' + (state.prestige.stars * 5) + '% op alles)<br>';
-    html += 'Keer geëvolueerd: ' + state.prestige.timesReset + '<br><br>';
-  }
-  html += '<b>Wat is Evolutie?</b><br>';
-  html += 'Als je minstens 1 van elk dier hebt (inclusief de Draak!), kun je je dierentuin laten evolueren.<br><br>';
-  html += '<b>Wat krijg je?</b><br>';
-  html += 'Evolutiesterren ⭐ — elke ster geeft <b>+5%</b> op al je DPS, voor altijd!<br>';
-  html += 'Hoe meer punten je hebt verdiend, hoe meer sterren je krijgt:<br>';
-  html += '<span style="color:var(--gold)">10 miljard → 1⭐ · 100 miljard → 2⭐ · 1 biljoen → 3⭐</span><br>';
-  html += 'Elke ×10 meer punten = +1 ster extra.<br><br>';
-  const previewStars = getPrestigeStars();
-  if (state.totalEarned > 0) {
-    html += '<b>Nu:</b> je hebt ' + formatNumber(Math.floor(state.totalEarned)) + ' totaal verdiend → <span style="color:var(--gold)">' + previewStars + ' ⭐</span><br><br>';
-  }
-  html += '<b style="color:var(--green-light)">Je houdt:</b> sterren, prestaties (+2% DPS elk)<br>';
-  html += '<b style="color:var(--red)">Je verliest:</b> dieren, punten, dier-upgrades<br><br>';
-  html += '<b>Upgrade-milestones:</b><br>';
-  const curStars = state.prestige.stars + previewStars;
-  html += prestigeKeepLine(curStars, PRESTIGE_KEEP_OFFLINE, 'Offline upgrades', '🌙');
-  html += prestigeKeepLine(curStars, PRESTIGE_KEEP_CLICK, 'Klik-upgrades', '👆');
-  html += prestigeKeepLine(curStars, PRESTIGE_KEEP_GLOBAL, 'Globale upgrades', '🌍');
-  html += '<br><span style="color:var(--text-dim)">Tip: na evolutie ga je sneller door je sterrenbonus! Elke keer kun je meer sterren verdienen.</span>';
-  html += '</div>';
-  html += '<button class="opt-btn prestige-btn" id="prestige-btn" onclick="showPrestigeModal()">⭐ Evolueer!</button>';
   html += '</div>';
 
   container.innerHTML = html;
@@ -2359,6 +2424,17 @@ function renderStats() {
   html += row('Offline bonus', getOfflinePercent() + '%');
   html += row('Evoluties', state.prestige.timesReset + 'x');
 
+  const s = state.stats;
+  const totalMgPlayed = s.quizPlayed + s.catcherPlayed + s.mathPlayed + s.buffPlayed + s.sortPlayed + s.memoryPlayed;
+  html += heading('Minigames');
+  html += row('Totaal gespeeld', totalMgPlayed + 'x');
+  if (s.quizPlayed) html += row('🧠 Quiz', s.quizCorrect + '/' + s.quizPlayed + ' goed');
+  if (s.mathPlayed) html += row('🔢 Wiskunde', s.mathCorrect + '/' + s.mathPlayed + ' goed');
+  if (s.catcherPlayed) html += row('🎯 Vanger', s.catcherCaught + ' gevangen (' + s.catcherPlayed + 'x)');
+  if (s.sortPlayed) html += row('🗂️ Sorteren', s.sortCorrect + ' goed (beste: ' + s.sortBestStreak + ')');
+  if (s.buffPlayed) html += row('✨ Buffs', s.buffPlayed + 'x gekozen');
+  if (s.memoryPlayed) html += row('🃏 Memory', s.memoryWon + '/' + s.memoryPlayed + ' gewonnen');
+
   list.innerHTML = html;
 }
 
@@ -2432,13 +2508,12 @@ function showMidTab(tabId) {
 }
 
 function showShopTab(tabId) {
-  document.querySelectorAll('.shop-tab').forEach(t => t.classList.toggle('active', t.textContent.includes(
-    tabId === 'animals' ? 'Dieren' : tabId === 'upgrades' ? 'Upgrades' : tabId === 'achievements' ? 'Prestaties' : 'Opties'
-  )));
+  const labels = {animals:'Dieren', upgrades:'Upgrades', achievements:'Prestaties', evolution:'Evolutie', options:'Opties'};
+  document.querySelectorAll('.shop-tab').forEach(t => t.classList.toggle('active', t.textContent.includes(labels[tabId] || '')));
   document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
   document.getElementById('tab-' + tabId).classList.add('active');
-  // Rebuild achievements when viewing (to update status)
   if (tabId === 'achievements') buildAchievements();
+  if (tabId === 'evolution') buildEvolution();
 }
 
 function showMobilePanel(panel) {
