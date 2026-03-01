@@ -233,7 +233,8 @@ img.emoji {
   text-align: center; padding: 20px; min-height: 100px;
   background: rgba(0,0,0,0.2); border-radius: 10px; margin-bottom: 8px;
 }
-#sort-current { font-size: 48px; margin-bottom: 4px; }
+#sort-current { font-size: 48px; margin-bottom: 4px; height: 56px; display: flex; align-items: center; justify-content: center; }
+#sort-current img { height: 48px; width: 48px; }
 #sort-name { font-size: 14px; color: var(--text-dim); }
 .sort-buttons { display: flex; gap: 6px; margin-bottom: 8px; }
 .sort-cat-btn {
@@ -245,6 +246,27 @@ img.emoji {
 .sort-cat-btn.correct { border-color: var(--green); background: rgba(67,160,71,0.3); }
 .sort-cat-btn.wrong { border-color: var(--red); background: rgba(239,83,80,0.3); }
 #sort-hud {
+  display: flex; justify-content: space-between;
+  font-size: 14px; font-weight: 600;
+}
+
+/* Memory game */
+#memory-grid {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px;
+  margin-bottom: 8px;
+}
+.memory-card {
+  aspect-ratio: 1; border-radius: 10px; font-size: 28px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: all 0.2s; user-select: none;
+  border: 2px solid var(--panel-border); background: rgba(0,0,0,0.3);
+}
+.memory-card.face-down { background: linear-gradient(135deg, #3a5a8c, #2d4a6f); }
+.memory-card.face-down:hover { border-color: var(--gold); transform: scale(1.05); }
+.memory-card.face-up { background: rgba(0,0,0,0.15); border-color: var(--green); }
+.memory-card.matched { background: rgba(67,160,71,0.2); border-color: var(--green); opacity: 0.6; }
+.memory-card img { height: 28px; width: 28px; }
+#memory-hud {
   display: flex; justify-content: space-between;
   font-size: 14px; font-weight: 600;
 }
@@ -506,6 +528,20 @@ img.emoji {
           </div>
         </div>
       </div>
+
+      <div class="minigame-box" id="mg-memory">
+        <h3>🃏 Dieren Memory</h3>
+        <div class="mg-lock-msg" id="lock-memory"></div>
+        <button class="mg-btn" id="memory-btn" onclick="startMemory()">Start Memory!</button>
+        <div id="memory-cooldown" class="cooldown-text"></div>
+        <div id="memory-game" style="display:none">
+          <div id="memory-grid"></div>
+          <div id="memory-hud">
+            <span>Paren: <b id="memory-pairs">0</b>/8</span>
+            <span>Fouten: <b id="memory-mistakes">0</b>/3</span>
+          </div>
+        </div>
+      </div>
     </div>
 
     <div id="mid-stats" class="mid-content">
@@ -609,14 +645,16 @@ const CATCHER_COOLDOWN = 300000; // 5 min
 const MATH_COOLDOWN = 180000;    // 3 min
 const BUFF_COOLDOWN = 240000;    // 4 min
 const SORT_COOLDOWN = 300000;    // 5 min
+const MEMORY_COOLDOWN = 300000;  // 5 min
 const BUFF_DURATION = 30000;     // 30 sec
 
 const MINIGAME_UNLOCKS = [
   {id:'quiz', reqAnimal:'slak', label:'Koop een Slak'},
-  {id:'catcher', reqAnimal:'kip', label:'Koop een Kip'},
-  {id:'math', reqAnimal:'hond', label:'Koop een Hond'},
-  {id:'buff', reqAnimal:'olifant', label:'Koop een Olifant'},
-  {id:'sort', reqAnimal:'draak', label:'Koop een Draak'}
+  {id:'catcher', reqAnimal:'kikker', label:'Koop een Kikker'},
+  {id:'math', reqAnimal:'kat', label:'Koop een Kat'},
+  {id:'buff', reqAnimal:'paard', label:'Koop een Paard'},
+  {id:'sort', reqAnimal:'walvis', label:'Koop een Walvis'},
+  {id:'memory', reqAnimal:'draak', label:'Koop een Draak'}
 ];
 
 const BUFF_TYPES = [
@@ -636,6 +674,14 @@ const SORT_ANIMALS = [
   {emoji:'🐟', name:'Vis', cat:'water'}, {emoji:'🐬', name:'Dolfijn', cat:'water'},
   {emoji:'🐙', name:'Octopus', cat:'water'}, {emoji:'🦈', name:'Haai', cat:'water'},
   {emoji:'🐢', name:'Schildpad', cat:'water'}, {emoji:'🐊', name:'Krokodil', cat:'water'}
+];
+
+const MEMORY_POOL = [
+  '🐶','🐱','🐭','🐹','🐰','🦊','🐻','🐼','🐨','🐯','🦁','🐮','🐷','🐸','🐵','🐔',
+  '🐧','🐦','🐤','🦆','🦅','🦉','🦇','🐺','🐗','🐴','🦄','🐝','🐛','🦋','🐌','🐞',
+  '🐜','🐢','🐍','🦎','🐙','🦑','🦐','🦀','🐡','🐠','🐟','🐬','🐳','🐋','🦈','🐊',
+  '🐘','🦏','🦛','🐪','🐫','🦒','🐃','🐄','🐎','🐖','🐑','🐐','🦌','🐕','🐈','🐓',
+  '🦃','🕊️','🐇','🦝','🦨','🦡','🐁','🐀','🐿️','🦔'
 ];
 
 const ANIMALS = [
@@ -833,7 +879,7 @@ function defaultState() {
     achievements: {},
     prestige: { stars: 0, timesReset: 0 },
     allTime: { totalClicks: 0, totalEarned: 0, totalAnimals: 0, playTimeSeconds: 0 },
-    minigames: { quizLast: 0, catcherLast: 0, mathLast: 0, buffLast: 0, sortLast: 0 },
+    minigames: { quizLast: 0, catcherLast: 0, mathLast: 0, buffLast: 0, sortLast: 0, memoryLast: 0 },
     lastTick: Date.now()
   };
   ANIMALS.forEach(a => s.animals[a.id] = 0);
@@ -948,6 +994,7 @@ function stateToIni() {
   lines.push('wiskunde_laatst=' + state.minigames.mathLast);
   lines.push('buff_laatst=' + state.minigames.buffLast);
   lines.push('sorteren_laatst=' + state.minigames.sortLast);
+  lines.push('memory_laatst=' + state.minigames.memoryLast);
   return lines.join('\n');
 }
 
@@ -1047,6 +1094,7 @@ function iniToState(text) {
   s.minigames.mathLast = safeInt(dm.wiskunde_laatst, 0, 0);
   s.minigames.buffLast = safeInt(dm.buff_laatst || dm.tellen_laatst, 0, 0);
   s.minigames.sortLast = safeInt(dm.sorteren_laatst, 0, 0);
+  s.minigames.memoryLast = safeInt(dm.memory_laatst, 0, 0);
 
   // Ensure totalEarned >= currentPoints
   if (s.totalEarned < s.currentPoints) s.totalEarned = s.currentPoints;
@@ -1797,6 +1845,109 @@ function endSort() {
   }, 3000);
 }
 
+/* Dieren Memory */
+let memoryActive = false;
+let memoryCards = [];
+let memoryFlipped = [];
+let memoryPairs = 0;
+let memoryMistakes = 0;
+
+function startMemory() {
+  if (memoryActive || !isMinigameUnlocked('memory')) return;
+  if (Date.now() - state.minigames.memoryLast < MEMORY_COOLDOWN) return;
+  memoryActive = true;
+  memoryPairs = 0;
+  memoryMistakes = 0;
+  memoryFlipped = [];
+  document.getElementById('memory-btn').disabled = true;
+  document.getElementById('memory-game').style.display = 'block';
+  document.getElementById('memory-pairs').textContent = '0';
+  document.getElementById('memory-mistakes').textContent = '0';
+
+  // Pick 8 random unique emojis
+  const shuffled = [...MEMORY_POOL].sort(() => Math.random() - 0.5);
+  const picked = shuffled.slice(0, 8);
+  memoryCards = [...picked, ...picked].sort(() => Math.random() - 0.5);
+
+  const grid = document.getElementById('memory-grid');
+  grid.innerHTML = '';
+  memoryCards.forEach((emoji, i) => {
+    const card = document.createElement('div');
+    card.className = 'memory-card face-down';
+    card.textContent = '?';
+    card.dataset.index = i;
+    card.onclick = () => flipCard(i);
+    grid.appendChild(card);
+  });
+}
+
+function flipCard(index) {
+  if (!memoryActive) return;
+  if (memoryFlipped.length >= 2) return;
+  const cards = document.querySelectorAll('.memory-card');
+  const card = cards[index];
+  if (!card || card.classList.contains('face-up') || card.classList.contains('matched')) return;
+
+  card.classList.remove('face-down');
+  card.classList.add('face-up');
+  card.textContent = memoryCards[index];
+  parseAppleEmoji(card);
+  memoryFlipped.push(index);
+
+  if (memoryFlipped.length === 2) {
+    const [a, b] = memoryFlipped;
+    if (memoryCards[a] === memoryCards[b]) {
+      // Match!
+      setTimeout(() => {
+        cards[a].classList.add('matched');
+        cards[b].classList.add('matched');
+        memoryFlipped = [];
+        memoryPairs++;
+        document.getElementById('memory-pairs').textContent = memoryPairs;
+        if (memoryPairs === 8) endMemory(true);
+      }, 400);
+    } else {
+      // No match
+      memoryMistakes++;
+      document.getElementById('memory-mistakes').textContent = memoryMistakes;
+      setTimeout(() => {
+        cards[a].classList.remove('face-up');
+        cards[a].classList.add('face-down');
+        cards[a].textContent = '?';
+        cards[b].classList.remove('face-up');
+        cards[b].classList.add('face-down');
+        cards[b].textContent = '?';
+        memoryFlipped = [];
+        if (memoryMistakes >= 3) endMemory(false);
+      }, 700);
+    }
+  }
+}
+
+function endMemory(won) {
+  memoryActive = false;
+  state.minigames.memoryLast = Date.now();
+
+  const bonus = getTotalDps() * 60 * memoryPairs;
+  state.currentPoints += bonus;
+  state.totalEarned += bonus;
+  state.allTime.totalEarned += bonus;
+
+  const grid = document.getElementById('memory-grid');
+  const msg = won
+    ? '<div style="color:var(--green-light)">Alle paren gevonden!</div>'
+    : '<div style="color:var(--red)">3 fouten — game over!</div>';
+  grid.innerHTML = '<div style="font-size:18px;font-weight:700;padding:20px;text-align:center">' +
+    msg + '<div style="margin-top:4px">' + memoryPairs + '/8 paren</div>' +
+    '<div style="color:var(--gold);margin-top:8px">+' + formatNumber(bonus) + ' punten</div></div>';
+
+  setTimeout(() => {
+    document.getElementById('memory-game').style.display = 'none';
+    document.getElementById('memory-btn').disabled = false;
+  }, 3000);
+  saveGame();
+}
+
 /* ================================================================
    SECTIE 9: EVOLUTIE (PRESTIGE)
    ================================================================ */
@@ -2143,6 +2294,7 @@ function render() {
   updateCooldown('math-btn', 'math-cooldown', state.minigames.mathLast, MATH_COOLDOWN, mathActive);
   updateCooldown('buff-btn', 'buff-cooldown', state.minigames.buffLast, BUFF_COOLDOWN, false);
   updateCooldown('sort-btn', 'sort-cooldown', state.minigames.sortLast, SORT_COOLDOWN, sortActive);
+  updateCooldown('memory-btn', 'memory-cooldown', state.minigames.memoryLast, MEMORY_COOLDOWN, memoryActive);
 
   // Buff indicator
   const buffInd = document.getElementById('buff-indicator');
