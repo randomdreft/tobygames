@@ -3174,12 +3174,13 @@ function upgradeItemHtml(u, animal) {
     ? escHtml(u.desc + (effect ? ' — Effect: ' + effect : ''))
     : escHtml(u.desc + reqText);
   const tip = escHtml(u.name) + '|' + tipDesc;
-  return '<div class="shop-item" id="upg-' + u.id + '" onclick="buyUpgrade(\'' + u.id + '\')" data-tip="' + tip + '">' +
+  const cls = 'shop-item' + (bought ? ' bought' : '');
+  return '<div class="' + cls + '" id="upg-' + u.id + '" onclick="buyUpgrade(\'' + u.id + '\')" data-tip="' + tip + '">' +
     '<div class="shop-info">' +
     '<div class="shop-name">' + u.name + '</div>' +
     '<div class="shop-flavor">' + u.desc + reqText + '</div>' +
     '</div>' +
-    '<div class="shop-price" id="upgprice-' + u.id + '">' + formatNumber(u.cost) + '</div>' +
+    '<div class="shop-price" id="upgprice-' + u.id + '">' + (bought ? 'Gekocht!' : formatNumber(u.cost)) + '</div>' +
     '</div>';
 }
 
