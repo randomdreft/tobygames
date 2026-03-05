@@ -107,36 +107,151 @@ Vier buffs (elk 30 seconden actief):
 
 ## TobyTypen
 
-ADHD-vriendelijke typecursus voor kinderen (6-10 jaar).
+ADHD-vriendelijke typecursus voor kinderen (6-10 jaar). Ontworpen als alternatief voor saaie typecursussen (ticken.nl etc.) met maximale dopamine en gamification.
 
 ### Bestandsstructuur (`typen/`)
 
-| Bestand | Inhoud |
-|---------|--------|
-| `index.html` | HTML shell met lessenkaart |
-| `style.css` | Alle CSS |
-| `audio.js` | Web Audio geluidseffecten |
-| `engine.js` | Game engine: falling words, boss fights, XP, toetsenbord |
-| `lessons.js` | 28 lessen met woordlijsten per moeilijkheidsgraad |
+| Bestand | Regels | Inhoud |
+|---------|--------|--------|
+| `index.html` | ~108 | HTML shell: 3 schermen (kaart, les, resultaten), overlays (intro, achievements, level-up, toast, combo) |
+| `style.css` | ~450 | Volledige styling: glassmorphic UI, animaties (pulse-glow, boss-shake, confetti-fall, word-explode, levelup-slide), responsive breakpoints |
+| `lessons.js` | ~325 | 28 lesdefinities met woordlijsten, 32 achievement-definities, keyboard layout met vingerindeling, XP-drempels |
+| `audio.js` | ~55 | Web Audio API procedurele geluiden: correct, fout, woord klaar, streak, les klaar, level-up, achievement, boss hit/defeat, ster |
+| `engine.js` | ~980 | Game state, save/load, XP/levels, achievements, UI helpers, keyboard rendering, levelkaart, lesflow (4 rondes), typing input, vallende woorden, boss fights, resultaten |
 
-### Kernsystemen
+### Ontwerpfilosofie (ADHD-vriendelijk)
 
-- **28 lessen** in 4 fasen: home row, klinkers, bovenrij, onderrij + speciale tekens
-- **3 woordlijsttypen per les**: words1 (basis), words2 (gevorderder), words3 (zinnen/lang)
-- **Falling-word mechanic**: woorden vallen naar beneden, type ze voordat ze de onderkant raken
-- **Boss fights**: elke les eindigt met een boss fight (HP-balk)
-- **XP/level systeem**: verdien XP per correct getypt woord
-- **Progressieve snelheid**: vroege lessen sneller (0.35), latere lessen tot 0.5
-- **Consecutive error detection**: voorkomt spam-typen
+- **Geen straf bij fouten**: fouten resetten de combo maar kosten geen punten. Alleen bij 5 fouten achter elkaar faalt de les (anti-spam).
+- **Maximale beloning**: XP bij elke letter, combo-multiplier, confetti bij sterren, geluidseffecten, level-ups, achievements
+- **Korte sessies**: elke les duurt 2-5 minuten, 4 afwisselende rondes
+- **Visuele feedback overal**: toetsenbord highlight, voortgangsbalk, combo-display, boss HP-balk
 
-### Lesstructuur
+### Lesstructuur (28 lessen, 6 fases)
 
-Elke les introduceert nieuwe letters en bouwt voort op eerder geleerde letters:
-- Les 1-5: Home row (f, j, d, k, s, l, a, g, h)
-- Les 6-9: Klinkers (e, i, o, u)
-- Les 10-17: Bovenrij (r, t, y, w, q, p)
-- Les 18-24: Onderrij (v, b, n, m, c, x, z)
-- Les 25-28: Speciale tekens (punt, komma, hoofdletters, cijfers)
+| Fase | Lessen | Nieuwe letters | Focus |
+|------|--------|---------------|-------|
+| 1: Thuisrij | 1-5 | f j d k s l a ; g h | Vingerplaatsing, thuispositie |
+| 2: Klinkers | 6-9 | e i o u | Eerste echte woorden! |
+| 3: Bovenrij | 10-14 | r t w p q y | Nederlandse woorden, veel combinaties |
+| 4: Onderrij | 15-21 | n m b v c , x . z / | Alle letters compleet, komma en punt |
+| 5: Hoofdletters | 22-24 | Shift, 0-9, ! ? ' " - | Shift-toets, cijfers, leestekens |
+| 6: Snelheid | 25-28 | — | Sprint, zinnen, snelheidstest, eindexamen |
+
+**Belangrijk**: elke les's `allLetters` array bevat ALLEEN de tot dan toe geleerde letters. Alle woorden in `words1`/`words2`/`words3` mogen uitsluitend die letters gebruiken. Bij het toevoegen van woorden altijd controleren tegen `allLetters`!
+
+### 4 Rondes per les
+
+| Ronde | Type | Beschrijving |
+|-------|------|-------------|
+| 1 — Kennismaking | Statisch | Losse letters typen, nieuwe letter geïntroduceerd |
+| 2 — Woordjes | Woordrij | Korte woorden uit een wachtrij, voltooide woorden doorgestreept |
+| 3 — Vallende Woorden | Arcade | Woorden vallen naar beneden, typ ze voor ze de onderkant raken |
+| 4 — Boss Fight | Timer | Monster met HP-balk, elk correct woord doet damage |
+
+### Boss Fight Systeem
+
+- **Mini-bosses**: na elke les (HP 5-12, timer ~45-180s)
+- **Eindbazen**: na les 5, 9, 14, 21, 24, 28 (HP 8-15, timer ~60-180s, `bigBoss: true`)
+- **Timer scaling**: `secsPerHP` × `boss.hp` (15s/HP vroeg, 12s/HP laat), max 300s
+- **Win**: boss HP → 0 = sterren + XP. Timer op + HP > 0 = 0 sterren, geen XP
+- **Boss woorden**: willekeurige mix uit `words2` + `words3`, regenereert als pool op is
+
+### Sterren & Beoordeling
+
+| Sterren | Voorwaarde |
+|---------|-----------|
+| 0 | Boss niet verslagen / te veel fouten achter elkaar |
+| 1 | Les uitgespeeld |
+| 2 | Nauwkeurigheid ≥ 90% |
+| 3 | Nauwkeurigheid ≥ 95% EN WPM ≥ 15 + lesnummer |
+
+### Anti-spam Systeem
+
+Voorkomt dat kinderen willekeurige toetsen spammen om door de les heen te komen:
+- **5 fouten achter elkaar** = les mislukt (0 sterren)
+- **2 correcte toetsen** achter elkaar reset de foutenteller
+- Variabelen: `consecutiveErrors`, `correctSinceLastError`, `MAX_CONSECUTIVE_ERRORS = 5`, `CORRECT_TO_RESET = 2`
+
+### XP & Level Systeem
+
+- Elke juiste letter: +10 XP × combo-multiplier
+- Combo multipliers: x1 (< 10), x2 (10-24), x3 (25-49), x5 (50+)
+- Les voltooid: +500 XP (niet bij fail)
+- Boss defeated: +500 XP (mini) / +1000 XP (eindbaas)
+- Level thresholds: `Math.floor(800 × i^1.3)` voor level i
+
+### Gamification
+
+- **Combo counter**: visueel rechts in beeld, groeit in grootte en kleur (geel → oranje → roze → rood)
+- **Dagelijkse streak**: kalender onderaan de kaart, 7/30 dagen milestones
+- **32 achievements**: eerste stappen, fase-completie, snelheid, combo, streaks, letter-tellingen, level-milestones
+- **Confetti**: bij 2+ sterren, level-up
+- **Level-up banner**: compact bovenaan (niet-blokkerend), verdwijnt na 3s
+- **Toast notificaties**: achievements, streak milestones, combo milestones
+
+### Vallende Woorden Mechaniek
+
+- Snelheid: `baseSpeed (0.35) + (lessonNum/28 × 0.15)` × `lengthFactor`
+- `lengthFactor`: `max(0.4, 1 - (textLength - 5) × 0.04)` — langere woorden vallen langzamer
+- Spawn delay: `max(2200ms, gemiddelde woordlengte × 200ms)`
+- Gemist woord: telt als 1 error, reset combo
+- Actief woord: geel gemarkeerd, getypte deel groen
+
+### On-screen Toetsenbord
+
+- 4 rijen + spatiebalk, Shift-toetsen links/rechts
+- Vingerkleur-codering: roze (pink), oranje (ring), groen (middel), blauw (wijs), paars (duim)
+- Niet-geleerde toetsen: `opacity: 0.2` (`.inactive` class)
+- Huidige toets: geel highlight met glow
+- Toets-flash bij typen (`.pressed` class, 150ms)
+- Shift highlight bij hoofdletters en shift-tekens
+
+### Levelkaart (Mario-stijl)
+
+- 6 fasegroepen met gekleurde nodes
+- Per level: nummer + 0-3 sterren (of `· · ·` als nog niet gespeeld)
+- `.not-started`: 50% opacity
+- `.current`: geel pulserende glow
+- `.completed`: groene achtergrond
+- Eindbazen: rode rand + 💀 badge
+- Onderaan: streak-panel (7-dagenkalender) + achievements-knop
+
+### Opslag
+
+- localStorage key: `tobygames_typen_save`
+- JSON-formaat met: `xp`, `level`, `lessonStars` (object: lesnr → sterren), `achievements` (array van IDs), `dailyDates`, `currentStreak`, `stats` (totalLetters, totalWords, accuracy, fastestWPM, bestCombo, perfectLessons)
+- Autosave: elke 30 seconden + bij `beforeunload`
+
+### Audio (Web Audio API)
+
+Alle geluiden procedureel gegenereerd, geen externe bestanden:
+
+| Functie | Beschrijving | Toon |
+|---------|-------------|------|
+| `sndCorrect()` | Juiste letter | Stijgend met combo (600 + combo×10 Hz) |
+| `sndWrong()` | Foute letter | Laag, zacht (200 Hz triangle) |
+| `sndWordComplete()` | Woord af | C-E-G arpeggio |
+| `sndStreakMilestone()` | 10/25/50/100 combo | Snelle oplopende arpeggio |
+| `sndLessonComplete()` | Les voltooid | 5-noot fanfare |
+| `sndLevelUp()` | Level omhoog | 7-noot uitgebreide fanfare |
+| `sndAchievement()` | Achievement ontgrendeld | 3-noot square wave |
+| `sndBossHit()` | Boss geraakt | Sawtooth + sine kort |
+| `sndBossDefeat()` | Boss verslagen | 7-noot victorie tune |
+| `sndStar()` | Ster verdiend | Hoge C + E |
+| `sndBossDrum()` | Boss start | 6-beat drumroll (sawtooth) |
+
+### CSS Animaties
+
+| Naam | Gebruikt voor | Duur |
+|------|--------------|------|
+| `pulse-glow` | Huidige level-node op kaart | 2s infinite |
+| `blink-cursor` | Cursor onder huidige letter | 1s infinite |
+| `word-explode` | Vallend woord getypt | 0.4s |
+| `boss-shake` | Boss bij hit | 0.15s |
+| `toast-in/out` | Toast notificaties | 0.3s in, 0.3s out na 2.2s |
+| `confetti-fall` | Confetti deeltjes | 1.5-3.5s |
+| `levelup-slide` | Level-up banner | 0.4s |
+| `combo-pulse` | x5 combo display | 0.5s infinite |
 
 ---
 
