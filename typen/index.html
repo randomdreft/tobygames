@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TobyTypen - Leer Typen!</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- TOAST CONTAINER -->
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- COMBO DISPLAY -->
+<div class="combo-display" id="comboDisplay" style="display:none"></div>
+
+<!-- LEVEL UP OVERLAY -->
+<div class="levelup-overlay" id="levelupOverlay">
+    <h1>LEVEL UP!</h1>
+    <div class="level-num-big" id="levelupNum"></div>
+</div>
+
+<!-- INTRO OVERLAY -->
+<div class="intro-overlay" id="introOverlay">
+    <h2 id="introTitle"></h2>
+    <div class="new-letters" id="introLetters"></div>
+    <div class="finger-hint" id="introHint"></div>
+    <button class="start-btn" id="introStartBtn">Start!</button>
+</div>
+
+<!-- ACHIEVEMENT OVERLAY -->
+<div class="achievement-overlay" id="achievementOverlay">
+    <div class="ach-header">
+        <h2>Prestaties</h2>
+        <button class="ach-close" onclick="document.getElementById('achievementOverlay').classList.remove('active')">&times;</button>
+    </div>
+    <div class="ach-grid" id="achGrid"></div>
+</div>
+
+<!-- ══════ SCREEN: MAP ══════ -->
+<div class="screen active" id="map-screen">
+    <div class="topbar">
+        <a href="../index.html" class="back-btn">← TobyGames</a>
+        <div class="stats">
+            <span id="mapLevel">Level 1</span>
+            <span id="mapStreak">Streak: 0</span>
+            <div class="xp-bar-wrap">
+                <div class="xp-bar-fill" id="mapXpFill" style="width:0%"></div>
+                <div class="xp-bar-text" id="mapXpText">0/1000 XP</div>
+            </div>
+        </div>
+    </div>
+    <div class="map-header">
+        <h1>TobyTypen</h1>
+        <div class="total-stars" id="totalStars">0 / 84</div>
+    </div>
+    <div class="map-container" id="mapContainer"></div>
+</div>
+
+<!-- ══════ SCREEN: LESSON ══════ -->
+<div class="screen" id="lesson-screen">
+    <div class="topbar">
+        <button class="back-btn" id="lessonBackBtn">← Kaart</button>
+        <div class="stats">
+            <span id="lessonLevel">Level 1</span>
+            <span id="lessonStreakStat">Streak: 0</span>
+            <div class="xp-bar-wrap">
+                <div class="xp-bar-fill" id="lessonXpFill" style="width:0%"></div>
+                <div class="xp-bar-text" id="lessonXpText">0/1000 XP</div>
+            </div>
+        </div>
+    </div>
+    <div class="lesson-header">
+        <h2 id="lessonTitle">Les 1</h2>
+        <div class="round-info" id="roundInfo">Ronde 1 - Kennismaking</div>
+    </div>
+    <div class="typing-area" id="typingArea">
+        <!-- Dynamic content injected here -->
+    </div>
+    <div class="progress-wrap" id="progressWrap">
+        <div class="progress-label" id="progressLabel">Woord 0/0</div>
+        <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+    </div>
+    <div class="keyboard" id="keyboard"></div>
+</div>
+
+<!-- ══════ SCREEN: RESULTS ══════ -->
+<div class="screen" id="results-screen">
+    <div class="results-card">
+        <h2 id="resultsTitle">Les Voltooid!</h2>
+        <div class="results-stars" id="resultsStars"></div>
+        <div class="results-stats" id="resultsStats"></div>
+        <div class="results-xp" id="resultsXp"></div>
+        <div class="results-buttons">
+            <button class="btn-retry" id="retryBtn">Opnieuw</button>
+            <button class="btn-next" id="nextBtn">Volgende Les</button>
+            <button class="btn-map" id="mapBtn">Naar Kaart</button>
+        </div>
+    </div>
+</div>
+
+<!-- JS: data first, then audio, then engine -->
+<script src="lessons.js"></script>
+<script src="audio.js"></script>
+<script src="engine.js"></script>
+</body>
+</html>
