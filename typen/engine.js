@@ -39,8 +39,10 @@ let fallingAnimFrame = null;
 let activefallingWord = null;
 let fallingTypedChars = 0;
 let soundEnabled = true;
-let maxErrors = 0;
-let roundErrors = 0;
+let consecutiveErrors = 0;
+const MAX_CONSECUTIVE_ERRORS = 5;
+const CORRECT_TO_RESET = 2;
+let correctSinceLastError = 0;
 
 // ═══ SAVE / LOAD ═══
 const SAVE_KEY = 'tobygames_typen_save';
@@ -463,7 +465,8 @@ function startRound(round) {
     wordIndex = 0;
     charIndex = 0;
     combo = 0;
-    roundErrors = 0;
+    consecutiveErrors = 0;
+    correctSinceLastError = 0;
     updateComboDisplay();
 
     stopFalling();
@@ -487,10 +490,6 @@ function startRound(round) {
         document.getElementById('roundInfo').textContent = currentLesson.bigBoss ? '💀 EINDBAAS!' : '👾 Mini-Boss!';
         startBossFight(area);
     }
-
-    // Calculate max errors: ~50% of total chars, minimum 5
-    const totalCharsInRound = roundWords.reduce((sum, w) => sum + w.length, 0);
-    maxErrors = Math.max(5, Math.ceil(totalCharsInRound * 0.5));
 
     if (round <= 2 && roundWords.length > 0) {
         highlightKey(roundWords[0][0]);
@@ -582,7 +581,7 @@ function spawnFallingWord(zone, text, idx) {
     el.style.left = (10 + Math.random() * 60) + '%';
     el.style.top = '-40px';
     zone.appendChild(el);
-    const baseSpeed = 0.2 + (currentLesson.num / 28) * 0.15;
+    const baseSpeed = 0.35 + (currentLesson.num / 28) * 0.15;
     const lengthFactor = Math.max(0.4, 1 - (text.length - 5) * 0.04);
     fallingWords.push({
         el, text, idx, y: -40, typed: 0, done: false, missed: false,
@@ -733,6 +732,7 @@ function handleKeyPress(e) {
         combo++;
         sessionCorrect++;
         state.stats.totalLetters++;
+        onCorrectKey();
         if (combo > state.stats.bestCombo) state.stats.bestCombo = combo;
         updateComboDisplay();
 
@@ -816,6 +816,7 @@ function handleFallingInput(key) {
         combo++;
         sessionCorrect++;
         state.stats.totalLetters++;
+        onCorrectKey();
         if (combo > state.stats.bestCombo) state.stats.bestCombo = combo;
         updateComboDisplay();
         addXP(10 * getComboMultiplier());
@@ -870,17 +871,25 @@ function handleFallingInput(key) {
 }
 
 function checkErrorLimit() {
-    roundErrors++;
-    if (roundErrors >= maxErrors) {
+    consecutiveErrors++;
+    correctSinceLastError = 0;
+    if (consecutiveErrors >= MAX_CONSECUTIVE_ERRORS) {
         stopFalling();
         stopBoss();
-        showToast("❌ Te veel fouten! Probeer opnieuw.", "");
+        showToast("❌ Te veel fouten achter elkaar!", "");
         setTimeout(() => {
-            finishLesson(false, true); // not boss timeout, but error limit
+            finishLesson(false, true);
         }, 1000);
         return true;
     }
     return false;
+}
+
+function onCorrectKey() {
+    correctSinceLastError++;
+    if (correctSinceLastError >= CORRECT_TO_RESET) {
+        consecutiveErrors = 0;
+    }
 }
 
 function advanceRound() {
@@ -896,8 +905,7 @@ function updateProgress() {
     const done = currentRound === 3 ? fallingWords.filter(f => f.done).length : wordIndex;
     const pct = total > 0 ? (done/total*100) : 0;
     document.getElementById('progressFill').style.width = pct + '%';
-    const errorsLeft = maxErrors - roundErrors;
-    document.getElementById('progressLabel').textContent = `Woord ${done}/${total}  ·  ❌ ${roundErrors}/${maxErrors}`;
+    document.getElementById('progressLabel').textContent = `Woord ${done}/${total}`;
 }
 
 // ═══ LESSON FINISH ═══
