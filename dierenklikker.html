@@ -443,10 +443,46 @@ img.emoji {
 .ach-summary { font-size: 13px; color: var(--text-dim); margin-bottom: 12px; text-align: center; }
 .ach-section { margin-bottom: 14px; }
 .ach-section h4 { font-size: 13px; color: var(--text-dim); margin-bottom: 6px; }
+.ach-spoiler-toggle {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  margin-top: 16px; padding: 8px 14px; border-radius: 8px;
+  background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.08);
+  color: var(--text-dim); font-size: 12px; cursor: pointer;
+  transition: background 0.2s;
+}
+.ach-spoiler-toggle:hover { background: rgba(0,0,0,0.35); }
+.ach-spoiler-toggle .toggle-switch {
+  width: 34px; height: 18px; border-radius: 9px;
+  background: rgba(255,255,255,0.15); position: relative; transition: background 0.2s; flex-shrink: 0;
+}
+.ach-spoiler-toggle .toggle-switch::after {
+  content: ''; position: absolute; top: 2px; left: 2px;
+  width: 14px; height: 14px; border-radius: 50%;
+  background: var(--text-dim); transition: transform 0.2s, background 0.2s;
+}
+.ach-spoiler-toggle.active .toggle-switch { background: var(--gold); }
+.ach-spoiler-toggle.active .toggle-switch::after { transform: translateX(16px); background: #1a1a2e; }
 
 /* Options */
 .opt-section { margin-bottom: 20px; }
 .opt-section h3 { font-size: 15px; margin-bottom: 10px; }
+/* Theme picker */
+.theme-picker { margin-top: 16px; }
+.theme-picker h4 { font-size: 13px; color: var(--text-dim); margin-bottom: 8px; }
+.theme-swatches { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+.theme-swatch {
+  width: 44px; height: 44px; border-radius: 50%; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; border: 3px solid rgba(255,255,255,0.15);
+  transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+  position: relative;
+}
+.theme-swatch:hover { transform: scale(1.15); }
+.theme-swatch.active {
+  border-color: var(--gold);
+  box-shadow: 0 0 12px rgba(255,215,0,0.5);
+}
+
 .opt-btn {
   display: block; width: 100%; padding: 12px; margin-bottom: 8px;
   border: 2px solid var(--panel-border); border-radius: 10px;
@@ -843,6 +879,42 @@ const MAX_OFFLINE_SECONDS = 14 * 24 * 3600; // 14 days
 const PRESTIGE_KEEP_OFFLINE = 3;  // stars needed to keep offline upgrades
 const PRESTIGE_KEEP_CLICK = 7;    // stars needed to keep click upgrades
 const PRESTIGE_KEEP_GLOBAL = 12;  // stars needed to keep global upgrades
+
+const COLOR_THEMES = [
+  {id:'oerwoud', name:'Oerwoud', emoji:'🌿', stars:0,
+   bg1:'#0f4c2a',bg2:'#1a6b3c',bg3:'#0d3b2e',text:'#e8f5e9',textDim:'#81c784',textDark:'#2e7d32',
+   gold:'#ffd700',green:'#43a047',greenLight:'#66bb6a',red:'#ef5350',orange:'#ff9800',blue:'#42a5f5',purple:'#ab47bc'},
+  {id:'oceaan', name:'Oceaan', emoji:'🌊', stars:10,
+   bg1:'#0a2a4a',bg2:'#0d3d6b',bg3:'#061e3a',text:'#e0f0ff',textDim:'#64b5f6',textDark:'#1565c0',
+   gold:'#00e5ff',green:'#26c6da',greenLight:'#4dd0e1',red:'#ef5350',orange:'#ffab40',blue:'#42a5f5',purple:'#7c4dff'},
+  {id:'savanne', name:'Savanne', emoji:'🌅', stars:20,
+   bg1:'#3e2316',bg2:'#5d3a1a',bg3:'#2c1a10',text:'#ffecd2',textDim:'#d4a76a',textDark:'#8d5524',
+   gold:'#ffb300',green:'#8d6e63',greenLight:'#a1887f',red:'#e65100',orange:'#ff8f00',blue:'#90a4ae',purple:'#8d6e63'},
+  {id:'bloesem', name:'Bloesem', emoji:'🌸', stars:30,
+   bg1:'#2d132c',bg2:'#4a1942',bg3:'#1a0a1a',text:'#fce4ec',textDim:'#f48fb1',textDark:'#880e4f',
+   gold:'#ff80ab',green:'#ec407a',greenLight:'#f48fb1',red:'#ff1744',orange:'#ff6090',blue:'#ce93d8',purple:'#ab47bc'},
+  {id:'middernacht', name:'Middernacht', emoji:'🌑', stars:40,
+   bg1:'#0a0e1a',bg2:'#141b2d',bg3:'#060a14',text:'#cfd8dc',textDim:'#78909c',textDark:'#37474f',
+   gold:'#b0bec5',green:'#546e7a',greenLight:'#78909c',red:'#ef5350',orange:'#ff9800',blue:'#607d8b',purple:'#78909c'},
+  {id:'vulkaan', name:'Vulkaan', emoji:'🌋', stars:50,
+   bg1:'#1a0a0a',bg2:'#3b0f0f',bg3:'#0d0505',text:'#ffccbc',textDim:'#ff8a65',textDark:'#bf360c',
+   gold:'#ff6d00',green:'#ff5722',greenLight:'#ff8a65',red:'#d50000',orange:'#ff9100',blue:'#ff6e40',purple:'#dd2c00'},
+  {id:'arctisch', name:'Arctisch', emoji:'❄️', stars:60,
+   bg1:'#0d1f2d',bg2:'#1a3a4a',bg3:'#071420',text:'#e1f5fe',textDim:'#81d4fa',textDark:'#0277bd',
+   gold:'#80deea',green:'#4fc3f7',greenLight:'#81d4fa',red:'#ef5350',orange:'#ffab40',blue:'#29b6f6',purple:'#4fc3f7'},
+  {id:'herfst', name:'Herfstbos', emoji:'🍂', stars:70,
+   bg1:'#1a1208',bg2:'#332610',bg3:'#110c05',text:'#fff3e0',textDim:'#ffb74d',textDark:'#e65100',
+   gold:'#ff9800',green:'#ef6c00',greenLight:'#ffa726',red:'#d84315',orange:'#ff6d00',blue:'#a1887f',purple:'#8d6e63'},
+  {id:'koninklijk', name:'Koninklijk', emoji:'👑', stars:80,
+   bg1:'#1a0a2e',bg2:'#2d1458',bg3:'#0f0620',text:'#ede7f6',textDim:'#b39ddb',textDark:'#4527a0',
+   gold:'#ffd700',green:'#7e57c2',greenLight:'#b39ddb',red:'#ef5350',orange:'#ffab40',blue:'#9575cd',purple:'#6a1b9a'},
+  {id:'kosmos', name:'Kosmos', emoji:'🌌', stars:90,
+   bg1:'#0a0014',bg2:'#1a0033',bg3:'#05000a',text:'#f3e5f5',textDim:'#ea80fc',textDark:'#aa00ff',
+   gold:'#e040fb',green:'#d500f9',greenLight:'#ea80fc',red:'#ff1744',orange:'#ff9100',blue:'#e040fb',purple:'#aa00ff'},
+  {id:'regenboog', name:'Regenboog', emoji:'🌈', stars:100,
+   bg1:'#1a1a2e',bg2:'#16213e',bg3:'#0f0f1a',text:'#ffffff',textDim:'#b0b0b0',textDark:'#555555',
+   gold:'#ffd700',green:'#43a047',greenLight:'#66bb6a',red:'#ef5350',orange:'#ff9800',blue:'#42a5f5',purple:'#ab47bc'}
+];
 const AUTOSAVE_INTERVAL = 30000; // 30 sec
 const TICK_INTERVAL = 100;       // 100ms
 const RENDER_INTERVAL = 250;     // 250ms
@@ -1184,7 +1256,7 @@ function defaultState() {
     animals: {},
     upgrades: {},
     achievements: {},
-    prestige: { stars: 0, timesReset: 0 },
+    prestige: { stars: 0, timesReset: 0, theme: 'oerwoud' },
     allTime: { totalClicks: 0, totalEarned: 0, totalAnimals: 0, playTimeSeconds: 0 },
     stats: {
       quizPlayed: 0, quizCorrect: 0, quizWrong: 0,
@@ -1302,6 +1374,7 @@ function stateToIni() {
   lines.push('[evolutie]');
   lines.push('sterren=' + state.prestige.stars);
   lines.push('keer_geevolueerd=' + state.prestige.timesReset);
+  lines.push('thema=' + (state.prestige.theme || 'oerwoud'));
   lines.push('');
   lines.push('[allertijden]');
   lines.push('totaal_klikken=' + state.allTime.totalClicks);
@@ -1409,6 +1482,7 @@ function iniToState(text) {
   const de = ini.evolutie || ini.prestige || {};
   s.prestige.stars = safeInt(de.sterren || de.stars, 0, 0);
   s.prestige.timesReset = safeInt(de.keer_geevolueerd || de.times_reset, 0, 0);
+  s.prestige.theme = (de.thema || de.theme || 'oerwoud').toString();
 
   // All-time stats
   const at = ini.allertijden || {};
@@ -3106,13 +3180,41 @@ function showPrestigeModal() {
   showModal('prestige-modal');
 }
 
+function applyTheme(themeId) {
+  const theme = COLOR_THEMES.find(t => t.id === themeId) || COLOR_THEMES[0];
+  const r = document.documentElement.style;
+  r.setProperty('--bg1', theme.bg1);
+  r.setProperty('--bg2', theme.bg2);
+  r.setProperty('--bg3', theme.bg3);
+  r.setProperty('--text', theme.text);
+  r.setProperty('--text-dim', theme.textDim);
+  r.setProperty('--text-dark', theme.textDark);
+  r.setProperty('--gold', theme.gold);
+  r.setProperty('--green', theme.green);
+  r.setProperty('--green-light', theme.greenLight);
+  r.setProperty('--red', theme.red);
+  r.setProperty('--orange', theme.orange);
+  r.setProperty('--blue', theme.blue);
+  r.setProperty('--purple', theme.purple);
+}
+
+function selectTheme(themeId) {
+  const theme = COLOR_THEMES.find(t => t.id === themeId);
+  if (!theme || theme.stars > state.prestige.stars) return;
+  state.prestige.theme = themeId;
+  applyTheme(themeId);
+  buildEvolution();
+  saveGame();
+}
+
 function doPrestige() {
   const newStars = getPrestigeStars();
   const totalStars = state.prestige.stars + newStars;
   const keepAch = {...state.achievements};
   const keepPrestige = {
     stars: totalStars,
-    timesReset: state.prestige.timesReset + 1
+    timesReset: state.prestige.timesReset + 1,
+    theme: state.prestige.theme || 'oerwoud'
   };
 
   // Determine which upgrades to keep based on total stars
@@ -3260,6 +3362,16 @@ function prestigeKeepLine(currentStars, required, label, emoji) {
   }
 }
 
+let achSpoilerActive = false;
+
+function toggleAchSpoiler() {
+  if (!achSpoilerActive) {
+    if (!confirm('Weet je het zeker? Dit laat zien welke prestaties je nog kunt halen!')) return;
+  }
+  achSpoilerActive = !achSpoilerActive;
+  buildAchievements();
+}
+
 function buildAchievements() {
   const container = document.getElementById('tab-achievements');
   const earned = Object.keys(state.achievements).filter(k => state.achievements[k]).length;
@@ -3276,13 +3388,24 @@ function buildAchievements() {
     html += '<div class="ach-section"><h4>' + g + '</h4><div class="ach-grid">';
     groups[g].forEach(a => {
       const e = state.achievements[a.id];
-      const achTip = e ? escHtml(a.name) + '|' + escHtml(a.desc) : '???|Nog niet ontgrendeld';
+      const achTip = e
+        ? escHtml(a.name) + '|' + escHtml(a.desc)
+        : achSpoilerActive
+          ? escHtml(a.name) + '|' + escHtml(a.desc)
+          : '???|Nog niet ontgrendeld';
       html += '<div class="ach-item ' + (e ? 'earned' : 'unearned') + '" id="ach-' + a.id + '" data-tip="' + achTip + '">' +
         a.emoji +
         '</div>';
     });
     html += '</div></div>';
   });
+
+  // Spoiler toggle
+  html += '<div class="ach-spoiler-toggle' + (achSpoilerActive ? ' active' : '') + '" onclick="toggleAchSpoiler()">';
+  html += '<div class="toggle-switch"></div>';
+  html += '<span>Toon hints voor verborgen prestaties</span>';
+  html += '</div>';
+
   container.innerHTML = html;
 }
 
@@ -3317,13 +3440,39 @@ function buildEvolution() {
     html += '<br><br>';
   }
 
-  html += '<b style="color:var(--green-light)">Dit houd je:</b> sterren, prestaties<br>';
-  html += '<b style="color:var(--red)">Dit raak je kwijt:</b> dieren, punten, dier-upgrades<br><br>';
+  html += '<div style="display:flex;gap:8px;margin-bottom:12px">';
+  html += '<div style="flex:1;padding:8px 10px;border-radius:8px;background:rgba(67,160,71,0.1);border:1px solid rgba(67,160,71,0.3)">';
+  html += '<div style="color:var(--green-light);font-weight:700;font-size:12px;margin-bottom:4px">✓ Dit houd je</div>';
+  html += '<div style="font-size:12px;line-height:1.6">⭐ Sterren<br>🏆 Prestaties</div>';
+  html += '</div>';
+  html += '<div style="flex:1;padding:8px 10px;border-radius:8px;background:rgba(239,83,80,0.1);border:1px solid rgba(239,83,80,0.3)">';
+  html += '<div style="color:var(--red);font-weight:700;font-size:12px;margin-bottom:4px">✗ Dit raak je kwijt</div>';
+  html += '<div style="font-size:12px;line-height:1.6">🐾 Dieren<br>🪙 Punten<br>🐾 Dier-upgrades</div>';
+  html += '</div></div>';
 
-  html += '<b>Bonussen bij genoeg sterren:</b><br>';
-  html += prestigeKeepLine(state.prestige.stars, PRESTIGE_KEEP_OFFLINE, 'Offline upgrades bewaren', '🌙');
-  html += prestigeKeepLine(state.prestige.stars, PRESTIGE_KEEP_CLICK, 'Klik-upgrades bewaren', '👆');
-  html += prestigeKeepLine(state.prestige.stars, PRESTIGE_KEEP_GLOBAL, 'Globale upgrades bewaren', '🌍');
+  // Bonuses progress
+  html += '<div style="margin-bottom:12px">';
+  html += '<b style="font-size:13px">Vrijspelbare bonussen:</b>';
+  const bonuses = [
+    {stars: PRESTIGE_KEEP_OFFLINE, emoji:'🌙', label:'Offline upgrades bewaren'},
+    {stars: PRESTIGE_KEEP_CLICK, emoji:'👆', label:'Klik-upgrades bewaren'},
+    {stars: PRESTIGE_KEEP_GLOBAL, emoji:'🌍', label:'Globale upgrades bewaren'}
+  ];
+  bonuses.forEach(b => {
+    const unlocked = state.prestige.stars >= b.stars;
+    const pct = Math.min(100, Math.round(state.prestige.stars / b.stars * 100));
+    html += '<div style="margin-top:8px">';
+    html += '<div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px">';
+    html += '<span>' + b.emoji + ' ' + b.label + '</span>';
+    html += unlocked
+      ? '<span style="color:var(--green-light)">✓ Vrijgespeeld</span>'
+      : '<span style="color:var(--text-dim)">' + state.prestige.stars + '/' + b.stars + ' ⭐</span>';
+    html += '</div>';
+    html += '<div style="height:6px;border-radius:3px;background:rgba(255,255,255,0.1);overflow:hidden">';
+    html += '<div style="height:100%;width:' + pct + '%;border-radius:3px;background:' + (unlocked ? 'var(--green-light)' : 'var(--gold)') + ';transition:width 0.3s"></div>';
+    html += '</div></div>';
+  });
+  html += '</div>';
 
   if (previewStars > 0 && state.prestige.stars + previewStars > state.prestige.stars) {
     const afterStars = state.prestige.stars + previewStars;
@@ -3332,13 +3481,33 @@ function buildEvolution() {
     if (afterStars >= PRESTIGE_KEEP_CLICK && state.prestige.stars < PRESTIGE_KEEP_CLICK) gained.push('👆 Klik');
     if (afterStars >= PRESTIGE_KEEP_GLOBAL && state.prestige.stars < PRESTIGE_KEEP_GLOBAL) gained.push('🌍 Globaal');
     if (gained.length > 0) {
-      html += '<br><span style="color:var(--gold)">Na evolutie unlock je: ' + gained.join(', ') + '</span><br>';
+      html += '<div style="padding:6px 10px;border-radius:8px;background:rgba(255,215,0,0.1);border:1px solid rgba(255,215,0,0.3);font-size:12px;color:var(--gold);margin-bottom:12px">';
+      html += '🎉 Na evolutie unlock je: ' + gained.join(', ');
+      html += '</div>';
     }
   }
 
-  html += '<br><span style="color:var(--text-dim)">Tip: na evolutie ga je veel sneller! Elke keer verdien je meer sterren.</span>';
+  html += '<span style="color:var(--text-dim);font-size:12px">Tip: na evolutie ga je veel sneller! Elke keer verdien je meer sterren.</span>';
   html += '</div>';
   html += '<button class="opt-btn prestige-btn" id="prestige-btn" onclick="showPrestigeModal()">⭐ Evolueer!</button>';
+
+  // Theme picker — only show if at least one unlockable theme is available
+  const unlockedThemes = COLOR_THEMES.filter(t => t.stars <= state.prestige.stars);
+  if (unlockedThemes.length > 1) {
+    html += '<div class="theme-picker">';
+    html += '<h4>🎨 Kleurstellingen</h4>';
+    html += '<div class="theme-swatches">';
+    unlockedThemes.forEach(t => {
+      const isActive = (state.prestige.theme || 'oerwoud') === t.id;
+      html += '<div class="theme-swatch' + (isActive ? ' active' : '') + '" ' +
+        'onclick="selectTheme(\'' + t.id + '\')" ' +
+        'style="background:linear-gradient(135deg,' + t.bg1 + ',' + t.bg2 + ');border-color:' + (isActive ? t.gold : 'rgba(255,255,255,0.15)') + '" ' +
+        'data-tip="' + escHtml(t.name) + '|' + escHtml(t.stars + ' sterren') + '">' +
+        t.emoji + '</div>';
+    });
+    html += '</div></div>';
+  }
+
   html += '</div>';
 
   container.innerHTML = html;
@@ -3438,7 +3607,7 @@ function render() {
     const e = !!state.achievements[a.id];
     el.classList.toggle('earned', e);
     el.classList.toggle('unearned', !e);
-    el.setAttribute('data-tip', e ? escHtml(a.name) + '|' + escHtml(a.desc) : '???|Nog niet ontgrendeld');
+    el.setAttribute('data-tip', e || achSpoilerActive ? escHtml(a.name) + '|' + escHtml(a.desc) : '???|Nog niet ontgrendeld');
   });
 
   // Achievement summary
@@ -3707,6 +3876,7 @@ function gameLoop() {
 
 function init() {
   loadGame();
+  applyTheme(state.prestige.theme || 'oerwoud');
   buildShop();
   render();
 
