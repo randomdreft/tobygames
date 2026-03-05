@@ -228,6 +228,7 @@ function answerMath(chosen, correct) {
 /* Buff Kiezer */
 let activeBuff = null; // {type, endsAt}
 let buyMultiplier = 1; // 1, 10 or 100
+let buyMax = false;
 
 function startBuff() {
   if (!isMinigameUnlocked('buff')) return;

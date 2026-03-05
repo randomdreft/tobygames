@@ -24,13 +24,13 @@ Het meest uitgebreide spel. Cookie Clicker-achtig incrementeel spel met veel sub
 
 | Bestand | Regels | Inhoud |
 |---------|--------|--------|
-| `style.css` | ~590 | CSS variabelen (`:root`), layout, alle component-styling |
+| `style.css` | ~620 | CSS variabelen (`:root`), layout, component-styling, achievement-viering animatie, milestone-bars, tab-badges |
 | `sound.js` | ~130 | Web Audio API geluidssynthese, volume-beheer (localStorage) |
 | `data.js` | ~375 | Constanten, dierdata (12 soorten + upgrades), quiz-vragen, minigame-data |
 | `state.js` | ~440 | `defaultState()`, INI save/load (`stateToIni`/`iniToState`), import/export |
-| `engine.js` | ~315 | Prijsberekening, DPS, click value, achievements, buy-functies |
-| `minigames.js` | ~1180 | Alle 12 mini-games (quiz, vanger, memory, puzzel, etc.) |
-| `ui.js` | ~760 | Prestige, thema's, shop-rendering, game loop, `render()`, `init()` |
+| `engine.js` | ~360 | Prijsberekening, DPS, click value, achievements, buy-functies, `getDpsBreakdown()`, `getMaxAffordable()` |
+| `minigames.js` | ~1180 | Alle 12 mini-games (quiz, vanger, memory, puzzel, etc.), `buyMax` variabele |
+| `ui.js` | ~900 | Prestige, thema's, shop-rendering, game loop, `render()`, `init()`, tab-badges, DPS-uitsplitsing, keyboard shortcuts |
 
 ### Kernsystemen
 
@@ -99,9 +99,21 @@ Vier buffs (elk 30 seconden actief):
 
 ### Bulk-kopen
 
-- Na eerste evolutie: 1x/10x/100x knoppen boven de dierenwinkel
+- Na eerste evolutie: 1x/10x/100x/Max knoppen boven de dierenwinkel
+- **Max-modus**: berekent automatisch hoeveel dieren je kunt betalen, toont aantal bij de prijs
 - Bij gedeeltelijke betaalbaarheid: koopt wat betaalbaar is
 - Prijsweergave toont totaalprijs voor het geselecteerde aantal
+
+### Quality of Life
+
+- **Cooldown voortgangsbalken**: visueel balkje onder elke minigame-timer
+- **Milestone voortgang**: bij elk dier in de winkel zichtbaar ("Volgende bonus: 12/25" + balkje), verdwijnt als alle milestones bereikt
+- **Notificatie-badges**: groen bolletje op Dieren/Upgrades-tab als je iets kunt kopen, goud op Evolutie als je kunt evolueren. Verborgen op actieve tab.
+- **DPS-uitsplitsing**: in statistieken een breakdown per diersoort met percentage, plus prestatie-/sterren-/buff-bonus
+- **DPS-tooltip op dieren**: hover toont totale DPS bijdrage en percentage van totaal
+- **Toetsenbordsneltoetsen**: Spatie = klik, 1-5 = winkeltabs, G = games, S = statistieken
+- **Tab-geheugen**: actieve winkel-, midden- en mobieltab worden onthouden in localStorage (`dk_shoptab`, `dk_midtab`, `dk_mobilepanel`)
+- **Prestatie-viering**: bij unlock vliegt de prestatie-emoji groot over het scherm (1.2s animatie)
 
 ---
 

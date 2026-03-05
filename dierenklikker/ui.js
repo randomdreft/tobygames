@@ -138,8 +138,9 @@ function buildAnimalShop() {
   if (state.prestige.stars >= 1) {
     html += '<div id="buy-amount-bar">';
     [1, 10, 100].forEach(n => {
-      html += '<button class="buy-amt-btn' + (buyMultiplier === n ? ' active' : '') + '" onclick="setBuyAmount(' + n + ')">' + n + '×</button>';
+      html += '<button class="buy-amt-btn' + (buyMultiplier === n && !buyMax ? ' active' : '') + '" onclick="setBuyAmount(' + n + ')">' + n + '×</button>';
     });
+    html += '<button class="buy-amt-btn' + (buyMax ? ' active' : '') + '" onclick="setBuyMax()">Max</button>';
     html += '</div>';
   }
   ANIMALS.forEach(a => {
@@ -150,6 +151,7 @@ function buildAnimalShop() {
     html += '<div class="shop-name">' + a.name + ' <span class="count" id="count-' + a.id + '">×0</span></div>';
     html += '<div class="shop-flavor">' + a.flavor + '</div>';
     html += '<div class="shop-dps" id="animdps-' + a.id + '"></div>';
+    html += '<div class="shop-milestone" id="milestone-' + a.id + '"></div>';
     html += '</div>';
     html += '<div class="shop-price" id="price-' + a.id + '"></div>';
     html += '</div>';
@@ -159,8 +161,16 @@ function buildAnimalShop() {
 
 function setBuyAmount(n) {
   buyMultiplier = n;
+  buyMax = false;
   document.querySelectorAll('.buy-amt-btn').forEach(b => {
     b.classList.toggle('active', b.textContent === n + '×');
+  });
+}
+
+function setBuyMax() {
+  buyMax = true;
+  document.querySelectorAll('.buy-amt-btn').forEach(b => {
+    b.classList.toggle('active', b.textContent === 'Max');
   });
 }
 
@@ -439,11 +449,12 @@ function render() {
   updateOrbiters();
 
   // Animal shop
-  const qty = buyMultiplier;
+  const totalDps = getTotalDps();
   ANIMALS.forEach(a => {
     const el = document.getElementById('shop-' + a.id);
     if (!el) return;
     const count = state.animals[a.id] || 0;
+    const qty = buyMax ? Math.max(1, getMaxAffordable(a.id)) : buyMultiplier;
     const totalPrice = getBulkPrice(a.id, qty);
     const canAffordAll = state.currentPoints >= totalPrice;
     const visible = isAnimalVisible(a.id);
@@ -455,12 +466,32 @@ function render() {
     if (saleBuff && saleBuff.type === 'sale') {
       const unsaledTotal = (() => { let t = 0; for (let i = 0; i < qty; i++) t += Math.ceil(a.basePrice * Math.pow(COST_MULTIPLIER, count + i)); return t; })();
       const priceColor = canAffordAll ? 'var(--green-light)' : 'var(--red)';
-      priceEl.innerHTML = '<s style="color:#ffa726;opacity:.6;font-size:.85em">' + formatNumber(unsaledTotal) + '</s> <span style="color:' + priceColor + '">' + formatNumber(totalPrice) + '</span>';
+      priceEl.innerHTML = (buyMax ? '<span style="font-size:10px;opacity:.6">' + qty + '×</span> ' : '') + '<s style="color:#ffa726;opacity:.6;font-size:.85em">' + formatNumber(unsaledTotal) + '</s> <span style="color:' + priceColor + '">' + formatNumber(totalPrice) + '</span>';
     } else {
-      priceEl.textContent = formatNumber(totalPrice);
+      priceEl.innerHTML = (buyMax && qty > 1 ? '<span style="font-size:10px;opacity:.6">' + qty + '×</span> ' : '') + formatNumber(totalPrice);
     }
+    // DPS info with percentage of total
+    const animalDps = getAnimalDps(a.id);
+    const animalTotalDps = animalDps * count;
+    const pct = totalDps > 0 && count > 0 ? (animalTotalDps / totalDps * 100) : 0;
+    const pctStr = pct >= 0.1 ? ' (' + pct.toFixed(1) + '%)' : '';
     document.getElementById('animdps-' + a.id).textContent =
-      '+' + formatDps(getAnimalDps(a.id)) + '/s elk (totaal: ' + formatDps(getAnimalDps(a.id) * count) + '/s)';
+      '+' + formatDps(animalDps) + '/s elk (totaal: ' + formatDps(animalTotalDps) + '/s' + pctStr + ')';
+    // DPS tooltip
+    const tipDps = count > 0 ? escHtml(a.name) + '|' + escHtml('+' + formatDps(animalDps) + '/s elk, totaal ' + formatDps(animalTotalDps) + '/s = ' + pct.toFixed(1) + '% van je DPS') : escHtml(a.name) + '|' + escHtml(a.flavor);
+    el.setAttribute('data-tip', tipDps);
+    // Milestone progress
+    const msEl = document.getElementById('milestone-' + a.id);
+    if (msEl) {
+      const nextMs = MILESTONES.find(m => count < m);
+      if (nextMs && visible) {
+        const prevMs = MILESTONES[MILESTONES.indexOf(nextMs) - 1] || 0;
+        const pctMs = Math.min(100, Math.round((count - prevMs) / (nextMs - prevMs) * 100));
+        msEl.innerHTML = 'Volgende bonus: ' + count + '/' + nextMs + '<div class="milestone-bar"><div class="milestone-bar-fill" style="width:' + pctMs + '%"></div></div>';
+      } else {
+        msEl.innerHTML = '';
+      }
+    }
   });
 
   // Upgrades
@@ -551,6 +582,9 @@ function render() {
   // Stats
   renderStats();
 
+  // Notification badges on shop tabs
+  updateTabBadges();
+
   // Parse only dynamic emoji elements (buff indicator)
   if (curBuff && buffInd) parseAppleEmoji(buffInd);
 }
@@ -562,10 +596,11 @@ function updateCooldown(btnId, textId, lastPlayed, cooldown, active) {
   const remaining = cooldown - (Date.now() - lastPlayed);
   if (remaining > 0 && !active) {
     btn.disabled = true;
-    text.textContent = 'Wacht ' + Math.ceil(remaining / 1000) + 's...';
+    const pct = Math.round((1 - remaining / cooldown) * 100);
+    text.innerHTML = 'Wacht ' + Math.ceil(remaining / 1000) + 's...<div class="cooldown-bar"><div class="cooldown-bar-fill" style="width:' + pct + '%"></div></div>';
   } else if (!active) {
     btn.disabled = false;
-    text.textContent = '';
+    text.innerHTML = '';
   }
 }
 
@@ -596,6 +631,20 @@ function renderStats() {
   html += row('Evolutiesterren', state.prestige.stars + ' ⭐ (+' + (state.prestige.stars * 5) + '%)');
   html += row('Offline bonus', getOfflinePercent() + '%');
   html += row('Evoluties', state.prestige.timesReset + 'x');
+
+  // DPS breakdown
+  const bd = getDpsBreakdown();
+  if (bd.total > 0) {
+    html += heading('DPS Uitsplitsing');
+    bd.animals.forEach(a => {
+      const pct = (a.dps / bd.rawTotal * 100).toFixed(1);
+      html += row(a.name, formatDps(a.dps) + '/s (' + pct + '%)');
+    });
+    if (bd.achPct > 0) html += row('🏆 Prestatiebonus', '+' + bd.achPct.toFixed(0) + '%');
+    if (bd.starPct > 0) html += row('⭐ Sterrenbonus', '+' + bd.starPct.toFixed(0) + '%');
+    if (bd.buffActive) html += row('🔥 Buff', '×2');
+    html += row('<b>Totaal</b>', '<b>' + formatDps(bd.total) + '/s</b>');
+  }
 
   const s = state.stats;
   const totalMgPlayed = s.quizPlayed + s.catcherPlayed + s.mathPlayed + s.buffPlayed + s.sortPlayed + s.memoryPlayed + s.tellenPlayed + s.indringerPlayed + s.groterPlayed + s.voedselPlayed + s.racePlayed + s.puzzelPlayed;
@@ -687,6 +736,7 @@ function showMidTab(tabId) {
   );
   document.getElementById('mid-games').classList.toggle('active', tabId === 'games');
   document.getElementById('mid-stats').classList.toggle('active', tabId === 'stats');
+  try { localStorage.setItem('dk_midtab', tabId); } catch(e) {}
 }
 
 function showShopTab(tabId) {
@@ -696,6 +746,7 @@ function showShopTab(tabId) {
   document.getElementById('tab-' + tabId).classList.add('active');
   if (tabId === 'achievements') buildAchievements();
   if (tabId === 'evolution') buildEvolution();
+  try { localStorage.setItem('dk_shoptab', tabId); } catch(e) {}
 }
 
 function showMobilePanel(panel) {
@@ -704,6 +755,55 @@ function showMobilePanel(panel) {
   ['left', 'middle', 'right'].forEach(p => {
     document.getElementById(p + '-panel').classList.toggle('hidden-mobile', p !== panel);
   });
+  try { localStorage.setItem('dk_mobilepanel', panel); } catch(e) {}
+}
+
+/* Notification badges */
+function updateTabBadges() {
+  const tabs = document.querySelectorAll('.shop-tab');
+  // Animals tab: can afford any visible animal
+  const canBuyAnimal = ANIMALS.some(a => isAnimalVisible(a.id) && state.currentPoints >= getAnimalPrice(a.id));
+  // Upgrades tab: can afford any unbought upgrade meeting requirements
+  const canBuyUpgrade = [CLICK_UPGRADES, GLOBAL_UPGRADES, OFFLINE_UPGRADES, ...ANIMALS.map(a => a.upgrades)].flat().some(u => {
+    if (state.upgrades[u.id]) return false;
+    if (state.currentPoints < u.cost) return false;
+    if (u.req !== undefined) {
+      const animal = ANIMALS.find(a => a.upgrades.some(au => au.id === u.id));
+      if (animal && (state.animals[animal.id] || 0) < u.req) return false;
+    }
+    return true;
+  });
+  // Evolution tab: can prestige
+  const canEvolve = canPrestige() && getPrestigeStars() > 0;
+
+  tabs.forEach(t => {
+    // Remove existing badges
+    const old = t.querySelector('.tab-badge');
+    if (old) old.remove();
+    const text = t.textContent;
+    let show = false;
+    if (text.includes('Dieren') && canBuyAnimal && !t.classList.contains('active')) show = true;
+    if (text.includes('Upgrades') && canBuyUpgrade && !t.classList.contains('active')) show = true;
+    if (text.includes('Evolutie') && canEvolve && !t.classList.contains('active')) show = true;
+    if (show) {
+      const badge = document.createElement('span');
+      badge.className = 'tab-badge';
+      if (text.includes('Evolutie')) badge.style.background = 'var(--gold)';
+      t.appendChild(badge);
+    }
+  });
+}
+
+/* Achievement celebration */
+function celebrateAchievement(emoji) {
+  const el = document.createElement('div');
+  el.className = 'ach-celebrate';
+  el.textContent = emoji;
+  el.style.left = (40 + Math.random() * 20) + '%';
+  el.style.top = (30 + Math.random() * 20) + '%';
+  document.body.appendChild(el);
+  parseAppleEmoji(el);
+  setTimeout(() => el.remove(), 1200);
 }
 
 function showModal(id) { document.getElementById(id).classList.add('show'); }
@@ -780,10 +880,39 @@ function init() {
   // Save on close
   window.addEventListener('beforeunload', saveGame);
 
-  // Mobile: show left panel by default
+  // Restore remembered tabs
+  try {
+    const savedShopTab = localStorage.getItem('dk_shoptab');
+    if (savedShopTab) showShopTab(savedShopTab);
+    const savedMidTab = localStorage.getItem('dk_midtab');
+    if (savedMidTab) showMidTab(savedMidTab);
+  } catch(e) {}
+
+  // Mobile: restore or default to left
   if (window.innerWidth <= 900) {
-    showMobilePanel('left');
+    const savedPanel = localStorage.getItem('dk_mobilepanel');
+    showMobilePanel(savedPanel || 'left');
   }
+
+  // Keyboard shortcuts
+  document.addEventListener('keydown', function(e) {
+    // Don't capture if typing in an input/textarea
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
+    // Space = click
+    if (e.code === 'Space') {
+      e.preventDefault();
+      const area = document.getElementById('click-area');
+      const rect = area.getBoundingClientRect();
+      doClick({clientX: rect.left + rect.width / 2, clientY: rect.top + rect.height / 2});
+    }
+    // 1-5 = shop tabs
+    const shopTabs = ['animals', 'upgrades', 'achievements', 'evolution', 'options'];
+    if (e.key >= '1' && e.key <= '5') showShopTab(shopTabs[e.key - 1]);
+    // G = games tab, S = stats tab
+    if (e.key === 'g' || e.key === 'G') showMidTab('games');
+    if (e.key === 's' || e.key === 'S') showMidTab('stats');
+  });
 }
 
 init();

@@ -82,6 +82,46 @@ function getOfflinePercent() {
   return pct;
 }
 
+function getDpsBreakdown() {
+  const total = getTotalDps();
+  if (total === 0) return [];
+  const breakdown = [];
+  let rawAnimalTotal = 0;
+  ANIMALS.forEach(a => {
+    const count = state.animals[a.id] || 0;
+    if (count > 0) {
+      const dps = getAnimalDps(a.id) * count;
+      rawAnimalTotal += dps;
+      breakdown.push({name: a.emoji + ' ' + a.name, dps: dps});
+    }
+  });
+  // Apply global multipliers to get proportional share
+  breakdown.sort((a, b) => b.dps - a.dps);
+  // Add bonus info
+  const achCount = Object.keys(state.achievements).filter(k => state.achievements[k]).length;
+  const achPct = achCount * ACHIEVEMENT_BONUS * 100;
+  const starPct = state.prestige.stars * PRESTIGE_BONUS * 100;
+  const buff = getActiveBuff();
+  const buffActive = buff && buff.type === 'dps2x';
+  return {animals: breakdown, rawTotal: rawAnimalTotal, total: total, achPct: achPct, starPct: starPct, buffActive: buffActive};
+}
+
+function getMaxAffordable(animalId) {
+  const a = ANIMALS.find(x => x.id === animalId);
+  const count = state.animals[animalId] || 0;
+  const buff = getActiveBuff();
+  const saleMult = (buff && buff.type === 'sale') ? 0.5 : 1;
+  let remaining = state.currentPoints;
+  let qty = 0;
+  while (qty < 10000) {
+    const price = Math.ceil(a.basePrice * Math.pow(COST_MULTIPLIER, count + qty) * saleMult);
+    if (remaining < price) break;
+    remaining -= price;
+    qty++;
+  }
+  return qty;
+}
+
 function getHighestAnimal() {
   for (let i = ANIMALS.length - 1; i >= 0; i--) {
     if ((state.animals[ANIMALS[i].id] || 0) > 0) return ANIMALS[i];
@@ -188,7 +228,7 @@ function checkAchievements() {
       newOnes.push(a);
     }
   });
-  newOnes.forEach(a => { showToast('🏆 ' + a.name); sfxAchievement(); });
+  newOnes.forEach(a => { showToast('🏆 ' + a.name); sfxAchievement(); celebrateAchievement(a.emoji); });
 }
 
 /* ================================================================
@@ -231,9 +271,10 @@ function doClick(event) {
 }
 
 function buyAnimal(animalId) {
-  // Buy as many as affordable, up to buyMultiplier
+  // Buy as many as affordable, up to buyMultiplier (or max affordable)
+  const limit = buyMax ? getMaxAffordable(animalId) : buyMultiplier;
   let bought = 0;
-  for (let i = 0; i < buyMultiplier; i++) {
+  for (let i = 0; i < limit; i++) {
     const price = getAnimalPrice(animalId);
     if (state.currentPoints < price) break;
     state.currentPoints -= price;
