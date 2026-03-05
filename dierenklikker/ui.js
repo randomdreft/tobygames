@@ -395,8 +395,8 @@ function buildOptions() {
   // Sound
   html += '<div class="opt-section"><h3>🔊 Geluid</h3>';
   html += '<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">';
-  html += '<span style="font-size:13px;min-width:30px">' + (soundEnabled ? Math.round(soundVolume * 100) + '%' : 'Uit') + '</span>';
-  html += '<input type="range" min="0" max="100" value="' + (soundEnabled ? Math.round(soundVolume * 100) : 0) + '" ';
+  html += '<span id="volume-label" style="font-size:13px;min-width:35px;text-align:right">' + (soundEnabled ? Math.round(soundVolume * 100) + '%' : 'Uit') + '</span>';
+  html += '<input id="volume-slider" type="range" min="0" max="100" value="' + (soundEnabled ? Math.round(soundVolume * 100) : 0) + '" ';
   html += 'style="flex:1;accent-color:var(--gold)" oninput="setSoundVolume(this.value)">';
   html += '</div></div>';
 

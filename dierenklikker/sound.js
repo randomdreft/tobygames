@@ -37,7 +37,27 @@ function playChord(freqs, duration, type, vol) {
 // === Sound effects ===
 
 function sfxClick() {
-  playTone(800, 0.06, 'square', 0.08, true);
+  if (!soundEnabled || soundVolume === 0) return;
+  const ctx = getAudioCtx();
+  if (!ctx) return;
+  // Short noise burst = satisfying click sound
+  const bufSize = ctx.sampleRate * 0.03;
+  const buf = ctx.createBuffer(1, bufSize, ctx.sampleRate);
+  const data = buf.getChannelData(0);
+  for (let i = 0; i < bufSize; i++) {
+    data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / bufSize, 10);
+  }
+  const src = ctx.createBufferSource();
+  src.buffer = buf;
+  const gain = ctx.createGain();
+  gain.gain.value = 0.15 * soundVolume;
+  const filter = ctx.createBiquadFilter();
+  filter.type = 'highpass';
+  filter.frequency.value = 1800;
+  src.connect(filter);
+  filter.connect(gain);
+  gain.connect(ctx.destination);
+  src.start();
 }
 
 function sfxBuy() {
@@ -100,8 +120,9 @@ function setSoundVolume(val) {
   soundVolume = v / 100;
   soundEnabled = v > 0;
   localStorage.setItem('dierenklikker_volume', v);
-  buildOptions();
-  if (soundEnabled) sfxClick(); // preview
+  // Update label without rebuilding DOM (keeps slider draggable)
+  const label = document.getElementById('volume-label');
+  if (label) label.textContent = v > 0 ? v + '%' : 'Uit';
 }
 
 function loadSoundSettings() {

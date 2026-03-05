@@ -4,16 +4,25 @@
 
 [tobygames.nl](https://tobygames.nl)
 
-Een verzameling zelfgemaakte HTML5-games. Elk spel is een enkel HTML-bestand zonder externe dependencies. Open het bestand, speel het spel. Zo simpel is het.
+Een verzameling zelfgemaakte HTML5-games. De meeste spellen zijn een enkel HTML-bestand. De grotere spellen (Dierenklikker, TobyTypen) zijn opgesplitst in meerdere bestanden. Open het bestand, speel het spel. Zo simpel is het.
 
 ## De Games
 
 ### 🐾 Dierenklikker
 *Idle clicker met dieren, mini-games en een evolutiesysteem*
 
-Klik op dieren, verdien punten, koop nieuwe diersoorten en ontgrendel upgrades. Met 10 diersoorten (van mier tot draak), 5 mini-games, een buff-systeem en een prestige-mechanisme. Het grootste en meest uitgebreide spel op de site.
+Klik op dieren, verdien punten, koop nieuwe diersoorten en ontgrendel upgrades. Met 12 diersoorten (van mier tot draak), 12 mini-games, een buff-systeem, een prestige-mechanisme, unlockbare kleurthema's en geluidseffecten. Het grootste en meest uitgebreide spel op de site.
 
 **[Speel Dierenklikker](https://tobygames.nl/dierenklikker.html)**
+
+---
+
+### ⌨️ TobyTypen
+*ADHD-vriendelijke typecursus met 28 lessen*
+
+Gamified typecursus met progressieve letterintroductie, falling-word arcade-mechanics, boss fights en een XP/level-systeem. Ontworpen voor kinderen (6-10 jaar) met korte aandachtsspanne.
+
+**[Speel TobyTypen](https://tobygames.nl/typen/index.html)**
 
 ---
 
@@ -62,13 +71,42 @@ Race-game waarbij je moet ontsnappen aan de politie. Verzamel sterretjes voor bo
 
 ## Technisch
 
-- **Nul dependencies** — elk spel is een enkel `.html` bestand
+- **Nul externe dependencies** — puur HTML5 + CSS3 + JavaScript
 - **Nul build tools** — geen npm, geen webpack, geen node_modules
 - **Nul tracking** — geen analytics, geen cookies, geen ads
-- **Vanilla stack** — HTML5 + CSS3 + JavaScript, meer heb je niet nodig
 - **Mobile-friendly** — touch controls waar nodig
-- **Apple emojis** — Dierenklikker gebruikt lokaal gehoste Apple-emojis (`emoji/`) voor consistente weergave op alle platforms. Twemoji-library als parser (CDN).
-- **Offline** — download het bestand, speel het zonder internet (emoji-map meenemen voor Dierenklikker)
+- **Apple emojis** — Dierenklikker gebruikt lokaal gehoste Apple-emojis (`emoji/`) voor consistente weergave. Twemoji-library als parser (CDN).
+- **Offline** — download de bestanden, speel zonder internet
+
+## Projectstructuur
+
+```
+tobygames/
+├── index.html              # Landing page / game portal
+├── dierenklikker.html      # Dierenklikker (HTML shell)
+├── dierenklikker/           # Dierenklikker modules
+│   ├── style.css           # Alle CSS + kleurthema variabelen
+│   ├── sound.js            # Web Audio geluidseffecten
+│   ├── data.js             # Constanten, dieren, quiz/minigame data
+│   ├── state.js            # Game state, save/load (INI-formaat)
+│   ├── engine.js           # Berekeningen, achievements, klik/koop
+│   ├── minigames.js        # Alle 12 mini-games
+│   └── ui.js               # Prestige, UI rendering, thema's, init
+├── typen/                   # TobyTypen typecursus
+│   ├── index.html          # HTML shell
+│   ├── style.css           # CSS
+│   ├── audio.js            # Geluidseffecten
+│   ├── engine.js           # Game engine
+│   └── lessons.js          # 28 lessen met woordlijsten
+├── snake.html              # Snake (single file)
+├── worms.html              # Neuswormen (single file)
+├── winkeltje.html          # Winkeltje (single file)
+├── boter-kaas-eieren-xl.html # BKE XL (single file)
+├── politie.html            # Politie Jacht (single file)
+├── emoji/                  # Apple emoji PNGs (lokaal gehost)
+├── GAMES.md                # Gedetailleerde technische docs per spel
+└── README.md               # Dit bestand
+```
 
 ## Zelf draaien
 
@@ -76,11 +114,9 @@ Race-game waarbij je moet ontsnappen aan de politie. Verzamel sterretjes voor bo
 # Optie 1: gewoon openen
 open index.html
 
-# Optie 2: lokale server
+# Optie 2: lokale server (nodig voor multi-file spellen)
 python3 -m http.server 8000
 ```
-
-Of download een enkel `.html` bestand en open het in je browser. Echt, dat is alles.
 
 ## Bijdragen
 
