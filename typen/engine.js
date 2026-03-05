@@ -39,6 +39,8 @@ let fallingAnimFrame = null;
 let activefallingWord = null;
 let fallingTypedChars = 0;
 let soundEnabled = true;
+let maxErrors = 0;
+let roundErrors = 0;
 
 // ═══ SAVE / LOAD ═══
 const SAVE_KEY = 'tobygames_typen_save';
@@ -438,9 +440,22 @@ function showIntro() {
     o.classList.add('active');
 }
 
+function closeIntro() {
+    document.getElementById('introOverlay').classList.remove('active');
+    stopFalling(); stopBoss();
+    showScreen('map-screen');
+    renderMap();
+}
+
 document.getElementById('introStartBtn').onclick = () => {
     document.getElementById('introOverlay').classList.remove('active');
     startRound(1);
+};
+
+document.getElementById('introCloseBtn').onclick = closeIntro;
+
+document.getElementById('introOverlay').onclick = (e) => {
+    if (e.target === document.getElementById('introOverlay')) closeIntro();
 };
 
 function startRound(round) {
@@ -448,6 +463,7 @@ function startRound(round) {
     wordIndex = 0;
     charIndex = 0;
     combo = 0;
+    roundErrors = 0;
     updateComboDisplay();
 
     stopFalling();
@@ -471,6 +487,10 @@ function startRound(round) {
         document.getElementById('roundInfo').textContent = currentLesson.bigBoss ? '💀 EINDBAAS!' : '👾 Mini-Boss!';
         startBossFight(area);
     }
+
+    // Calculate max errors: ~50% of total chars, minimum 5
+    const totalCharsInRound = roundWords.reduce((sum, w) => sum + w.length, 0);
+    maxErrors = Math.max(5, Math.ceil(totalCharsInRound * 0.5));
 
     if (round <= 2 && roundWords.length > 0) {
         highlightKey(roundWords[0][0]);
@@ -611,7 +631,9 @@ function startBossFight(area) {
     const boss = currentLesson.boss;
     bossMaxHP = boss.hp;
     bossHP = boss.hp;
-    bossTimer = currentLesson.bigBoss ? 45 : 30;
+    // Scale timer: ~15s per HP for early lessons, ~12s for later, max 5 minutes
+    const secsPerHP = currentLesson.num <= 9 ? 15 : currentLesson.num <= 21 ? 13 : 12;
+    bossTimer = Math.min(300, boss.hp * secsPerHP);
 
     const bossWords = generateBossWords();
     roundWords = bossWords;
@@ -755,6 +777,7 @@ function handleKeyPress(e) {
         updateComboDisplay();
         sndWrong();
         flashKey(e.key, false);
+        if (checkErrorLimit()) return;
         const display = document.getElementById('wordDisplay');
         if (display && display.children[charIndex]) {
             display.children[charIndex].classList.add('wrong');
@@ -782,6 +805,7 @@ function handleFallingInput(key) {
             combo = 0;
             updateComboDisplay();
             sndWrong();
+            checkErrorLimit();
             return;
         }
     }
@@ -821,6 +845,7 @@ function handleFallingInput(key) {
         combo = 0;
         updateComboDisplay();
         sndWrong();
+        if (checkErrorLimit()) return;
     }
 
     const display = document.getElementById('wordDisplay');
@@ -844,6 +869,20 @@ function handleFallingInput(key) {
     updateProgress();
 }
 
+function checkErrorLimit() {
+    roundErrors++;
+    if (roundErrors >= maxErrors) {
+        stopFalling();
+        stopBoss();
+        showToast("❌ Te veel fouten! Probeer opnieuw.", "");
+        setTimeout(() => {
+            finishLesson(false, true); // not boss timeout, but error limit
+        }, 1000);
+        return true;
+    }
+    return false;
+}
+
 function advanceRound() {
     if (currentRound < 4) {
         startRound(currentRound + 1);
@@ -857,11 +896,12 @@ function updateProgress() {
     const done = currentRound === 3 ? fallingWords.filter(f => f.done).length : wordIndex;
     const pct = total > 0 ? (done/total*100) : 0;
     document.getElementById('progressFill').style.width = pct + '%';
-    document.getElementById('progressLabel').textContent = `Woord ${done}/${total}`;
+    const errorsLeft = maxErrors - roundErrors;
+    document.getElementById('progressLabel').textContent = `Woord ${done}/${total}  ·  ❌ ${roundErrors}/${maxErrors}`;
 }
 
 // ═══ LESSON FINISH ═══
-function finishLesson(bossTimedOut = false) {
+function finishLesson(bossTimedOut = false, tooManyErrors = false) {
     stopFalling();
     stopBoss();
 
@@ -875,8 +915,9 @@ function finishLesson(bossTimedOut = false) {
     if (sessionErrors === 0 && sessionCorrect > 10) state.stats.perfectLessons++;
 
     let stars;
-    if (bossTimedOut && bossHP > 0) {
-        // Boss not defeated — no stars earned
+    if (tooManyErrors) {
+        stars = 0;
+    } else if (bossTimedOut && bossHP > 0) {
         stars = 0;
     } else {
         stars = 1;
@@ -887,19 +928,21 @@ function finishLesson(bossTimedOut = false) {
     const prevStars = state.lessonStars[currentLesson.num] || 0;
     if (stars > prevStars) state.lessonStars[currentLesson.num] = stars;
 
-    if (!bossTimedOut || bossHP <= 0) addXP(500);
+    if (!bossTimedOut && !tooManyErrors) addXP(500);
     updateDailyStreak();
     checkAchievements();
     saveGame();
 
-    showResults(stars, accuracy, wpm, elapsed, bossTimedOut);
+    showResults(stars, accuracy, wpm, elapsed, bossTimedOut, tooManyErrors);
 }
 
-function showResults(stars, accuracy, wpm, elapsed, bossTimedOut = false) {
+function showResults(stars, accuracy, wpm, elapsed, bossTimedOut = false, tooManyErrors = false) {
     showScreen('results-screen');
 
     let title;
-    if (bossTimedOut && bossHP > 0) {
+    if (tooManyErrors) {
+        title = `❌ Te veel fouten! Probeer het opnieuw.`;
+    } else if (bossTimedOut && bossHP > 0) {
         title = `⏱️ Tijd op! ${currentLesson.boss.name} heeft gewonnen...`;
     } else if (currentLesson.bigBoss) {
         title = `💀 ${currentLesson.boss.name} Verslagen!`;

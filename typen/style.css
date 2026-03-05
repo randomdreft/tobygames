@@ -137,7 +137,7 @@ body {
 .achievements-btn:hover { transform:scale(1.02); }
 
 /* ═══ LESSON SCREEN ═══ */
-#lesson-screen { background: linear-gradient(135deg, #2d3436, #636e72); padding-bottom:60px; }
+#lesson-screen { background: linear-gradient(135deg, #2d3436, #636e72); }
 
 .lesson-header {
     text-align:center; padding:0.5rem; color:white;
@@ -152,6 +152,18 @@ body {
     flex-direction:column; color:white; text-align:center; padding:2rem;
 }
 .intro-overlay.active { display:flex; }
+.intro-card {
+    position:relative; background:rgba(255,255,255,0.08); border-radius:20px;
+    padding:2.5rem 2rem; max-width:500px; width:90%;
+    border:1px solid rgba(255,255,255,0.15);
+}
+.intro-close {
+    position:absolute; top:0.8rem; right:0.8rem; background:rgba(255,255,255,0.15);
+    border:none; color:white; width:36px; height:36px; border-radius:50%;
+    font-size:1.5rem; cursor:pointer; display:flex; align-items:center; justify-content:center;
+    transition: background 0.2s;
+}
+.intro-close:hover { background:rgba(255,255,255,0.3); }
 .intro-overlay h2 { font-size:2rem; margin-bottom:1rem; }
 .intro-overlay .new-letters {
     font-size:4rem; font-weight:800; letter-spacing:1rem;
@@ -278,9 +290,8 @@ body {
 
 /* ── Progress Bar ── */
 .progress-wrap {
-    position:fixed; bottom:0; left:0; right:0; z-index:40;
-    background:rgba(0,0,0,0.5); backdrop-filter:blur(8px);
-    padding:0.4rem 1rem 0.5rem; border-top:1px solid rgba(255,255,255,0.1);
+    width:100%; padding:0.4rem 1rem;
+    background:rgba(0,0,0,0.3); border-radius:10px; margin:0 0.5rem;
 }
 .progress-label {
     color:white; font-size:0.95rem; font-weight:700; margin-bottom:0.3rem;

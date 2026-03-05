@@ -13,7 +13,7 @@ const LESSONS = [
         words1:["f","j","f","j","f","f","j","j","f","j","f","j","j","f","f","j"],
         words2:["fj","jf","fjfj","jfjf","ff","jj","fjf","jfj","ffjj","jjff","fjjf","jffj"],
         words3:["fjfj","jfjf","ffjj","jjff","fjf","jfj","ffj","jjf","fjjf","jffj","fjfjfj","jfjfjf"],
-        boss:{emoji:"🐛",name:"Rups",hp:8}
+        boss:{emoji:"🐛",name:"Rups",hp:5}
     },
     {
         num:2, title:"Les 2 - Middelvingers", phase:1, phaseName:"Thuisrij",
@@ -22,7 +22,7 @@ const LESSONS = [
         words1:["d","k","d","k","d","d","k","k","d","k","d","k","k","d","d","k"],
         words2:["dk","kd","fd","jk","dkdk","fdjk","kdfj","dfkj","fdk","jkd","kdf","djf"],
         words3:["dkfj","fjdk","kdfjdk","dkjf","fdjkfd","jkdfjk","dffk","kjfd","dkdk","fjfj"],
-        boss:{emoji:"🐌",name:"Slak",hp:10}
+        boss:{emoji:"🐌",name:"Slak",hp:5}
     },
     {
         num:3, title:"Les 3 - Ringvingers", phase:1, phaseName:"Thuisrij",
@@ -31,7 +31,7 @@ const LESSONS = [
         words1:["s","l","s","l","s","s","l","l","s","l","s","l","l","s","s","l"],
         words2:["sl","ls","sdf","lkj","sldk","fjls","dksl","sdkl","flds","jksl","lds","skf"],
         words3:["sdfjkl","lkjfds","sldfkj","dkslfjd","fdsljk","jkldfs","sflk","dlsj","fsjl","dkfs"],
-        boss:{emoji:"🐸",name:"Kikker",hp:12}
+        boss:{emoji:"🐸",name:"Kikker",hp:6}
     },
     {
         num:4, title:"Les 4 - Pinken", phase:1, phaseName:"Thuisrij",
@@ -40,7 +40,7 @@ const LESSONS = [
         words1:["a",";","a",";","a","a",";",";","a",";","a",";",";","a","a",";"],
         words2:["als","dal","kas","lak","jak","sla","glad","das","klas","sal","flask","laks"],
         words3:["allas","allas","dalkas","slakas","lakdas","klasja","jaksla","daklas","saldak","gladjas"],
-        boss:{emoji:"🦎",name:"Hagedis",hp:14}
+        boss:{emoji:"🦎",name:"Hagedis",hp:6}
     },
     {
         num:5, title:"Les 5 - Index Stretch", phase:1, phaseName:"Thuisrij",
@@ -49,7 +49,7 @@ const LESSONS = [
         words1:["g","h","g","h","g","g","h","h","g","h","g","h","h","g","g","h"],
         words2:["gaf","had","glas","half","has","dag","lag","hak","gal","has","slag","gash"],
         words3:["glas","half","slag","flash","klash","ghalf","daghas","lagash","galhas","hasgal"],
-        boss:{emoji:"🐲",name:"Draak",hp:20}, bigBoss:true
+        boss:{emoji:"🐲",name:"Draak",hp:8}, bigBoss:true
     },
     // Fase 2: Klinkers (6-9)
     {
@@ -59,7 +59,7 @@ const LESSONS = [
         words1:["e","e","e","e","e","e","e","e","e","e","e","e","e","e","e","e"],
         words2:["de","fee","les","elf","held","geld","jade","lef","ges","hek","lek","deel"],
         words3:["helder","gesel","eless","segel","feehelder","gehelfd","lesse","hekjes","geleed","delfs"],
-        boss:{emoji:"🦇",name:"Vleermuis",hp:14}
+        boss:{emoji:"🦇",name:"Vleermuis",hp:6}
     },
     {
         num:7, title:"Les 7 - De I", phase:2, phaseName:"Klinkers",
@@ -68,7 +68,7 @@ const LESSONS = [
         words1:["i","i","i","i","i","i","i","i","i","i","i","i","i","i","i","i"],
         words2:["die","hij","is","lid","die","gif","ski","ei","kiel","file","dief","lies"],
         words3:["diesel","kiddie","giechel","liefde","eiland","heide","fisjke","diefje","gilde","ijdel"],
-        boss:{emoji:"🦂",name:"Schorpioen",hp:16}
+        boss:{emoji:"🦂",name:"Schorpioen",hp:7}
     },
     {
         num:8, title:"Les 8 - De O", phase:2, phaseName:"Klinkers",
@@ -77,7 +77,7 @@ const LESSONS = [
         words1:["o","o","o","o","o","o","o","o","o","o","o","o","o","o","o","o"],
         words2:["doe","goed","hoe","koel","doel","olie","hoed","lood","gok","hol","sok","koe"],
         words3:["hoofd","goede","doelen","koele","olies","hoede","loods","goedkope","hoekige","doelgoed"],
-        boss:{emoji:"🕷️",name:"Spin",hp:18}
+        boss:{emoji:"🕷️",name:"Spin",hp:7}
     },
     {
         num:9, title:"Les 9 - De U", phase:2, phaseName:"Klinkers",
@@ -86,7 +86,7 @@ const LESSONS = [
         words1:["u","u","u","u","u","u","u","u","u","u","u","u","u","u","u","u"],
         words2:["duf","gul","huis","kus","lui","oud","goud","fuif","koud","juf","duel","kuil"],
         words3:["juist","huidig","ouders","gelukkig","kuilde","duisel","fuikel","goudvis","huidje","juiste"],
-        boss:{emoji:"🐉",name:"Draken Koning",hp:25}, bigBoss:true
+        boss:{emoji:"🐉",name:"Draken Koning",hp:10}, bigBoss:true
     },
     // Fase 3: Bovenrij Medeklinkers (10-14)
     {
@@ -96,7 +96,7 @@ const LESSONS = [
         words1:["r","r","r","r","r","r","r","r","r","r","r","r","r","r","r","r"],
         words2:["rood","dier","gras","deur","vier","rijke","rug","ree","rek","rok","rid","ros"],
         words3:["ridder","groei","rivier","grijs","ruiker","draai","kreukels","roeisl","grijsde","kruisel"],
-        boss:{emoji:"🐺",name:"Wolf",hp:16}
+        boss:{emoji:"🐺",name:"Wolf",hp:7}
     },
     {
         num:11, title:"Les 11 - De T", phase:3, phaseName:"Bovenrij",
@@ -105,7 +105,7 @@ const LESSONS = [
         words1:["t","t","t","t","t","t","t","t","t","t","t","t","t","t","t","t"],
         words2:["het","stel","fiets","tegel","trek","test","kort","stoer","trots","rest","ster","tart"],
         words3:["gieter","terug","sterkte","toetsje","fietsrit","gisterdag","trotseer","testfase","sterretje","ketters"],
-        boss:{emoji:"🐻",name:"Beer",hp:18}
+        boss:{emoji:"🐻",name:"Beer",hp:8}
     },
     {
         num:12, title:"Les 12 - De W", phase:3, phaseName:"Bovenrij",
@@ -114,7 +114,7 @@ const LESSONS = [
         words1:["w","w","w","w","w","w","w","w","w","w","w","w","w","w","w","w"],
         words2:["wie","wat","waar","wist","wit","wol","wijs","wieg","wijk","woord","wil","werk"],
         words3:["water","woord","wereld","wierook","wisselgeld","werkgroei","watertje","wijsheid","wolkje","wilskruid"],
-        boss:{emoji:"🦁",name:"Leeuw",hp:20}
+        boss:{emoji:"🦁",name:"Leeuw",hp:8}
     },
     {
         num:13, title:"Les 13 - De P", phase:3, phaseName:"Bovenrij",
@@ -123,7 +123,7 @@ const LESSONS = [
         words1:["p","p","p","p","p","p","p","p","p","p","p","p","p","p","p","p"],
         words2:["pet","pas","pil","pol","put","pot","prik","drop","stap","klap","plat","port"],
         words3:["plattegrip","paspoort","portier","priester","plotsklaps","dropjes","optreil","petluis","politiek","stipworp"],
-        boss:{emoji:"🦅",name:"Arend",hp:22}
+        boss:{emoji:"🦅",name:"Arend",hp:8}
     },
     {
         num:14, title:"Les 14 - Q en Y", phase:3, phaseName:"Bovenrij",
@@ -132,7 +132,7 @@ const LESSONS = [
         words1:["q","y","q","y","q","q","y","y","q","y","q","y","y","q","q","y"],
         words2:["yoga","type","yard","yeti","qat","quilt","yogi","query","yes","yet","yep","quiz"],
         words3:["yoghurt","typist","quiltje","youtube","yuppie","queeste","yogales","typfout","yoghurtje","querylist"],
-        boss:{emoji:"🐙",name:"Octopus",hp:30}, bigBoss:true
+        boss:{emoji:"🐙",name:"Octopus",hp:12}, bigBoss:true
     },
     // Fase 4: Onderrij (15-21)
     {
@@ -142,7 +142,7 @@ const LESSONS = [
         words1:["n","n","n","n","n","n","n","n","n","n","n","n","n","n","n","n"],
         words2:["den","een","hen","nek","tent","net","eng","kin","pen","ren","tin","kan"],
         words3:["lente","winter","onder","denken","planten","golden","kindje","renner","werken","tinker"],
-        boss:{emoji:"🐊",name:"Krokodil",hp:18}
+        boss:{emoji:"🐊",name:"Krokodil",hp:8}
     },
     {
         num:16, title:"Les 16 - De M", phase:4, phaseName:"Onderrij",
@@ -151,7 +151,7 @@ const LESSONS = [
         words1:["m","m","m","m","m","m","m","m","m","m","m","m","m","m","m","m"],
         words2:["met","mij","men","mok","mug","mist","melk","muis","mand","mooi","mond","mars"],
         words3:["moment","morgen","melkweg","minister","modder","monster","museum","meester","middel","motoren"],
-        boss:{emoji:"🦈",name:"Haai",hp:20}
+        boss:{emoji:"🦈",name:"Haai",hp:8}
     },
     {
         num:17, title:"Les 17 - De B", phase:4, phaseName:"Onderrij",
@@ -160,7 +160,7 @@ const LESSONS = [
         words1:["b","b","b","b","b","b","b","b","b","b","b","b","b","b","b","b"],
         words2:["bed","bij","bot","bus","bol","brug","boot","berg","boom","best","boek","bord"],
         words3:["beter","bouwen","brood","binnen","burger","beschrijf","bolder","bijtend","brugkind","boomgaard"],
-        boss:{emoji:"🐗",name:"Wild Zwijn",hp:22}
+        boss:{emoji:"🐗",name:"Wild Zwijn",hp:9}
     },
     {
         num:18, title:"Les 18 - De V", phase:4, phaseName:"Onderrij",
@@ -169,7 +169,7 @@ const LESSONS = [
         words1:["v","v","v","v","v","v","v","v","v","v","v","v","v","v","v","v"],
         words2:["van","vel","vis","vol","vuur","voet","vier","vlot","vork","vast","vies","vet"],
         words3:["vogel","vader","voetbal","vlinder","vakker","vijver","vertrek","vinden","vuurwerk","vitamine"],
-        boss:{emoji:"🐍",name:"Python",hp:24}
+        boss:{emoji:"🐍",name:"Python",hp:9}
     },
     {
         num:19, title:"Les 19 - C en Komma", phase:4, phaseName:"Onderrij",
@@ -178,7 +178,7 @@ const LESSONS = [
         words1:["c",",","c",",","c","c",",",",","c",",","c",",",",","c","c",","],
         words2:["crn","cel","ach","cv","cd","kic","code","clip","correct","scan","scrum","disco"],
         words3:["computer","concert","december","fietsclub","circuit","scandium","educatie","recyclen","correct","cyclus"],
-        boss:{emoji:"🦀",name:"Krab",hp:22}
+        boss:{emoji:"🦀",name:"Krab",hp:9}
     },
     {
         num:20, title:"Les 20 - X en Punt", phase:4, phaseName:"Onderrij",
@@ -187,7 +187,7 @@ const LESSONS = [
         words1:["x",".","x",".","x","x",".",".","x",".","x",".",".","x","x","."],
         words2:["tex","mix","fax","hex","box","fix","fox","max","six","wax","dex","pix"],
         words3:["expres","flexibel","textiel","complex","excuus","expert","exterior","executie","examen","excursie"],
-        boss:{emoji:"🦑",name:"Inktvis",hp:24}
+        boss:{emoji:"🦑",name:"Inktvis",hp:9}
     },
     {
         num:21, title:"Les 21 - Z en Slash", phase:4, phaseName:"Onderrij",
@@ -196,7 +196,7 @@ const LESSONS = [
         words1:["z","/","z","/","z","z","/","/","z","/","z","/","/","z","z","/"],
         words2:["zee","zon","zit","zak","zes","zin","zes","zig","zout","zij","zus","zoom"],
         words3:["zeilen","zondag","ziekenhuis","bezorgen","verzorgen","puzzel","zwemmen","zoeken","zilveren","zenuwachtig"],
-        boss:{emoji:"👹",name:"Demon",hp:35}, bigBoss:true
+        boss:{emoji:"👹",name:"Demon",hp:12}, bigBoss:true
     },
     // Fase 5: Hoofdletters & Specials (22-24)
     {
@@ -204,9 +204,9 @@ const LESSONS = [
         newLetters:["Shift"], allLetters:["a","s","d","f","g","h","j","k","l",";","e","i","o","u","r","t","w","p","q","y","n","m","b","v","c",",","x",".","z","/"],
         fingerHint:"Gebruik Shift met je pink! Links-Shift voor rechterhand letters, Rechts-Shift voor linkerhand.",
         words1:["A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P"],
-        words2:["Jan","Piet","Amsterdam","Den Haag","Rotterdam","Utrecht","Groningen","Leiden","Delft","Breda","Arnhem","Zwolle"],
-        words3:["Nederland","Europa","Sinterklaas","Koningsdag","Amsterdam","Rotterdam","Verjaardag","Fietsen","December","Januari"],
-        boss:{emoji:"🧙",name:"Tovenaar",hp:25}
+        words2:["Jan","Piet","Amsterdam","huis","Rotterdam","school","Groningen","water","Delft","brood","Arnhem","fiets"],
+        words3:["Nederland","kat en hond","Europa","de school","Sinterklaas","mijn boek","Amsterdam","de winter","Rotterdam","lekker warm"],
+        boss:{emoji:"🧙",name:"Tovenaar",hp:10}
     },
     {
         num:23, title:"Les 23 - Cijfers", phase:5, phaseName:"Hoofdletters",
@@ -214,17 +214,17 @@ const LESSONS = [
         fingerHint:"Cijfers staan op de bovenste rij. Gebruik dezelfde vingers als de letterrij eronder!",
         words1:["1","2","3","4","5","6","7","8","9","0","1","2","3","4","5","0"],
         words2:["100","2023","42","365","007","1984","2000","99","55","12","31","77"],
-        words3:["artikel 5","nummer 10","pagina 42","route 66","groep 8","level 99","jaar 2026","code 007","stap 1","poort 80"],
-        boss:{emoji:"🤖",name:"Robot",hp:28}
+        words3:["artikel 5","nummer 10","pagina 42","Route 66","groep 8","level 99","jaar 2026","code 007","stap 1","poort 80"],
+        boss:{emoji:"🤖",name:"Robot",hp:10}
     },
     {
         num:24, title:"Les 24 - Leestekens", phase:5, phaseName:"Hoofdletters",
         newLetters:["!","?","'","\"","-"], allLetters:["a","s","d","f","g","h","j","k","l",";","e","i","o","u","r","t","w","p","q","y","n","m","b","v","c",",","x",".","z","/","!","?","'","\"","-"],
         fingerHint:"Leestekens maken je zinnen compleet!",
         words1:["!","?","'","\"","-","!","?","'","\"","-","!","?","'","\"","-","!"],
-        words2:["hallo!","wie?","dat's","'s ochtends","niet-waar","ja!","nee?","hij's","zo'n","non-stop","wow!","hoe?"],
-        words3:["Hoe gaat het?","Wat leuk!","'s Morgens vroeg","non-fictie","Hij zei: 'hoi!'","Rennen!","Klaar?","'t Is mooi.","Stop!","Waarom niet?"],
-        boss:{emoji:"👾",name:"Alien Koning",hp:40}, bigBoss:true
+        words2:["hallo!","wie?","dat's","niet-waar","ja!","nee?","zo'n","non-stop","wow!","hoe?","top!","klaar?"],
+        words3:["hoe gaat het?","wat leuk!","non-fictie","hallo daar!","klaar?","mooi zo!","stop!","waarom niet?","ga je mee?","heel goed!"],
+        boss:{emoji:"👾",name:"Alien Koning",hp:14}, bigBoss:true
     },
     // Fase 6: Snelheid (25-28)
     {
@@ -233,35 +233,35 @@ const LESSONS = [
         fingerHint:"Tijd om snel te typen! Korte woorden zo snel mogelijk!",
         words1:["de","het","een","en","is","op","in","van","dat","dit","met","aan","als","bij","nog","wel"],
         words2:["kan","zal","mag","wil","zou","was","had","ben","heb","kom","doe","zie","zeg","geef","ga","sta"],
-        words3:["goed","snel","mooi","lang","kort","hoog","laag","warm","koud","veel","soms","heel","best","fijn","leuk","gaaf"],
-        boss:{emoji:"⚡",name:"Bliksem",hp:30}
+        words3:["goed","snel","mooi","lang","kort","warm","koud","veel","soms","heel","best","fijn","leuk","gaaf","Ja!","nee?"],
+        boss:{emoji:"⚡",name:"Bliksem",hp:10}
     },
     {
         num:26, title:"Les 26 - Zinnen Typen", phase:6, phaseName:"Snelheid",
         newLetters:[], allLetters:["a","s","d","f","g","h","j","k","l",";","e","i","o","u","r","t","w","p","q","y","n","m","b","v","c",",","x",".","z","/"],
         fingerHint:"Nu gaan we hele zinnen typen!",
         words1:["de kat zit op de mat","hij rent heel snel","ik kan goed typen","de zon schijnt vandaag"],
-        words2:["Toby speelt graag games.","De hond blaft luid.","Wij gaan naar school.","Het is mooi weer vandaag.","Zij leest een boek.","Hij fietst naar huis."],
-        words3:["mooi land","de trein","kopje thee","pak je jas","in het park","het weekend","regen buiten","naar school","goede morgen","lekker weer","tot straks","veel plezier"],
-        boss:{emoji:"🌪️",name:"Tornado",hp:35}
+        words2:["de hond blaft luid","wij gaan naar school","het is mooi weer","zij leest een boek","hij fietst naar huis","Toby speelt graag"],
+        words3:["mooi land","de trein","kopje thee","pak je jas","in het park","het weekend","naar school","goede morgen","lekker weer","tot straks","Heel goed!","veel plezier"],
+        boss:{emoji:"🌪️",name:"Tornado",hp:10}
     },
     {
         num:27, title:"Les 27 - Snelheidstest", phase:6, phaseName:"Snelheid",
         newLetters:[], allLetters:["a","s","d","f","g","h","j","k","l",";","e","i","o","u","r","t","w","p","q","y","n","m","b","v","c",",","x",".","z","/"],
         fingerHint:"Typ zo snel en zo goed mogelijk!",
-        words1:["snel","snel","snel","snel","snel","snel","snel","snel","vlug","vlug","vlug","vlug","rap","rap","rap","rap"],
-        words2:["De snelle vos springt over de luie hond.","Oefening baart kunst.","Wie het kleine niet eert is het grote niet weerd.","Alle begin is moeilijk.","Na regen komt zonneschijn.","De aanhouder wint."],
-        words3:["de beste typer","elke dag beter","niet kijken","tien vingers","snel typen","oefenen helpt","ga zo door","super snel","goed bezig","bijna klaar","heel knap","top score"],
-        boss:{emoji:"🔥",name:"Vuurgeest",hp:40}
+        words1:["snel","vlug","rap","goed","fijn","mooi","leuk","best","warm","koud","lang","kort","snel","vlug","rap","goed"],
+        words2:["de snelle vos springt","oefening baart kunst","alle begin is moeilijk","na regen komt zon","de aanhouder wint","goed gedaan!"],
+        words3:["de beste typer","elke dag beter","tien vingers","snel typen","ga zo door","goed bezig","bijna klaar","heel knap","Super!","top score","nog even","klaar?"],
+        boss:{emoji:"🔥",name:"Vuurgeest",hp:12}
     },
     {
         num:28, title:"Les 28 - Eindexamen!", phase:6, phaseName:"Snelheid",
         newLetters:[], allLetters:["a","s","d","f","g","h","j","k","l",";","e","i","o","u","r","t","w","p","q","y","n","m","b","v","c",",","x",".","z","/"],
         fingerHint:"Het eindexamen! Laat zien wat je geleerd hebt!",
         words1:["a","b","c","d","e","f","g","h","i","j","k","l","m","n","o","p","q","r","s","t","u","v","w","x","y","z"],
-        words2:["Gefeliciteerd met je diploma!","Je bent nu een echte typer!","Toby is supertrots op je!","Blijf oefenen voor meer snelheid.","Het toetsenbord is jouw vriend.","Typen is een superpower!"],
-        words3:["je bent geweldig","blijf oefenen","goed gedaan","alle letters","super trots","eindexamen","afgestudeerd","heel knap","typen is leuk","de beste","top resultaat","kampioen"],
-        boss:{emoji:"🏆",name:"Eindbaas",hp:50}, bigBoss:true
+        words2:["gefeliciteerd met je diploma","je bent nu een echte typer","Toby is trots op je!","blijf oefenen voor snelheid","het toetsenbord is je vriend","typen is een superpower"],
+        words3:["je bent geweldig","blijf oefenen","goed gedaan","alle letters","super trots","eindexamen","heel knap","typen is leuk","de beste","Klaar!","top resultaat","kampioen"],
+        boss:{emoji:"🏆",name:"Eindbaas",hp:15}, bigBoss:true
     }
 ];
 
