@@ -953,12 +953,18 @@ function showResults(stars, accuracy, wpm, elapsed, bossTimedOut = false, tooMan
 
     const starsEl = document.getElementById('resultsStars');
     starsEl.innerHTML = '';
-    for (let i = 1; i <= 3; i++) {
-        const delay = i * 0.3;
-        setTimeout(() => {
-            starsEl.textContent += i <= stars ? '⭐' : '☆';
-            if (i <= stars) sndStar();
-        }, delay * 1000);
+    if (stars === 0) {
+        starsEl.textContent = '😢 Geen sterren';
+        starsEl.style.fontSize = '1.5rem';
+    } else {
+        starsEl.style.fontSize = '';
+        for (let i = 1; i <= 3; i++) {
+            const delay = i * 0.3;
+            setTimeout(() => {
+                starsEl.textContent += i <= stars ? '⭐' : '☆';
+                if (i <= stars) sndStar();
+            }, delay * 1000);
+        }
     }
 
     document.getElementById('resultsStats').innerHTML = `
