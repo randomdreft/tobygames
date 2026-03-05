@@ -925,7 +925,7 @@ const FOOD_QUIZ = [
   {emoji:'🐱',name:'Kat',food:'🐟 Vis',wrong:['🌿 Gras','🍌 Bananen','🌾 Graan']},
   {emoji:'🐶',name:'Hond',food:'🥩 Vlees',wrong:['🌿 Gras','🌾 Graan','🍯 Honing']},
   {emoji:'🐰',name:'Konijn',food:'🥕 Wortels',wrong:['🥩 Vlees','🐟 Vis','🍯 Honing']},
-  {emoji:'🐻',name:'Beer',food:'🍯 Honing',wrong:['🌾 Graan','🥕 Wortels','🐟 Vis']},
+  {emoji:'🐻',name:'Beer',food:'🍯 Honing',wrong:['🌾 Graan','🥕 Wortels','🍫 Chocolade']},
   {emoji:'🐼',name:'Panda',food:'🎋 Bamboe',wrong:['🥩 Vlees','🐟 Vis','🍯 Honing']},
   {emoji:'🐵',name:'Aap',food:'🍌 Bananen',wrong:['🐟 Vis','🥩 Vlees','🌾 Graan']},
   {emoji:'🐔',name:'Kip',food:'🌾 Graan',wrong:['🐟 Vis','🍯 Honing','🍌 Bananen']},
@@ -2314,6 +2314,31 @@ function flipCard(index) {
         memoryPairs++;
         document.getElementById('memory-pairs').textContent = memoryPairs;
         if (memoryPairs === 8) endMemory();
+        else if (memoryPairs === 7) {
+          // Auto-flip last 2 cards — they're guaranteed to match
+          setTimeout(() => {
+            const remaining = document.querySelectorAll('.memory-card.face-down');
+            if (remaining.length === 2) {
+              const idxA = parseInt(remaining[0].dataset.index);
+              const idxB = parseInt(remaining[1].dataset.index);
+              remaining[0].classList.remove('face-down');
+              remaining[0].classList.add('face-up');
+              remaining[0].textContent = memoryCards[idxA];
+              parseAppleEmoji(remaining[0]);
+              remaining[1].classList.remove('face-down');
+              remaining[1].classList.add('face-up');
+              remaining[1].textContent = memoryCards[idxB];
+              parseAppleEmoji(remaining[1]);
+              setTimeout(() => {
+                remaining[0].classList.add('matched');
+                remaining[1].classList.add('matched');
+                memoryPairs++;
+                document.getElementById('memory-pairs').textContent = memoryPairs;
+                endMemory();
+              }, 400);
+            }
+          }, 500);
+        }
       }, 400);
     } else {
       // No match
