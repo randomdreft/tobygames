@@ -612,7 +612,7 @@ function renderStats() {
   if (s.sortPlayed) html += row('🗂️ Sorteren', s.sortCorrect + ' goed (beste: ' + s.sortBestStreak + ')');
   if (s.racePlayed) html += row('🏇 Paardenrace', s.raceWon + '/' + s.racePlayed + ' gewonnen');
   if (s.puzzelPlayed) html += row('🧩 Puzzel', s.puzzelWon + 'x opgelost (beste: ' + (s.puzzelBestMoves || '-') + ' zetten)');
-  if (s.memoryPlayed) html += row('🃏 Memory', s.memoryWon + '/' + s.memoryPlayed + ' gewonnen');
+  if (s.memoryPlayed) html += row('🃏 Memory', s.memoryWon + '/' + s.memoryPlayed + ' perfect');
 
   list.innerHTML = html;
 }

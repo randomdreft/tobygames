@@ -142,6 +142,8 @@ img.emoji {
 .mg-btn:hover:not(:disabled) { background: var(--green-light); transform: translateY(-1px); }
 .mg-btn:disabled { background: #555; cursor: not-allowed; opacity: 0.7; }
 .cooldown-text { font-size: 13px; color: var(--text-dim); margin-top: 6px; text-align: center; }
+.cooldown-bar { height: 4px; border-radius: 2px; background: rgba(255,255,255,0.08); margin-top: 4px; overflow: hidden; }
+.cooldown-bar-fill { height: 100%; border-radius: 2px; background: var(--green); transition: width 1s linear; }
 
 /* Quiz */
 #quiz-game { margin-top: 10px; }
@@ -585,4 +587,5 @@ img.emoji {
 }
 .puzzel-tile img { height: 28px; width: 28px; }
 .puzzel-tile:hover { background: rgba(255,255,255,0.2); }
+.puzzel-tile.correct { border-color: var(--green); background: rgba(67,160,71,0.15); }
 .puzzel-tile.empty { background: transparent; border-color: transparent; cursor: default; }

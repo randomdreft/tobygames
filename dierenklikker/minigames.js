@@ -207,6 +207,7 @@ function answerMath(chosen, correct) {
 
   const result = document.getElementById('math-result');
   if (chosen === correct) {
+    sfxCorrect();
     state.stats.mathCorrect++;
     const bonus = getTotalDps() * 600;
     state.currentPoints += bonus;
@@ -214,6 +215,7 @@ function answerMath(chosen, correct) {
     state.allTime.totalEarned += bonus;
     result.innerHTML = '<div class="quiz-result" style="background:rgba(67,160,71,0.2);color:var(--green-light)">Goed! +' + formatNumber(bonus) + ' punten!</div>';
   } else {
+    sfxWrong();
     state.stats.mathWrong++;
     result.innerHTML = '<div class="quiz-result" style="background:rgba(239,83,80,0.2);color:var(--red)">Helaas, fout!</div>';
   }
@@ -335,12 +337,14 @@ function sortAnswer(category) {
   if (!sortActive || !sortCurrent) return;
   const btn = document.querySelector('.sort-cat-btn[onclick*="' + category + '"]');
   if (category === sortCurrent.cat) {
+    sfxCorrect();
     sortScore++;
     document.getElementById('sort-score').textContent = sortScore;
     if (btn) btn.classList.add('correct');
     setTimeout(nextSortAnimal, 300);
   } else {
     // Wrong answer: show correct category, then end the game
+    sfxWrong();
     sortActive = false; // prevent further clicks
     clearInterval(sortInterval); // stop timer to prevent double endSort
     if (btn) btn.classList.add('wrong');
@@ -604,6 +608,7 @@ function answerTellen(n) {
   });
 
   if (n === tellenCount) {
+    sfxCorrect();
     state.stats.tellenCorrect++;
     const bonus = getTotalDps() * 600;
     state.currentPoints += bonus;
@@ -612,6 +617,7 @@ function answerTellen(n) {
     const prompt = document.getElementById('tellen-prompt');
     if (prompt) prompt.innerHTML = '<span style="color:var(--green-light)">Goed! +' + formatNumber(bonus) + ' punten!</span>';
   } else {
+    sfxWrong();
     state.stats.tellenWrong++;
     const prompt = document.getElementById('tellen-prompt');
     if (prompt) prompt.innerHTML = '<span style="color:var(--red)">Helaas! Het waren er ' + tellenCount + '.</span>';
@@ -681,11 +687,13 @@ function answerIndringer(idx) {
   if (!indringerActive) return;
   const cards = document.querySelectorAll('.indringer-card');
   if (idx === indringerCorrectIdx) {
+    sfxCorrect();
     indringerScore++;
     document.getElementById('indringer-score').textContent = indringerScore;
     cards[idx].classList.add('correct');
     setTimeout(nextIndringer, 250);
   } else {
+    sfxWrong();
     cards[idx].classList.add('wrong');
     cards[indringerCorrectIdx].classList.add('correct');
     endIndringer();
@@ -789,10 +797,12 @@ function answerGroter(idx) {
   choices[heavier].classList.add('correct');
 
   if (idx === heavier) {
+    sfxCorrect();
     groterScore++;
     state.stats.groterCorrect++;
     document.getElementById('groter-score').textContent = groterScore;
   } else {
+    sfxWrong();
     groterMistakes++;
     state.stats.groterWrong++;
     choices[idx].classList.add('wrong');
@@ -1105,7 +1115,7 @@ function nextVoedsel() {
   voedselCurrent = voedselBag.shift();
 
   const field = document.getElementById('voedsel-field');
-  const wrongPick = voedselCurrent.wrong.sort(() => Math.random() - 0.5).slice(0, 2);
+  const wrongPick = [...voedselCurrent.wrong].sort(() => Math.random() - 0.5).slice(0, 2);
   const options = [voedselCurrent.food, ...wrongPick].sort(() => Math.random() - 0.5);
 
   let html = '<div class="voedsel-animal">' + voedselCurrent.emoji + '</div>';
@@ -1139,10 +1149,12 @@ function answerVoedsel(btn, answer) {
   buttons.forEach(b => { if (b.textContent === voedselCurrent.food) b.classList.add('correct'); });
 
   if (answer === voedselCurrent.food) {
+    sfxCorrect();
     voedselScore++;
     state.stats.voedselCorrect++;
     document.getElementById('voedsel-score').textContent = voedselScore;
   } else {
+    sfxWrong();
     voedselMistakes++;
     state.stats.voedselWrong++;
     btn.classList.add('wrong');
