@@ -1507,6 +1507,13 @@ function saveGame() {
   } catch(e) {}
 }
 
+function cleanupObsoleteAchievements() {
+  const validIds = new Set(achievementDefs.map(a => a.id));
+  Object.keys(state.achievements).forEach(k => {
+    if (!validIds.has(k)) delete state.achievements[k];
+  });
+}
+
 function loadGame() {
   try {
     const data = localStorage.getItem('dierenklikker_save');
@@ -1539,10 +1546,12 @@ function loadGame() {
             showOfflineModal(earnings, elapsed);
           }
         }
+        cleanupObsoleteAchievements();
         return true;
       }
     }
     state = loaded;
+    cleanupObsoleteAchievements();
     return true;
   } catch(e) { return false; }
 }
@@ -1736,8 +1745,8 @@ function buildAchievementDefs() {
   });
   // Click milestones
   const clickMilestones = [
-    [100, 'Klik klik klik'], [1000, 'Doordrukker'], [10000, 'Klikkampioen'],
-    [100000, 'Supersnelle vinger'], [1000000, 'Miljoen klikken!']
+    [100, 'Klik klik klik'], [1000, 'Doordrukker'], [5000, 'Klikkampioen'],
+    [15000, 'Supersnelle vinger'], [35000, 'Kliklegende']
   ];
   clickMilestones.forEach(([n, name]) => {
     defs.push({
@@ -1855,11 +1864,43 @@ function buyUpgrade(upgradeId) {
   }
   state.currentPoints -= u.cost;
   state.upgrades[upgradeId] = 1;
-  const panel = document.getElementById('right-panel');
-  const scrollY = panel.scrollTop;
-  buildUpgradeShop();
-  parseAppleEmoji(document.getElementById('tab-upgrades'));
-  panel.scrollTop = scrollY;
+  // Update only the purchased item instead of rebuilding the whole list
+  const el = document.getElementById('upg-' + upgradeId);
+  if (el) {
+    el.className = 'shop-item bought';
+    el.removeAttribute('onclick');
+    const nameDiv = el.querySelector('.shop-name');
+    if (nameDiv) nameDiv.textContent = u.name;
+    const flavorDiv = el.querySelector('.shop-flavor');
+    if (flavorDiv) flavorDiv.style.display = 'none';
+    const priceDiv = el.querySelector('.shop-price');
+    if (priceDiv) { priceDiv.textContent = 'Gekocht!'; priceDiv.id = 'upgprice-' + upgradeId; }
+    const effect = upgradeEffect(u);
+    const tipDesc = escHtml(u.desc + (effect ? ' — Effect: ' + effect : ''));
+    el.dataset.tip = escHtml(u.name) + '|' + tipDesc;
+  }
+  // Update the category header (progress count + collapse if all done)
+  if (el) {
+    const cat = el.closest('.upgrade-category');
+    if (cat) {
+      const items = cat.querySelectorAll('.shop-item');
+      const boughtCount = cat.querySelectorAll('.shop-item.bought').length;
+      const total = items.length;
+      const h3 = cat.querySelector('h3');
+      if (h3) {
+        const progress = total > 1 ? ' <span style="color:var(--text-dim);font-size:12px">(' + boughtCount + '/' + total + ')</span>' : '';
+        const arrow = '<span class="toggle-arrow">▼</span> ';
+        const titleText = h3.textContent.replace(/▼\s*/, '').replace(/\s*\(\d+\/\d+\)/, '').replace(/\s*✓$/, '');
+        if (boughtCount === total) {
+          h3.innerHTML = arrow + titleText + progress + ' ✓';
+          h3.style.opacity = '0.5';
+          cat.classList.add('collapsed');
+        } else {
+          h3.innerHTML = arrow + titleText + progress;
+        }
+      }
+    }
+  }
 }
 
 function findUpgrade(id) {
