@@ -478,8 +478,15 @@ function render() {
     document.getElementById('animdps-' + a.id).textContent =
       '+' + formatDps(animalDps) + '/s elk (totaal: ' + formatDps(animalTotalDps) + '/s' + pctStr + ')';
     // DPS tooltip
-    const tipDps = count > 0 ? escHtml(a.name) + '|' + escHtml('+' + formatDps(animalDps) + '/s elk, totaal ' + formatDps(animalTotalDps) + '/s = ' + pct.toFixed(1) + '% van je DPS') : escHtml(a.name) + '|' + escHtml(a.flavor);
-    el.setAttribute('data-tip', tipDps);
+    if (count > 0) {
+      let tip = escHtml(a.name) + '|';
+      tip += escHtml(formatDps(animalDps) + '/s per ' + a.name.toLowerCase()) + '<br>';
+      tip += escHtml(formatDps(animalTotalDps) + '/s totaal (' + count + ' stuks)') + '<br>';
+      tip += escHtml(pct.toFixed(1) + '% van je DPS');
+      el.setAttribute('data-tip', tip);
+    } else {
+      el.setAttribute('data-tip', escHtml(a.name) + '|' + escHtml(a.flavor));
+    }
     // Milestone progress
     const msEl = document.getElementById('milestone-' + a.id);
     if (msEl) {
