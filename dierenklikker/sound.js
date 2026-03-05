@@ -102,6 +102,28 @@ function sfxPrestige() {
   notes.forEach((f, i) => setTimeout(() => playTone(f, 0.2, 'sine', 0.1, true), i * 120));
 }
 
+function sfxHeaven() {
+  if (!soundEnabled || soundVolume === 0) return;
+  const ctx = getAudioCtx();
+  if (!ctx) return;
+  // Ethereal ascending chord
+  const notes = [261, 329, 392, 523, 659];
+  notes.forEach((f, i) => {
+    setTimeout(() => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = f;
+      gain.gain.value = 0.06 * soundVolume;
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 1.5);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + 1.5);
+    }, i * 200);
+  });
+}
+
 function sfxMemoryMatch() {
   playTone(600, 0.08, 'sine', 0.1, true);
   setTimeout(() => playTone(900, 0.12, 'sine', 0.1, true), 70);

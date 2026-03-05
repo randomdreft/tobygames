@@ -68,10 +68,80 @@ function toggleThemeLock() {
   saveGame();
 }
 
+const HEMEL_HABITATS = [
+  {id:'mier', bg:'linear-gradient(180deg,#8B6914,#654a0e)', env:'🌱🍂🌿🍃🌱🍂🌿🍃🌱🍂', food:'🍞', desc:'Sjouwt vrolijk kruimels rond'},
+  {id:'slak', bg:'linear-gradient(180deg,#4a7c3f,#2d5a27)', env:'🌿🌧️🍃🌱🍀🌿🌧️🍃🌱🍀', food:'🍃', desc:'Glijdt door de dauw'},
+  {id:'kikker', bg:'linear-gradient(180deg,#2d6a4f,#1b4332)', env:'🌊💧🪷🌿🐚🌊💧🪷🌿🐚', food:'🐛', desc:'Springt bij de vijver'},
+  {id:'kip', bg:'linear-gradient(180deg,#8B7355,#6b5a3e)', env:'🌾🌻🌾🌻🌾🌻🌾🌻🌾🌻', food:'🌾', desc:'Pikt graan op de boerderij'},
+  {id:'kat', bg:'linear-gradient(180deg,#c2956a,#a07848)', env:'☀️🧶🛋️✨☀️🧶🛋️✨☀️🧶', food:'🐟', desc:'Snoept visjes in de zon'},
+  {id:'hond', bg:'linear-gradient(180deg,#6aaa5a,#4a8a3a)', env:'🌳🌤️🌼🌳🌤️🌼🌳🌤️🌼🌳', food:'🦴', desc:'Kluift op een bot in het gras'},
+  {id:'lama', bg:'linear-gradient(180deg,#7a9aa8,#5a7a88)', env:'🏔️⛰️🌄🏔️⛰️🌄🏔️⛰️🌄🏔️', food:'🌿', desc:'Kauwt gras in de bergen'},
+  {id:'paard', bg:'linear-gradient(180deg,#7ab648,#5a9628)', env:'🌾🌻🌿🌼🌾🌻🌿🌼🌾🌻', food:'🥕', desc:'Galoppeert door de wei'},
+  {id:'panda', bg:'linear-gradient(180deg,#2d7a3f,#1a5a2a)', env:'🎋🎋🎋🎋🎋🎋🎋🎋🎋🎋', food:'🎋', desc:'Smult van bamboe'},
+  {id:'olifant', bg:'linear-gradient(180deg,#c4a35a,#a08040)', env:'🌴🌅🦒🌴🌅🦒🌴🌅🦒🌴', food:'🍃', desc:'Plukt bladeren op de savanne'},
+  {id:'walvis', bg:'linear-gradient(180deg,#1a5a8a,#0d3a5a)', env:'🌊🐚🪸🫧🌊🐚🪸🫧🌊🐚', food:'🦐', desc:'Zwemt door de hemelse oceaan'},
+  {id:'draak', bg:'linear-gradient(180deg,#5a2a6a,#3a1a4a)', env:'🌋✨🔮⭐🌋✨🔮⭐🌋✨', food:'🔥', desc:'Spuwt vuur op de bergtop'}
+];
+
+let prestigeCache = null;
+
 function doPrestige() {
-  sfxPrestige();
   const newStars = getPrestigeStars();
   const totalStars = state.prestige.stars + newStars;
+  prestigeCache = { newStars, totalStars };
+  closeModal('prestige-modal');
+  showDierenhemel(newStars);
+}
+
+function showDierenhemel(newStars) {
+  sfxHeaven();
+  const el = document.getElementById('dierenhemel');
+  const farm = document.getElementById('hemel-farm');
+  const clouds = document.getElementById('hemel-clouds');
+  const starsEl = document.getElementById('hemel-stars');
+
+  // Build clouds
+  let cloudHtml = '';
+  for (let i = 0; i < 6; i++) {
+    const top = 2 + Math.random() * 30;
+    const dur = 25 + Math.random() * 30;
+    const delay = -(Math.random() * dur);
+    const size = 0.6 + Math.random() * 0.8;
+    cloudHtml += '<div class="hemel-cloud" style="top:' + top + '%;animation-duration:' + dur + 's;animation-delay:' + delay + 's;transform:scale(' + size + ')">☁️</div>';
+  }
+  clouds.innerHTML = cloudHtml;
+
+  // Build habitat cards for owned animals
+  let html = '';
+  HEMEL_HABITATS.forEach(h => {
+    const count = state.animals[h.id] || 0;
+    if (count === 0) return;
+    const animal = ANIMALS.find(a => a.id === h.id);
+    if (!animal) return;
+    html += '<div class="hemel-habitat" style="background:' + h.bg + '">';
+    html += '<div class="hemel-env">' + h.env + '</div>';
+    html += '<div class="hemel-halo">😇</div>';
+    html += '<div class="hemel-animal">' + animal.emoji + '</div>';
+    html += '<div class="hemel-food">' + h.food + '</div>';
+    html += '<div class="hemel-label">' + animal.name + ' <span style="opacity:.6">\u00d7' + count + '</span></div>';
+    html += '<div class="hemel-desc">' + h.desc + '</div>';
+    html += '</div>';
+  });
+  farm.innerHTML = html;
+
+  starsEl.textContent = '+' + newStars + ' \u2b50 evolutiesterren verdiend!';
+
+  el.classList.add('show');
+  parseAppleEmoji(el);
+}
+
+function completePrestige() {
+  if (!prestigeCache) return;
+  const { newStars, totalStars } = prestigeCache;
+  prestigeCache = null;
+
+  sfxPrestige();
+
   const keepAch = {...state.achievements};
   const keepPrestige = {
     stars: totalStars,
@@ -80,7 +150,6 @@ function doPrestige() {
     themeLocked: state.prestige.themeLocked
   };
 
-  // Determine which upgrades to keep based on total stars
   const keepUpgrades = {};
   if (totalStars >= PRESTIGE_KEEP_OFFLINE) {
     OFFLINE_UPGRADES.forEach(u => { if (state.upgrades[u.id]) keepUpgrades[u.id] = 1; });
@@ -102,22 +171,20 @@ function doPrestige() {
   state.allTime = keepAllTime;
   state.stats = keepStats;
 
-  // Award first prestige achievement
   if (!state.achievements['eerste_evolutie']) {
     state.achievements['eerste_evolutie'] = 1;
   }
 
-  // Auto-update theme to highest unlocked if not manually locked
   if (!state.prestige.themeLocked) {
     state.prestige.theme = getHighestUnlockedTheme();
   }
   applyTheme(state.prestige.theme);
 
-  closeModal('prestige-modal');
+  document.getElementById('dierenhemel').classList.remove('show');
   saveGame();
   buildShop();
   parseAppleEmoji(document.body);
-  showToast('⭐ Geëvolueerd! +' + newStars + ' sterren!');
+  showToast('\u2b50 Ge\u00ebvolueerd! +' + newStars + ' sterren!');
 }
 
 /* ================================================================

@@ -619,3 +619,137 @@ img.emoji {
 .puzzel-tile:hover { background: rgba(255,255,255,0.2); }
 .puzzel-tile.correct { border-color: var(--green); background: rgba(67,160,71,0.15); }
 .puzzel-tile.empty { background: transparent; border-color: transparent; cursor: default; }
+
+/* Dierenhemel */
+#dierenhemel {
+  display: none; position: fixed; inset: 0; z-index: 250;
+  flex-direction: column; align-items: center;
+  overflow-y: auto; overflow-x: hidden;
+}
+#dierenhemel.show { display: flex; }
+.hemel-sky {
+  position: fixed; inset: 0; z-index: -1;
+  background: linear-gradient(180deg, #87ceeb 0%, #b0e0ff 25%, #d4f0ff 45%, #90d860 50%, #5aad30 55%, #4a9028 100%);
+}
+.hemel-title {
+  text-align: center; padding: 30px 20px 10px; z-index: 1;
+}
+.hemel-title h1 {
+  font-size: clamp(28px, 5vw, 48px); color: #fff;
+  text-shadow: 0 3px 12px rgba(0,0,0,0.2), 0 0 40px rgba(255,255,200,0.4);
+  margin-bottom: 4px;
+}
+.hemel-title p {
+  font-size: clamp(14px, 2.5vw, 18px); color: rgba(255,255,255,0.9);
+  text-shadow: 0 1px 6px rgba(0,0,0,0.2);
+}
+.hemel-clouds {
+  position: fixed; top: 0; left: 0; right: 0; height: 50%; z-index: 0; pointer-events: none; overflow: hidden;
+}
+.hemel-cloud {
+  position: absolute; font-size: clamp(40px, 8vw, 80px); opacity: 0.5;
+  animation: cloud-drift linear infinite;
+}
+@keyframes cloud-drift {
+  from { transform: translateX(-120px); }
+  to { transform: translateX(calc(100vw + 120px)); }
+}
+.hemel-farm {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 16px; padding: 16px 24px; max-width: 1200px; width: 100%; z-index: 1;
+}
+.hemel-habitat {
+  border-radius: 20px; padding: 20px 16px; text-align: center;
+  position: relative; overflow: hidden; min-height: 180px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  border: 2px solid rgba(255,255,255,0.25);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+  animation: habitat-appear 0.6s ease-out backwards;
+}
+.hemel-habitat:nth-child(1) { animation-delay: 0.1s; }
+.hemel-habitat:nth-child(2) { animation-delay: 0.2s; }
+.hemel-habitat:nth-child(3) { animation-delay: 0.3s; }
+.hemel-habitat:nth-child(4) { animation-delay: 0.4s; }
+.hemel-habitat:nth-child(5) { animation-delay: 0.5s; }
+.hemel-habitat:nth-child(6) { animation-delay: 0.6s; }
+.hemel-habitat:nth-child(7) { animation-delay: 0.7s; }
+.hemel-habitat:nth-child(8) { animation-delay: 0.8s; }
+.hemel-habitat:nth-child(9) { animation-delay: 0.9s; }
+.hemel-habitat:nth-child(10) { animation-delay: 1.0s; }
+.hemel-habitat:nth-child(11) { animation-delay: 1.1s; }
+.hemel-habitat:nth-child(12) { animation-delay: 1.2s; }
+@keyframes habitat-appear {
+  from { opacity: 0; transform: translateY(30px) scale(0.9); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.hemel-env {
+  position: absolute; inset: 0; font-size: 28px; opacity: 0.2; overflow: hidden;
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: center;
+  gap: 8px; line-height: 1.4; pointer-events: none;
+}
+.hemel-animal {
+  font-size: clamp(56px, 10vw, 80px); line-height: 1;
+  animation: hemel-bob 3s ease-in-out infinite;
+  filter: drop-shadow(0 4px 12px rgba(0,0,0,0.2));
+  position: relative; z-index: 1;
+}
+.hemel-animal img { width: 1em; height: 1em; }
+@keyframes hemel-bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+.hemel-food {
+  font-size: 32px; margin-top: 6px; position: relative; z-index: 1;
+  animation: hemel-munch 2s ease-in-out infinite;
+}
+.hemel-food img { width: 1em; height: 1em; }
+@keyframes hemel-munch {
+  0%, 100% { transform: scale(1); }
+  25% { transform: scale(1.1) rotate(-5deg); }
+  75% { transform: scale(0.95) rotate(5deg); }
+}
+.hemel-label {
+  font-size: 14px; font-weight: 700; margin-top: 8px;
+  color: rgba(255,255,255,0.95); text-shadow: 0 1px 4px rgba(0,0,0,0.4);
+  position: relative; z-index: 1;
+}
+.hemel-desc {
+  font-size: 12px; color: rgba(255,255,255,0.75); margin-top: 2px;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.3);
+  position: relative; z-index: 1;
+}
+.hemel-halo {
+  position: absolute; top: 4px; font-size: 24px;
+  animation: halo-glow 2s ease-in-out infinite;
+}
+@keyframes halo-glow {
+  0%, 100% { opacity: 0.8; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.1); }
+}
+.hemel-bottom {
+  padding: 24px 20px 40px; z-index: 1; text-align: center; width: 100%;
+}
+.hemel-return-btn {
+  display: inline-block; padding: 18px 48px; border: none; border-radius: 16px;
+  background: linear-gradient(135deg, #43a047, #66bb6a);
+  color: white; font-size: clamp(16px, 3vw, 22px); font-weight: 700;
+  cursor: pointer; transition: all 0.2s;
+  box-shadow: 0 4px 20px rgba(67,160,71,0.4);
+  text-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+.hemel-return-btn:hover {
+  transform: translateY(-2px); box-shadow: 0 6px 28px rgba(67,160,71,0.5);
+  background: linear-gradient(135deg, #66bb6a, #81c784);
+}
+.hemel-return-btn:active { transform: translateY(0); }
+.hemel-stars {
+  font-size: clamp(14px, 2vw, 18px); color: #ffd700;
+  text-shadow: 0 0 10px rgba(255,215,0,0.5);
+  margin-bottom: 12px;
+}
+@media (max-width: 600px) {
+  .hemel-farm { grid-template-columns: repeat(2, 1fr); gap: 10px; padding: 10px 12px; }
+  .hemel-habitat { min-height: 150px; padding: 14px 10px; }
+  .hemel-animal { font-size: 48px; }
+  .hemel-food { font-size: 24px; }
+}
