@@ -340,7 +340,7 @@ const QUIZ_QUESTIONS = [
   {q:"Welk dier heeft de langste tong?", a:["Kameleon","Kikker","Miereneter","Giraffe"], c:0},
   {q:"Hoeveel botten heeft een haai?", a:["Nul!","200","100","50"], c:0},
   {q:"Welk dier kan het hardst bijten?", a:["Krokodil","Haai","Leeuw","Hyena"], c:0},
-  {q:"Hoe noem je een baby eend?", a:["Eendje","Kuiken","Pulletje","Kalf"], c:0},
+  {q:"Hoe noem je een baby eend?", a:["Pulletje","Kuiken","Welp","Kalf"], c:0},
   {q:"Welk dier heeft strepen die uniek zijn, net als vingerafdrukken?", a:["Zebra","Tijger","Giraf","Cheetah"], c:0},
   {q:"Wat is het zwaarste insect?", a:["Goliathkever","Vliegend hert","Bidsprinkhaan","Mestkever"], c:0},
   {q:"Welk dier kan zijn kop bijna helemaal omdraaien?", a:["Uil","Papegaai","Arend","Flamingo"], c:0},
