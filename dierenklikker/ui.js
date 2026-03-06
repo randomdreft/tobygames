@@ -218,6 +218,7 @@ function buildAnimalShop() {
     html += '<div class="shop-info">';
     html += '<div class="shop-name">' + a.name + ' <span class="count" id="count-' + a.id + '">×0</span></div>';
     html += '<div class="shop-flavor">' + a.flavor + '</div>';
+    html += '<div class="shop-milestone" id="milestone-' + a.id + '"></div>';
     html += '</div>';
     html += '<div class="shop-price" id="price-' + a.id + '"></div>';
     html += '</div>';
@@ -550,6 +551,18 @@ function render() {
       el.setAttribute('data-tip', tip);
     } else {
       el.setAttribute('data-tip', escHtml(a.name) + '|' + escHtml(a.flavor));
+    }
+    // Milestone progress bar
+    const msEl = document.getElementById('milestone-' + a.id);
+    if (msEl) {
+      const nextMs = MILESTONES.find(m => count < m);
+      if (nextMs && visible) {
+        const prevMs = MILESTONES[MILESTONES.indexOf(nextMs) - 1] || 0;
+        const pctMs = Math.min(100, Math.round((count - prevMs) / (nextMs - prevMs) * 100));
+        msEl.innerHTML = '<div class="milestone-bar"><div class="milestone-bar-fill" style="width:' + pctMs + '%"></div></div>';
+      } else {
+        msEl.innerHTML = '';
+      }
     }
   });
 
