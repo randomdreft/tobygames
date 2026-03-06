@@ -51,7 +51,7 @@ function answerQuiz(chosen, correct) {
   if (chosen === correct) {
     sfxCorrect();
     state.stats.quizCorrect++;
-    const bonus = getTotalDps() * 600; // 10 minutes DPS
+    const bonus = getTotalDps() * 300; // 5 minutes DPS
     state.currentPoints += bonus;
     state.totalEarned += bonus;
     state.allTime.totalEarned += bonus;
@@ -209,7 +209,7 @@ function answerMath(chosen, correct) {
   if (chosen === correct) {
     sfxCorrect();
     state.stats.mathCorrect++;
-    const bonus = getTotalDps() * 600;
+    const bonus = getTotalDps() * 300;
     state.currentPoints += bonus;
     state.totalEarned += bonus;
     state.allTime.totalEarned += bonus;
@@ -499,9 +499,8 @@ function endMemory() {
   state.stats.memoryPairsFound += memoryPairs;
   if (memoryMistakes === 0) state.stats.memoryWon++;
 
-  // Graduated penalty: multiplier = max(0, 1 - mistakes²/36)
-  // 0 fouten = 100%, 1 = 97%, 2 = 89%, 3 = 75%, 4 = 56%, 5 = 31%, 6+ = 0%
-  const penaltyMult = Math.max(0, 1 - (memoryMistakes * memoryMistakes) / 36);
+  // 0-3 fouten = 100%, daarna aflopend: 4=96%, 5=84%, 6=64%, 7=36%, 8+=10%
+  const penaltyMult = memoryMistakes <= 3 ? 1 : Math.max(0.1, 1 - Math.pow(memoryMistakes - 3, 2) / 25);
   const maxBonus = getTotalDps() * 60 * 8;
   const bonus = Math.round(maxBonus * penaltyMult);
   state.currentPoints += bonus;
@@ -511,8 +510,9 @@ function endMemory() {
   const grid = document.getElementById('memory-grid');
   let msg;
   if (memoryMistakes === 0) msg = '<div style="color:var(--gold)">Perfect! Geen fouten!</div>';
-  else if (memoryMistakes <= 2) msg = '<div style="color:var(--green-light)">Goed gedaan!</div>';
-  else if (memoryMistakes <= 4) msg = '<div style="color:var(--orange)">Kan beter!</div>';
+  else if (memoryMistakes <= 3) msg = '<div style="color:var(--gold)">Klasse!</div>';
+  else if (memoryMistakes <= 5) msg = '<div style="color:var(--green-light)">Goed gedaan!</div>';
+  else if (memoryMistakes <= 7) msg = '<div style="color:var(--orange)">Kan beter!</div>';
   else msg = '<div style="color:var(--red)">Veel fouten gemaakt!</div>';
   const pctText = Math.round(penaltyMult * 100) + '% bonus';
   grid.innerHTML = '<div style="grid-column:1/-1;font-size:18px;font-weight:700;padding:20px;text-align:center">' +
@@ -611,7 +611,7 @@ function answerTellen(n) {
   if (n === tellenCount) {
     sfxCorrect();
     state.stats.tellenCorrect++;
-    const bonus = getTotalDps() * 600;
+    const bonus = getTotalDps() * 300;
     state.currentPoints += bonus;
     state.totalEarned += bonus;
     state.allTime.totalEarned += bonus;
