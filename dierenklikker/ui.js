@@ -542,9 +542,12 @@ function render() {
     const pct = totalDps > 0 && count > 0 ? (animalTotalDps / totalDps * 100) : 0;
     if (count > 0) {
       const nextMs = MILESTONES.find(m => count < m);
-      const msText = nextMs ? ' · Bonus bij ' + nextMs : '';
-      el.setAttribute('data-tip', escHtml(a.name) + '|' +
-        escHtml('+' + formatDps(animalDps) + '/s elk, ' + formatDps(animalTotalDps) + '/s totaal (' + pct.toFixed(1) + '%)' + msText));
+      let tip = escHtml(a.name) + '|';
+      tip += escHtml(count + ' ' + (count === 1 ? a.name.toLowerCase() : a.plural));
+      tip += '<br>' + escHtml('+' + formatDps(animalDps) + '/s per stuk');
+      tip += '<br>' + escHtml(formatDps(animalTotalDps) + '/s totaal (' + pct.toFixed(1) + '%)');
+      if (nextMs) tip += '<br>' + escHtml('Volgende bonus bij ' + nextMs);
+      el.setAttribute('data-tip', tip);
     } else {
       el.setAttribute('data-tip', escHtml(a.name) + '|' + escHtml(a.flavor));
     }
