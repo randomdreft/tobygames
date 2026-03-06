@@ -25,12 +25,12 @@ Het meest uitgebreide spel. Cookie Clicker-achtig incrementeel spel met veel sub
 | Bestand | Regels | Inhoud |
 |---------|--------|--------|
 | `style.css` | ~620 | CSS variabelen (`:root`), layout, component-styling, achievement-viering animatie, milestone-bars, tab-badges |
-| `sound.js` | ~130 | Web Audio API geluidssynthese, volume-beheer (localStorage) |
+| `sound.js` | ~150 | Web Audio API geluidssynthese, volume-beheer (localStorage) |
 | `data.js` | ~375 | Constanten, dierdata (12 soorten + upgrades), quiz-vragen, minigame-data |
 | `state.js` | ~440 | `defaultState()`, INI save/load (`stateToIni`/`iniToState`), import/export |
 | `engine.js` | ~360 | Prijsberekening, DPS, click value, achievements, buy-functies, `getDpsBreakdown()`, `getMaxAffordable()` |
-| `minigames.js` | ~1180 | Alle 12 mini-games (quiz, vanger, memory, puzzel, etc.), `buyMax` variabele |
-| `ui.js` | ~900 | Prestige, thema's, shop-rendering, game loop, `render()`, `init()`, tab-badges, DPS-uitsplitsing, keyboard shortcuts |
+| `minigames.js` | ~1290 | Alle 12 mini-games, cancel-systeem (`cancelMinigame`/`cancelAllMinigames`), `buyMax` variabele |
+| `ui.js` | ~990 | Prestige, Dierenhemel, thema's, shop-rendering, game loop, `render()`, `init()`, tab-badges, DPS-uitsplitsing, keyboard shortcuts |
 
 ### Kernsystemen
 
@@ -59,6 +59,10 @@ Het meest uitgebreide spel. Cookie Clicker-achtig incrementeel spel met veel sub
 | Dieren Sorteren | Walvis | 5 min | Sorteer in boerderij/bos/water |
 | Dieren Memory | Draak | 5 min | Vind paren (auto-flip laatste 2) |
 
+**Beloningen**: enkele-vraag games (quiz, tellen, wiskunde) geven 5 min DPS. Multi-score games geven 1 min DPS per punt. Memory: max 8 min DPS, 0-3 fouten = 100% ("Klasse!"), daarna aflopend.
+
+**Annuleren**: elke actieve minigame toont een "✕ Stop"-knop om het spel te sluiten zonder cooldown of beloning.
+
 ### Buff-systeem
 
 Vier buffs (elk 30 seconden actief):
@@ -73,6 +77,8 @@ Vier buffs (elk 30 seconden actief):
 - Reset dieren en punten, behoud sterren (+5% DPS per ster)
 - Sterren gebaseerd op totaal verdiende punten (log10 - 9)
 - Bij 3⭐: behoud offline upgrades. Bij 7⭐: klik-upgrades. Bij 12⭐: globale upgrades.
+- **Dierenhemel**: bij evolutie verschijnt een schermvullend paradijs met alle bezeten dieren in hun natuurlijke habitat, etend van hun favoriete voer (wolken, animaties, etherisch geluid). "Terug naar de Aarde"-knop voert de eigenlijke reset uit.
+- Alle actieve minigames worden automatisch gestopt bij evolutie
 
 ### Kleurthema's
 
@@ -85,7 +91,7 @@ Vier buffs (elk 30 seconden actief):
 ### Geluidssysteem
 
 - Web Audio API synthesized geluiden (geen audio bestanden)
-- Geluiden: klik, koop, quiz goed/fout, memory match/fail, game start/eind, achievement, prestige
+- Geluiden: klik, koop, quiz goed/fout, memory match/fail, game start/eind, achievement, prestige, dierenhemel
 - Volume slider in opties, opgeslagen in localStorage (`dierenklikker_volume`)
 - Alle sfx-functies in `sound.js`
 
@@ -107,11 +113,11 @@ Vier buffs (elk 30 seconden actief):
 ### Quality of Life
 
 - **Cooldown voortgangsbalken**: visueel balkje onder elke minigame-timer
-- **Milestone voortgang**: bij elk dier in de winkel zichtbaar ("Volgende bonus: 12/25" + balkje), verdwijnt als alle milestones bereikt
+- **Milestone voortgang**: gouden balkje onder elk dier in de winkel (pas zichtbaar na eerste evolutie), details in tooltip
 - **Notificatie-badges**: groen bolletje op Dieren/Upgrades-tab als je iets kunt kopen, goud op Evolutie als je kunt evolueren. Verborgen op actieve tab.
 - **DPS-uitsplitsing**: in statistieken een breakdown per diersoort met percentage, plus prestatie-/sterren-/buff-bonus
-- **DPS-tooltip op dieren**: hover toont totale DPS bijdrage en percentage van totaal
-- **Toetsenbordsneltoetsen**: Spatie = klik, 1-5 = winkeltabs, G = games, S = statistieken
+- **DPS-tooltip op dieren**: hover toont aantal, DPS per stuk, totaal DPS, percentage en volgende milestone
+- **Toetsenbordsneltoetsen**: Spatie = klik (geen key-repeat), 1-5 = winkeltabs, G = games, S = statistieken
 - **Tab-geheugen**: actieve winkel-, midden- en mobieltab worden onthouden in localStorage (`dk_shoptab`, `dk_midtab`, `dk_mobilepanel`)
 - **Prestatie-viering**: bij unlock vliegt de prestatie-emoji groot over het scherm (1.2s animatie)
 
