@@ -141,6 +141,7 @@ function completePrestige() {
   prestigeCache = null;
 
   sfxPrestige();
+  cancelAllMinigames();
 
   const keepAch = {...state.achievements};
   const keepPrestige = {

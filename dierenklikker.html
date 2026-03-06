@@ -40,7 +40,7 @@
 
     <div id="mid-games" class="mid-content active">
       <div class="minigame-box" id="mg-tellen">
-        <h3>🔢 Dieren Tellen</h3>
+        <h3>🔢 Dieren Tellen <button class="mg-cancel" onclick="cancelMinigame('tellen')">&#x2715; Stop</button></h3>
         <div class="mg-lock-msg" id="lock-tellen"></div>
         <button class="mg-btn" id="tellen-btn" onclick="startTellen()">Start Tellen!</button>
         <div id="tellen-cooldown" class="cooldown-text"></div>
@@ -48,7 +48,7 @@
       </div>
 
       <div class="minigame-box" id="mg-quiz">
-        <h3>🧠 Dierenquiz</h3>
+        <h3>🧠 Dierenquiz <button class="mg-cancel" onclick="cancelMinigame('quiz')">&#x2715; Stop</button></h3>
         <div class="mg-lock-msg" id="lock-quiz"></div>
         <button class="mg-btn" id="quiz-btn" onclick="startQuiz()">Start Quiz!</button>
         <div id="quiz-cooldown" class="cooldown-text"></div>
@@ -56,7 +56,7 @@
       </div>
 
       <div class="minigame-box" id="mg-catcher">
-        <h3>🎯 Dierenvanger</h3>
+        <h3>🎯 Dierenvanger <button class="mg-cancel" onclick="cancelMinigame('catcher')">&#x2715; Stop</button></h3>
         <div class="mg-lock-msg" id="lock-catcher"></div>
         <button class="mg-btn" id="catcher-btn" onclick="startCatcher()">Start Vangen!</button>
         <div id="catcher-cooldown" class="cooldown-text"></div>
@@ -70,7 +70,7 @@
       </div>
 
       <div class="minigame-box" id="mg-indringer">
-        <h3>🚫 De Indringer</h3>
+        <h3>🚫 De Indringer <button class="mg-cancel" onclick="cancelMinigame('indringer')">&#x2715; Stop</button></h3>
         <div class="mg-lock-msg" id="lock-indringer"></div>
         <button class="mg-btn" id="indringer-btn" onclick="startIndringer()">Zoek de Indringer!</button>
         <div id="indringer-cooldown" class="cooldown-text"></div>
@@ -85,7 +85,7 @@
       </div>
 
       <div class="minigame-box" id="mg-math">
-        <h3>🔢 Dieren Wiskunde</h3>
+        <h3>🔢 Dieren Wiskunde <button class="mg-cancel" onclick="cancelMinigame('math')">&#x2715; Stop</button></h3>
         <div class="mg-lock-msg" id="lock-math"></div>
         <button class="mg-btn" id="math-btn" onclick="startMath()">Start Rekenen!</button>
         <div id="math-cooldown" class="cooldown-text"></div>
@@ -93,7 +93,7 @@
       </div>
 
       <div class="minigame-box" id="mg-groter">
-        <h3>&#x2696;&#xFE0F; Groter of Kleiner</h3>
+        <h3>&#x2696;&#xFE0F; Groter of Kleiner <button class="mg-cancel" onclick="cancelMinigame('groter')">&#x2715; Stop</button></h3>
         <div class="mg-lock-msg" id="lock-groter"></div>
         <button class="mg-btn" id="groter-btn" onclick="startGroter()">Wie is zwaarder?</button>
         <div id="groter-cooldown" class="cooldown-text"></div>
@@ -108,7 +108,7 @@
       </div>
 
       <div class="minigame-box" id="mg-buff">
-        <h3>&#x2728; Buff Kiezer</h3>
+        <h3>&#x2728; Buff Kiezer <button class="mg-cancel" onclick="cancelMinigame('buff')">&#x2715; Stop</button></h3>
         <div class="mg-lock-msg" id="lock-buff"></div>
         <button class="mg-btn" id="buff-btn" onclick="startBuff()">Kies je Buff!</button>
         <div id="buff-cooldown" class="cooldown-text"></div>
@@ -116,7 +116,7 @@
       </div>
 
       <div class="minigame-box" id="mg-race">
-        <h3>🏇 Paardenrace</h3>
+        <h3>🏇 Paardenrace <button class="mg-cancel" onclick="cancelMinigame('race')">&#x2715; Stop</button></h3>
         <div class="mg-lock-msg" id="lock-race"></div>
         <button class="mg-btn" id="race-btn" onclick="startRace()">Start Race!</button>
         <div id="race-cooldown" class="cooldown-text"></div>
@@ -133,7 +133,7 @@
       </div>
 
       <div class="minigame-box" id="mg-puzzel">
-        <h3>🧩 Dieren Puzzel</h3>
+        <h3>🧩 Dieren Puzzel <button class="mg-cancel" onclick="cancelMinigame('puzzel')">&#x2715; Stop</button></h3>
         <div class="mg-lock-msg" id="lock-puzzel"></div>
         <button class="mg-btn" id="puzzel-btn" onclick="startPuzzel()">Start Puzzel!</button>
         <div id="puzzel-cooldown" class="cooldown-text"></div>
@@ -147,7 +147,7 @@
       </div>
 
       <div class="minigame-box" id="mg-voedsel">
-        <h3>🍽️ Wat Eet Ik?</h3>
+        <h3>🍽️ Wat Eet Ik? <button class="mg-cancel" onclick="cancelMinigame('voedsel')">&#x2715; Stop</button></h3>
         <div class="mg-lock-msg" id="lock-voedsel"></div>
         <button class="mg-btn" id="voedsel-btn" onclick="startVoedsel()">Start!</button>
         <div id="voedsel-cooldown" class="cooldown-text"></div>
@@ -161,7 +161,7 @@
       </div>
 
       <div class="minigame-box" id="mg-sort">
-        <h3>🗂️ Dieren Sorteren</h3>
+        <h3>🗂️ Dieren Sorteren <button class="mg-cancel" onclick="cancelMinigame('sort')">&#x2715; Stop</button></h3>
         <div class="mg-lock-msg" id="lock-sort"></div>
         <button class="mg-btn" id="sort-btn" onclick="startSort()">Start Sorteren!</button>
         <div id="sort-cooldown" class="cooldown-text"></div>
@@ -180,7 +180,7 @@
       </div>
 
       <div class="minigame-box" id="mg-memory">
-        <h3>🃏 Dieren Memory</h3>
+        <h3>🃏 Dieren Memory <button class="mg-cancel" onclick="cancelMinigame('memory')">&#x2715; Stop</button></h3>
         <div class="mg-lock-msg" id="lock-memory"></div>
         <button class="mg-btn" id="memory-btn" onclick="startMemory()">Start Memory!</button>
         <div id="memory-cooldown" class="cooldown-text"></div>

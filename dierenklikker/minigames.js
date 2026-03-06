@@ -8,11 +8,104 @@ let catcherInterval = null;
 let catcherScore = 0;
 let catcherSpawnInterval = null;
 
+function mgSetActive(id, active) {
+  const box = document.getElementById('mg-' + id);
+  if (box) box.classList.toggle('mg-active', active);
+}
+
+function cancelMinigame(id) {
+  mgSetActive(id, false);
+  // Quiz
+  if (id === 'quiz' && quizActive) {
+    quizActive = false;
+    document.getElementById('quiz-game').style.display = 'none';
+    document.getElementById('quiz-btn').disabled = false;
+  }
+  // Catcher
+  if (id === 'catcher' && catcherActive) {
+    catcherActive = false;
+    clearInterval(catcherInterval);
+    clearInterval(catcherSpawnInterval);
+    document.getElementById('catcher-game').style.display = 'none';
+    document.getElementById('catcher-btn').disabled = false;
+  }
+  // Math
+  if (id === 'math' && mathActive) {
+    mathActive = false;
+    document.getElementById('math-game').style.display = 'none';
+    document.getElementById('math-btn').disabled = false;
+  }
+  // Sort
+  if (id === 'sort' && sortActive) {
+    sortActive = false;
+    clearInterval(sortInterval);
+    document.getElementById('sort-game').style.display = 'none';
+    document.getElementById('sort-btn').disabled = false;
+    document.getElementById('sort-field').innerHTML =
+      '<div id="sort-current"></div><div id="sort-name"></div>';
+  }
+  // Memory
+  if (id === 'memory' && memoryActive) {
+    memoryActive = false;
+    document.getElementById('memory-game').style.display = 'none';
+    document.getElementById('memory-btn').disabled = false;
+  }
+  // Tellen
+  if (id === 'tellen' && tellenActive) {
+    tellenActive = false;
+    document.getElementById('tellen-game').style.display = 'none';
+    document.getElementById('tellen-btn').disabled = false;
+  }
+  // Indringer
+  if (id === 'indringer' && indringerActive) {
+    indringerActive = false;
+    clearInterval(indringerInterval);
+    document.getElementById('indringer-game').style.display = 'none';
+    document.getElementById('indringer-btn').disabled = false;
+  }
+  // Groter
+  if (id === 'groter' && groterActive) {
+    groterActive = false;
+    clearTimeout(groterTimeout);
+    document.getElementById('groter-game').style.display = 'none';
+    document.getElementById('groter-btn').disabled = false;
+  }
+  // Race
+  if (id === 'race' && raceActive) {
+    raceActive = false;
+    clearInterval(raceTimer);
+    document.getElementById('race-game').style.display = 'none';
+    document.getElementById('race-btn').disabled = false;
+  }
+  // Puzzel
+  if (id === 'puzzel' && puzzelActive) {
+    puzzelActive = false;
+    document.getElementById('puzzel-game').style.display = 'none';
+    document.getElementById('puzzel-btn').disabled = false;
+  }
+  // Voedsel
+  if (id === 'voedsel' && voedselActive) {
+    voedselActive = false;
+    clearTimeout(voedselTimeout);
+    document.getElementById('voedsel-game').style.display = 'none';
+    document.getElementById('voedsel-btn').disabled = false;
+  }
+  // Buff (no active state, just hide)
+  const buffGame = document.getElementById('buff-game');
+  if (id === 'buff' && buffGame && buffGame.style.display !== 'none') {
+    buffGame.style.display = 'none';
+  }
+}
+
+function cancelAllMinigames() {
+  ['quiz','catcher','math','sort','memory','tellen','indringer','groter','race','puzzel','voedsel','buff'].forEach(cancelMinigame);
+}
+
 function startQuiz() {
   if (quizActive || !isMinigameUnlocked('quiz')) return;
   const now = Date.now();
   if (now - state.minigames.quizLast < QUIZ_COOLDOWN) return;
-  quizActive = true; sfxGameStart();
+  quizActive = true; sfxGameStart(); mgSetActive('quiz', true);
   document.getElementById('quiz-btn').disabled = true;
 
   // Pick random question
@@ -35,7 +128,7 @@ function startQuiz() {
 
 function answerQuiz(chosen, correct) {
   if (!quizActive) return;
-  quizActive = false;
+  quizActive = false; mgSetActive('quiz', false);
   state.minigames.quizLast = Date.now();
   state.stats.quizPlayed++;
 
@@ -72,7 +165,7 @@ function startCatcher() {
   if (catcherActive || !isMinigameUnlocked('catcher')) return;
   const now = Date.now();
   if (now - state.minigames.catcherLast < CATCHER_COOLDOWN) return;
-  catcherActive = true; sfxGameStart();
+  catcherActive = true; sfxGameStart(); mgSetActive('catcher', true);
   catcherScore = 0;
   document.getElementById('catcher-btn').disabled = true;
   document.getElementById('catcher-game').style.display = 'block';
@@ -114,7 +207,7 @@ function startCatcher() {
 }
 
 function endCatcher() {
-  catcherActive = false;
+  catcherActive = false; mgSetActive('catcher', false);
   sfxGameEnd();
   state.minigames.catcherLast = Date.now();
   state.stats.catcherPlayed++;
@@ -154,7 +247,7 @@ let mathActive = false;
 function startMath() {
   if (mathActive || !isMinigameUnlocked('math')) return;
   if (Date.now() - state.minigames.mathLast < MATH_COOLDOWN) return;
-  mathActive = true; sfxGameStart();
+  mathActive = true; sfxGameStart(); mgSetActive('math', true);
   document.getElementById('math-btn').disabled = true;
 
   const emoji = ANIMALS[Math.floor(Math.random() * ANIMALS.length)].emoji;
@@ -194,7 +287,7 @@ function startMath() {
 
 function answerMath(chosen, correct) {
   if (!mathActive) return;
-  mathActive = false;
+  mathActive = false; mgSetActive('math', false);
   state.minigames.mathLast = Date.now();
   state.stats.mathPlayed++;
 
@@ -240,6 +333,7 @@ function startBuff() {
 
   // Pick 4 random animals for flavor
   const shuffled = [...ANIMALS].sort(() => Math.random() - 0.5);
+  mgSetActive('buff', true);
   const game = document.getElementById('buff-game');
   game.style.display = 'block';
   let html = '<div class="buff-choices">';
@@ -276,6 +370,7 @@ function chooseBuff(buffId) {
     showToast(buff.emoji + ' ' + buff.name + ' actief voor 30 seconden!');
   }
 
+  mgSetActive('buff', false);
   document.getElementById('buff-game').style.display = 'none';
   document.getElementById('buff-btn').disabled = false;
 }
@@ -296,7 +391,7 @@ let sortBag = [];
 function startSort() {
   if (sortActive || !isMinigameUnlocked('sort')) return;
   if (Date.now() - state.minigames.sortLast < SORT_COOLDOWN) return;
-  sortActive = true; sfxGameStart();
+  sortActive = true; sfxGameStart(); mgSetActive('sort', true);
   sortScore = 0;
   sortBag = [];
   document.getElementById('sort-btn').disabled = true;
@@ -357,7 +452,7 @@ function sortAnswer(category) {
 }
 
 function endSort() {
-  sortActive = false;
+  sortActive = false; mgSetActive('sort', false);
   sfxGameEnd();
   state.minigames.sortLast = Date.now();
   state.stats.sortPlayed++;
@@ -395,7 +490,7 @@ let memoryMistakes = 0;
 function startMemory() {
   if (memoryActive || !isMinigameUnlocked('memory')) return;
   if (Date.now() - state.minigames.memoryLast < MEMORY_COOLDOWN) return;
-  memoryActive = true; sfxGameStart();
+  memoryActive = true; sfxGameStart(); mgSetActive('memory', true);
   memoryPairs = 0;
   memoryMistakes = 0;
   memoryFlipped = [];
@@ -492,7 +587,7 @@ function flipCard(index) {
 }
 
 function endMemory() {
-  memoryActive = false;
+  memoryActive = false; mgSetActive('memory', false);
   sfxGameEnd();
   state.minigames.memoryLast = Date.now();
   state.stats.memoryPlayed++;
@@ -534,7 +629,7 @@ let tellenCount = 0;
 function startTellen() {
   if (tellenActive || !isMinigameUnlocked('tellen')) return;
   if (Date.now() - state.minigames.tellenLast < TELLEN_COOLDOWN) return;
-  tellenActive = true; sfxGameStart();
+  tellenActive = true; sfxGameStart(); mgSetActive('tellen', true);
   document.getElementById('tellen-btn').disabled = true;
   const game = document.getElementById('tellen-game');
   game.style.display = 'block';
@@ -596,7 +691,7 @@ function startTellen() {
 
 function answerTellen(n) {
   if (!tellenActive) return;
-  tellenActive = false;
+  tellenActive = false; mgSetActive('tellen', false);
   state.minigames.tellenLast = Date.now();
   state.stats.tellenPlayed++;
 
@@ -640,7 +735,7 @@ let indringerCorrectIdx = -1;
 function startIndringer() {
   if (indringerActive || !isMinigameUnlocked('indringer')) return;
   if (Date.now() - state.minigames.indringerLast < INDRINGER_COOLDOWN) return;
-  indringerActive = true; sfxGameStart();
+  indringerActive = true; sfxGameStart(); mgSetActive('indringer', true);
   indringerScore = 0;
   document.getElementById('indringer-btn').disabled = true;
   document.getElementById('indringer-game').style.display = 'block';
@@ -702,7 +797,7 @@ function answerIndringer(idx) {
 }
 
 function endIndringer() {
-  indringerActive = false;
+  indringerActive = false; mgSetActive('indringer', false);
   sfxGameEnd();
   state.minigames.indringerLast = Date.now();
   state.stats.indringerPlayed++;
@@ -737,7 +832,7 @@ let groterTimeout = null;
 function startGroter() {
   if (groterActive || !isMinigameUnlocked('groter')) return;
   if (Date.now() - state.minigames.groterLast < GROTER_COOLDOWN) return;
-  groterActive = true; sfxGameStart();
+  groterActive = true; sfxGameStart(); mgSetActive('groter', true);
   groterScore = 0;
   groterMistakes = 0;
   groterRound = 0;
@@ -815,7 +910,7 @@ function answerGroter(idx) {
 function endGroter() {
   clearTimeout(groterTimeout);
   sfxGameEnd();
-  groterActive = false;
+  groterActive = false; mgSetActive('groter', false);
   state.minigames.groterLast = Date.now();
   state.stats.groterPlayed++;
 
@@ -851,7 +946,7 @@ const RACE_NAMES = [
 function startRace() {
   if (raceActive || !isMinigameUnlocked('race')) return;
   if (Date.now() - state.minigames.raceLast < RACE_COOLDOWN) return;
-  raceActive = true; sfxGameStart();
+  raceActive = true; sfxGameStart(); mgSetActive('race', true);
   raceChoice = -1;
   document.getElementById('race-btn').disabled = true;
   document.getElementById('race-game').style.display = 'block';
@@ -941,7 +1036,7 @@ function pickHorse(idx) {
 }
 
 function endRace() {
-  raceActive = false;
+  raceActive = false; mgSetActive('race', false);
   sfxGameEnd();
   state.minigames.raceLast = Date.now();
   state.stats.racePlayed++;
@@ -983,7 +1078,7 @@ const PUZZEL_EMOJIS = ['🐶','🐱','🐭','🐹','🐰','🦊','🐻','🐼','
 function startPuzzel() {
   if (puzzelActive || !isMinigameUnlocked('puzzel')) return;
   if (Date.now() - state.minigames.puzzelLast < PUZZEL_COOLDOWN) return;
-  puzzelActive = true; sfxGameStart();
+  puzzelActive = true; sfxGameStart(); mgSetActive('puzzel', true);
   puzzelMoves = 0;
   document.getElementById('puzzel-btn').disabled = true;
   document.getElementById('puzzel-game').style.display = 'block';
@@ -1056,7 +1151,7 @@ function puzzelClick(idx) {
 }
 
 function endPuzzel() {
-  puzzelActive = false;
+  puzzelActive = false; mgSetActive('puzzel', false);
   sfxGameEnd();
   state.minigames.puzzelLast = Date.now();
   state.stats.puzzelPlayed++;
@@ -1097,7 +1192,7 @@ let voedselTimeout = null;
 function startVoedsel() {
   if (voedselActive || !isMinigameUnlocked('voedsel')) return;
   if (Date.now() - state.minigames.voedselLast < VOEDSEL_COOLDOWN) return;
-  voedselActive = true; sfxGameStart();
+  voedselActive = true; sfxGameStart(); mgSetActive('voedsel', true);
   voedselScore = 0;
   voedselMistakes = 0;
   voedselRound = 0;
@@ -1167,7 +1262,7 @@ function answerVoedsel(btn, answer) {
 function endVoedsel() {
   clearTimeout(voedselTimeout);
   sfxGameEnd();
-  voedselActive = false;
+  voedselActive = false; mgSetActive('voedsel', false);
   state.minigames.voedselLast = Date.now();
   state.stats.voedselPlayed++;
 
