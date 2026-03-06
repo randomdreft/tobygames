@@ -974,9 +974,10 @@ function init() {
     // Don't capture if typing in an input/textarea
     if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
 
-    // Space = click
+    // Space = click (no repeat — must release and press again)
     if (e.code === 'Space') {
       e.preventDefault();
+      if (e.repeat) return;
       const area = document.getElementById('click-area');
       const rect = area.getBoundingClientRect();
       doClick({clientX: rect.left + rect.width / 2, clientY: rect.top + rect.height / 2});
