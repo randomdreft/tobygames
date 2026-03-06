@@ -556,7 +556,7 @@ function render() {
     const msEl = document.getElementById('milestone-' + a.id);
     if (msEl) {
       const nextMs = MILESTONES.find(m => count < m);
-      if (nextMs && visible) {
+      if (nextMs && visible && state.prestige.timesReset > 0) {
         const prevMs = MILESTONES[MILESTONES.indexOf(nextMs) - 1] || 0;
         const pctMs = Math.min(100, Math.round((count - prevMs) / (nextMs - prevMs) * 100));
         msEl.innerHTML = '<div class="milestone-bar"><div class="milestone-bar-fill" style="width:' + pctMs + '%"></div></div>';
