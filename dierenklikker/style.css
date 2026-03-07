@@ -152,6 +152,8 @@ img.emoji {
 .cooldown-text { font-size: 13px; color: var(--text-dim); margin-top: 6px; text-align: center; }
 .cooldown-bar { height: 4px; border-radius: 2px; background: rgba(255,255,255,0.08); margin-top: 4px; overflow: hidden; }
 .cooldown-bar-fill { height: 100%; border-radius: 2px; background: var(--green); transition: width 1s linear; }
+.cooldown-bar-fill.cooldown-pulse { animation: cd-pulse 1s ease-in-out infinite; }
+@keyframes cd-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
 
 /* Quiz */
 #quiz-game { margin-top: 10px; }

@@ -683,7 +683,8 @@ function updateCooldown(btnId, textId, lastPlayed, cooldown, active) {
   if (remaining > 0 && !active) {
     btn.disabled = true;
     const pct = Math.round((1 - remaining / cooldown) * 100);
-    text.innerHTML = 'Wacht ' + Math.ceil(remaining / 1000) + 's...<div class="cooldown-bar"><div class="cooldown-bar-fill" style="width:' + pct + '%"></div></div>';
+    const almostReady = remaining <= 5000 ? ' cooldown-pulse' : '';
+    text.innerHTML = 'Wacht ' + Math.ceil(remaining / 1000) + 's...<div class="cooldown-bar"><div class="cooldown-bar-fill' + almostReady + '" style="width:' + pct + '%"></div></div>';
   } else if (!active) {
     btn.disabled = false;
     text.innerHTML = '';
