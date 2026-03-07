@@ -193,6 +193,8 @@ img.emoji {
 .ss-buyable:hover { background: rgba(255,215,0,0.15); transform: scale(1.01); }
 .ss-locked { opacity: 0.35; }
 .ss-expensive { opacity: 0.6; }
+.ss-expensive .ss-perk-cost { color: var(--red); }
+.ss-buyable .ss-perk-cost { color: var(--green-light); }
 
 #animal-name {
   font-size: clamp(16px, 3vw, 22px); font-weight: 600; margin-top: 8px;
