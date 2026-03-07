@@ -996,11 +996,10 @@ function clickLucky(el) {
   sfxLuckyClick();
   state.stats.luckyClicked++;
 
-  // Check if two are caught (count recently removed ones too)
-  const activeCount = luckyActive.filter(e => e.classList.contains('lucky-caught')).length;
-  if (activeCount >= 2 || (activeCount >= 1 && luckyRecentCatch > 0)) state.stats.luckyDouble++;
+  // Double catch: clicked 2 bugs within 10 seconds
+  if (luckyRecentCatch > 0) state.stats.luckyDouble++;
   luckyRecentCatch++;
-  setTimeout(() => luckyRecentCatch--, 2000);
+  setTimeout(() => luckyRecentCatch--, 10000);
 
   // Determine reward
   const roll = Math.random();
