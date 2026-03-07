@@ -829,6 +829,18 @@ function renderDailyChallenges() {
   el.innerHTML = html;
 }
 
+let _onlineCount = null;
+let _heartbeatSid = sessionStorage.getItem('hb_sid') || '';
+function pollOnlineCount() {
+  const q = _heartbeatSid ? '?sid=' + _heartbeatSid : '';
+  fetch('/api/heartbeat' + q, {method:'POST'}).then(r => r.json()).then(d => {
+    _onlineCount = d.online;
+    if (d.sid && !_heartbeatSid) { _heartbeatSid = d.sid; sessionStorage.setItem('hb_sid', d.sid); }
+  }).catch(() => {});
+}
+setInterval(pollOnlineCount, 30000);
+setTimeout(pollOnlineCount, 2000);
+
 function renderStats() {
   const list = document.getElementById('stats-list');
   if (!list) return;
@@ -838,6 +850,7 @@ function renderStats() {
   const row = (l, v) => '<div class="stat-row"><span class="stat-label">' + l + '</span><span>' + v + '</span></div>';
   const heading = (t) => '<div class="stat-heading">' + t + '</div>';
   const bigStat = (emoji, val, label) => '<div class="stat-big"><span class="stat-big-val">' + emoji + ' ' + val + '</span><span class="stat-big-label">' + label + '</span></div>';
+  const pct = (a, b) => b > 0 ? Math.round(a / b * 100) : 0;
 
   // Highlight dashboard
   const s = state.stats;
@@ -845,9 +858,10 @@ function renderStats() {
   const bd = getDpsBreakdown();
   let html = '<div class="stat-dashboard">';
   html += bigStat('', formatDps(bd.total || 0) + '/s', 'DPS');
-  html += bigStat('', formatTime(state.allTime.playTimeSeconds), 'Speeltijd');
   html += bigStat('', formatNumber(state.allTime.totalClicks), 'Klikken');
-  html += bigStat('', state.prestige.timesReset + 'x', 'Evoluties');
+  html += bigStat('', totalMgPlayed + 'x', 'Minigames');
+  if (_onlineCount !== null) html += bigStat('', _onlineCount, 'Spelers online');
+  else html += bigStat('', state.prestige.timesReset + 'x', 'Evoluties');
   html += '</div>';
 
   // Favoriete minigame
@@ -875,13 +889,14 @@ function renderStats() {
   html += row('Evolutiesterren', state.prestige.stars + ' ⭐ (+' + (state.prestige.stars * 5) + '%)');
   html += row('Offline bonus', getOfflinePercent() + '%');
   html += row('Evoluties', state.prestige.timesReset + 'x');
+  if (_onlineCount !== null) html += row('Spelers online', _onlineCount);
 
   // DPS breakdown
   if (bd.total > 0) {
     html += heading('DPS Uitsplitsing');
     bd.animals.forEach(a => {
-      const pct = (a.dps / bd.rawTotal * 100).toFixed(1);
-      html += row(a.name, formatDps(a.dps) + '/s (' + pct + '%)');
+      const p = (a.dps / bd.rawTotal * 100).toFixed(1);
+      html += row(a.name, formatDps(a.dps) + '/s (' + p + '%)');
     });
     if (bd.achPct > 0) html += row('🏆 Prestatiebonus', '+' + bd.achPct.toFixed(0) + '%');
     if (bd.starPct > 0) html += row('⭐ Sterrenbonus', '+' + bd.starPct.toFixed(0) + '%');
@@ -889,30 +904,41 @@ function renderStats() {
     html += row('<b>Totaal</b>', '<b>' + formatDps(bd.total) + '/s</b>');
   }
 
+  // Minigame stats with accuracy percentages
   html += heading('Minigames');
   html += row('Totaal gespeeld', totalMgPlayed + 'x');
   if (favMg) html += row('Favoriete game', favMg + ' (' + favMgCount + 'x)');
-  if (s.tellenPlayed) html += row('🔢 Tellen', s.tellenCorrect + '/' + s.tellenPlayed + ' goed');
-  if (s.quizPlayed) html += row('🧠 Quiz', s.quizCorrect + '/' + s.quizPlayed + ' goed');
+  if (s.tellenPlayed) html += row('🔢 Tellen', s.tellenCorrect + '/' + s.tellenPlayed + ' goed (' + pct(s.tellenCorrect, s.tellenPlayed) + '%)');
+  if (s.quizPlayed) html += row('🧠 Quiz', s.quizCorrect + '/' + s.quizPlayed + ' goed (' + pct(s.quizCorrect, s.quizPlayed) + '%)');
   if (s.catcherPlayed) html += row('🎯 Vanger', s.catcherCaught + ' gevangen (' + s.catcherPlayed + 'x)');
   if (s.indringerPlayed) html += row('🚫 Indringer', 'beste: ' + s.indringerBest + ' (' + s.indringerPlayed + 'x)');
-  if (s.mathPlayed) html += row('🔢 Wiskunde', s.mathCorrect + '/' + s.mathPlayed + ' goed');
-  if (s.groterPlayed) html += row('⚖️ Groter/Kleiner', s.groterCorrect + ' goed, ' + s.groterWrong + ' fout');
+  if (s.mathPlayed) html += row('🔢 Wiskunde', s.mathCorrect + '/' + s.mathPlayed + ' goed (' + pct(s.mathCorrect, s.mathPlayed) + '%)');
+  if (s.groterPlayed) {
+    const groterTotal = s.groterCorrect + s.groterWrong;
+    html += row('⚖️ Groter/Kleiner', s.groterCorrect + '/' + groterTotal + ' goed (' + pct(s.groterCorrect, groterTotal) + '%)');
+  }
   if (s.buffPlayed) html += row('✨ Buffs', s.buffPlayed + 'x gekozen');
-  if (s.voedselPlayed) html += row('🍽️ Wat Eet Ik?', s.voedselCorrect + '/' + (s.voedselCorrect+s.voedselWrong) + ' goed');
-  if (s.sortPlayed) html += row('🗂️ Sorteren', s.sortCorrect + ' goed (beste: ' + s.sortBestStreak + ')');
-  if (s.racePlayed) html += row('🏇 Paardenrace', s.raceWon + '/' + s.racePlayed + ' gewonnen (' + Math.round(s.raceWon/s.racePlayed*100) + '%)');
+  if (s.voedselPlayed) {
+    const voedselTotal = s.voedselCorrect + s.voedselWrong;
+    html += row('🍽️ Wat Eet Ik?', s.voedselCorrect + '/' + voedselTotal + ' goed (' + pct(s.voedselCorrect, voedselTotal) + '%)');
+  }
+  if (s.sortPlayed) html += row('🗂️ Sorteren', s.sortCorrect + ' goed (beste streak: ' + s.sortBestStreak + ')');
+  if (s.racePlayed) html += row('🏇 Paardenrace', s.raceWon + '/' + s.racePlayed + ' gewonnen (' + pct(s.raceWon, s.racePlayed) + '%)');
   if (s.puzzelPlayed) html += row('🧩 Puzzel', s.puzzelWon + 'x opgelost (beste: ' + (s.puzzelBestMoves || '-') + ' zetten)');
-  if (s.memoryPlayed) html += row('🃏 Memory', s.memoryWon + '/' + s.memoryPlayed + ' perfect');
-  if (s.groterPerfect) html += row('⚖️ Perfect scores', s.groterPerfect + 'x');
-  if (s.voedselPerfect) html += row('🍽️ Perfect scores', s.voedselPerfect + 'x');
+  if (s.memoryPlayed) html += row('🃏 Memory', s.memoryWon + '/' + s.memoryPlayed + ' perfect (' + pct(s.memoryWon, s.memoryPlayed) + '%)');
+
+  // Perfect scores summary
+  const perfects = [];
+  if (s.groterPerfect) perfects.push('⚖️ ' + s.groterPerfect + 'x');
+  if (s.voedselPerfect) perfects.push('🍽️ ' + s.voedselPerfect + 'x');
+  if (s.memoryWon) perfects.push('🃏 ' + s.memoryWon + 'x');
+  if (perfects.length) html += row('Perfect scores', perfects.join(' · '));
 
   if (s.luckyClicked || s.luckyMissed) {
     const luckyTotal = (s.luckyClicked || 0) + (s.luckyMissed || 0);
-    const luckyPct = luckyTotal > 0 ? Math.round((s.luckyClicked || 0) / luckyTotal * 100) : 0;
+    const luckyPct = pct(s.luckyClicked || 0, luckyTotal);
     html += heading('Geluksbeestjes');
-    html += row('🐞 Gevangen', (s.luckyClicked || 0) + ' (' + luckyPct + '% vangratio)');
-    html += row('🐞 Gemist', s.luckyMissed || 0);
+    html += row('🐞 Gevangen', (s.luckyClicked || 0) + '/' + luckyTotal + ' (' + luckyPct + '%)');
     if (s.luckyDouble) html += row('🐞🐞 Dubbel', s.luckyDouble + 'x');
     if (s.luckyJackpot) html += row('💰 Jackpots', s.luckyJackpot + 'x');
   }
