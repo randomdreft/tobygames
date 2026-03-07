@@ -322,7 +322,8 @@ function buildAchievements() {
   const container = document.getElementById('tab-achievements');
   const earned = Object.keys(state.achievements).filter(k => state.achievements[k]).length;
   const total = achievementDefs.length;
-  let html = '<div class="ach-summary">' + earned + '/' + total + ' prestaties — elke prestatie geeft +2% DPS!</div>';
+  const pct = total ? Math.floor(earned / total * 100) : 0;
+  let html = '<div class="ach-summary">' + earned + '/' + total + ' prestaties (' + pct + '%) — elke prestatie geeft +2% DPS!</div>';
 
   // Group by animal, then specials
   const groups = {};
@@ -600,7 +601,8 @@ function render() {
   const achSummary = document.querySelector('.ach-summary');
   if (achSummary) {
     const earned = Object.keys(state.achievements).filter(k => state.achievements[k]).length;
-    achSummary.textContent = earned + '/' + achievementDefs.length + ' prestaties — elke prestatie geeft +2% DPS!';
+    const pct = achievementDefs.length ? Math.floor(earned / achievementDefs.length * 100) : 0;
+    achSummary.textContent = earned + '/' + achievementDefs.length + ' prestaties (' + pct + '%) — elke prestatie geeft +2% DPS!';
   }
 
   // Prestige button
