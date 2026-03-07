@@ -777,7 +777,8 @@ function buildStarShop() {
       html += '<div class="' + cls + '"' + (canBuy ? ' onclick="buyPerk(\'' + p.id + '\');buildStarShop()"' : '') + '>';
       html += '<div class="ss-perk-top">';
       html += '<span class="ss-perk-name">' + p.name + '</span>';
-      html += '<span class="ss-perk-cost">' + (owned ? '✓' : p.cost + '⭐') + '</span>';
+      const costCls = owned ? '' : canBuy ? ' ss-affordable' : locked ? '' : ' ss-toodear';
+      html += '<span class="ss-perk-cost' + costCls + '">' + (owned ? '✓' : p.cost + '⭐') + '</span>';
       html += '</div>';
       html += '<div class="ss-perk-desc">' + p.desc + '</div>';
       html += '</div>';
