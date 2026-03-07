@@ -734,7 +734,7 @@ function updateCooldown(btnId, textId, lastPlayed, cooldown, active) {
 function renderDailyChallenges() {
   const el = document.getElementById('daily-challenges');
   if (!el) return;
-  if (!state.daily.date || !state.daily.challenges.length) {
+  if (!state.daily.date || !state.daily.challenges.length || state.prestige.timesReset < 1) {
     el.innerHTML = '';
     return;
   }
