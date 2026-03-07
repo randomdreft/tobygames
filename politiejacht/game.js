@@ -26,11 +26,24 @@ const BUILDING_COLORS = [
 ];
 
 // === HELPERS ===
+// Global ref set by Game constructor so helpers can access buildings
+let _buildings = null;
+
 function isRoad(x, y) {
     if (x < 0 || y < 0 || x >= WORLD || y >= WORLD) return false;
     const cx = ((x % CELL) + CELL) % CELL;
     const cy = ((y % CELL) + CELL) % CELL;
-    return cx < ROAD_W || cy < ROAD_W;
+    if (cx < ROAD_W || cy < ROAD_W) return true;
+    // Check if inside a park block (parks are drivable)
+    if (_buildings) {
+        const gx = Math.floor(x / CELL);
+        const gy = Math.floor(y / CELL);
+        if (gx >= 0 && gx < GRID_N && gy >= 0 && gy < GRID_N) {
+            const bldg = _buildings[gy * GRID_N + gx];
+            if (bldg && bldg.isPark) return true;
+        }
+    }
+    return false;
 }
 
 function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
@@ -110,6 +123,7 @@ class Game {
 
     generateWorld() {
         this.buildings = [];
+        _buildings = this.buildings;
         for (let i = 0; i < GRID_N * GRID_N; i++) {
             const isPark = Math.random() < 0.12;
             if (isPark) {
@@ -146,6 +160,10 @@ class Game {
             if (e.key === 'Enter') {
                 if (this.state === 'menu') this.startCountdown();
                 else if (this.state === 'gameover') this.restart();
+            }
+            if (e.key === ' ' || e.key === 'Escape' || e.key === 'p' || e.key === 'P') {
+                if (this.state === 'playing') this.pause();
+                else if (this.state === 'paused') this.unpause();
             }
         });
         document.addEventListener('keyup', e => { this.keys[e.key] = false; });
@@ -225,6 +243,7 @@ class Game {
 
         document.getElementById('start-btn').addEventListener('click', () => this.startCountdown());
         document.getElementById('restart-btn').addEventListener('click', () => this.restart());
+        document.getElementById('resume-btn').addEventListener('click', () => this.unpause());
 
         this._updateModeLabels();
         this.updateScoreboard();
@@ -372,6 +391,20 @@ class Game {
     restart() {
         document.getElementById('gameover-screen').style.display = 'none';
         this.startCountdown();
+    }
+
+    pause() {
+        this.state = 'paused';
+        this.sound.stopAll();
+        document.getElementById('pause-screen').style.display = 'flex';
+    }
+
+    unpause() {
+        this.state = 'playing';
+        this.lastTime = 0; // prevent time jump
+        this.sound.startEngine();
+        this.sound.startSiren();
+        document.getElementById('pause-screen').style.display = 'none';
     }
 
     // === UPDATE ===
