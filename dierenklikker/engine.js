@@ -213,6 +213,33 @@ function buildAchievementDefs() {
     check: () => ANIMALS.every(a => a.upgrades.every(u => !!state.upgrades[u.id]))
   });
 
+  // Lucky bug achievements
+  defs.push({
+    id: 'lucky_1', emoji: '🐞', name: 'Geluksvogel',
+    desc: 'Je eerste lieveheersbeestje gevangen!', group: 'Geluk',
+    check: () => (state.stats.luckyClicked || 0) >= 1
+  });
+  defs.push({
+    id: 'lucky_25', emoji: '🐞', name: 'Geluksjager',
+    desc: '25 lieveheersbeestjes gevangen!', group: 'Geluk',
+    check: () => (state.stats.luckyClicked || 0) >= 25
+  });
+  defs.push({
+    id: 'lucky_100', emoji: '🐞', name: 'Meester der fortuin',
+    desc: '100 lieveheersbeestjes gevangen!', group: 'Geluk',
+    check: () => (state.stats.luckyClicked || 0) >= 100
+  });
+  defs.push({
+    id: 'lucky_double', emoji: '🐞', name: 'Dubbel geluk!',
+    desc: 'Twee lieveheersbeestjes tegelijk gevangen!', group: 'Geluk',
+    check: () => (state.stats.luckyDouble || 0) >= 1
+  });
+  defs.push({
+    id: 'lucky_jackpot', emoji: '🐞', name: 'Jackpot!',
+    desc: 'Een jackpot-lieveheersbeestje gevangen!', group: 'Geluk',
+    check: () => (state.stats.luckyJackpot || 0) >= 1
+  });
+
   // Special
   defs.push({
     id: 'alle_dieren', emoji: '🌈', name: 'Alle dieren!',

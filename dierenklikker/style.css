@@ -628,6 +628,53 @@ img.emoji {
 .puzzel-tile.correct { border-color: var(--green); background: rgba(67,160,71,0.15); }
 .puzzel-tile.empty { background: transparent; border-color: transparent; cursor: default; }
 
+/* Geluksbeestje */
+.lucky-bug {
+  position: fixed; z-index: 180; cursor: pointer; user-select: none;
+  font-size: clamp(36px, 6vw, 52px); line-height: 1;
+  filter: drop-shadow(0 0 12px rgba(255,215,0,0.6));
+  animation: lucky-wiggle 0.6s ease-in-out infinite, lucky-glow 2s ease-in-out infinite;
+  transition: transform 0.1s;
+}
+.lucky-bug:hover { transform: scale(1.2); }
+.lucky-bug:active { transform: scale(0.9); }
+.lucky-bug img { width: 1em; height: 1em; }
+.lucky-bug.lucky-fade {
+  animation: lucky-vanish 0.5s ease-in forwards;
+  pointer-events: none;
+}
+.lucky-bug.lucky-caught {
+  animation: lucky-pop 0.3s ease-out forwards;
+  pointer-events: none;
+}
+@keyframes lucky-wiggle {
+  0%, 100% { transform: rotate(-8deg); }
+  50% { transform: rotate(8deg); }
+}
+@keyframes lucky-glow {
+  0%, 100% { filter: drop-shadow(0 0 12px rgba(255,215,0,0.6)); }
+  50% { filter: drop-shadow(0 0 20px rgba(255,215,0,0.9)); }
+}
+@keyframes lucky-vanish {
+  0% { opacity: 1; transform: scale(1); }
+  100% { opacity: 0; transform: scale(0.3) translateY(-30px); }
+}
+@keyframes lucky-pop {
+  0% { opacity: 1; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.5); }
+  100% { opacity: 0; transform: scale(0) rotate(180deg); }
+}
+.lucky-miss {
+  position: fixed; z-index: 181; pointer-events: none;
+  font-size: 16px; font-weight: 700; color: var(--red);
+  text-shadow: 0 1px 4px rgba(0,0,0,0.5);
+  animation: lucky-miss-fly 1s ease-out forwards;
+}
+@keyframes lucky-miss-fly {
+  0% { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(-40px); }
+}
+
 /* Dierenhemel */
 #dierenhemel {
   display: none; position: fixed; inset: 0; z-index: 250;

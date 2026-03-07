@@ -102,6 +102,24 @@ function sfxPrestige() {
   notes.forEach((f, i) => setTimeout(() => playTone(f, 0.2, 'sine', 0.1, true), i * 120));
 }
 
+function sfxLuckyAppear() {
+  if (!soundEnabled || soundVolume === 0) return;
+  // Gentle bell chime
+  const ctx = getAudioCtx();
+  if (!ctx) return;
+  [1200, 1500, 1800].forEach((f, i) => {
+    setTimeout(() => playTone(f, 0.3, 'sine', 0.06, true), i * 80);
+  });
+}
+
+function sfxLuckyClick() {
+  if (!soundEnabled || soundVolume === 0) return;
+  // Satisfying pling
+  [800, 1000, 1200, 1600].forEach((f, i) => {
+    setTimeout(() => playTone(f, 0.12, 'sine', 0.1, true), i * 50);
+  });
+}
+
 function sfxHeaven() {
   if (!soundEnabled || soundVolume === 0) return;
   const ctx = getAudioCtx();

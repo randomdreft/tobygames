@@ -735,6 +735,12 @@ function renderStats() {
   if (s.puzzelPlayed) html += row('🧩 Puzzel', s.puzzelWon + 'x opgelost (beste: ' + (s.puzzelBestMoves || '-') + ' zetten)');
   if (s.memoryPlayed) html += row('🃏 Memory', s.memoryWon + '/' + s.memoryPlayed + ' perfect');
 
+  if (s.luckyClicked || s.luckyMissed) {
+    html += heading('Geluksbeestjes');
+    html += row('🐞 Gevangen', s.luckyClicked || 0);
+    html += row('🐞 Gemist', s.luckyMissed || 0);
+  }
+
   list.innerHTML = html;
 }
 
@@ -896,6 +902,141 @@ function showToast(text) {
 }
 
 /* ================================================================
+   SECTIE 11b: GELUKSBEESTJE
+   ================================================================ */
+
+const LUCKY_BASE_INTERVAL = 120000; // 120 sec average
+const LUCKY_VARIANCE = 40000;       // ±40 sec
+const LUCKY_DURATION = 8000;        // 8 sec visible
+const LUCKY_DOUBLE_CHANCE = 0.03;   // 3% double
+const LUCKY_BUFF_CHANCE = 0.05;     // 5% per buff type (20% total)
+const LUCKY_JACKPOT_CHANCE = 0.05;  // 5% jackpot
+
+let luckyNextSpawn = 0;
+let luckyActive = [];
+
+function getLuckyInterval() {
+  // Faster spawns with more prestige stars (10% faster per 5 stars, max 40%)
+  const speedBonus = Math.min(0.4, Math.floor(state.prestige.stars / 5) * 0.1);
+  const base = LUCKY_BASE_INTERVAL * (1 - speedBonus);
+  return base + (Math.random() * 2 - 1) * LUCKY_VARIANCE;
+}
+
+function scheduleLucky() {
+  luckyNextSpawn = Date.now() + getLuckyInterval();
+}
+
+function checkLuckySpawn() {
+  if (Date.now() < luckyNextSpawn) return;
+  if (document.hidden) { scheduleLucky(); return; }
+  // Need at least some DPS to spawn
+  if (getTotalDps() <= 0) { scheduleLucky(); return; }
+
+  spawnLucky();
+  // Small chance of double
+  if (Math.random() < LUCKY_DOUBLE_CHANCE) {
+    setTimeout(() => spawnLucky(), 300);
+  }
+  scheduleLucky();
+}
+
+function spawnLucky() {
+  sfxLuckyAppear();
+  const el = document.createElement('div');
+  el.className = 'lucky-bug';
+  el.textContent = '\uD83D\uDC1E'; // 🐞
+  // Random position (avoid edges)
+  const x = 10 + Math.random() * 75; // 10-85% of screen width
+  const y = 10 + Math.random() * 70; // 10-80% of screen height
+  el.style.left = x + 'vw';
+  el.style.top = y + 'vh';
+  el.onclick = function() { clickLucky(el); };
+  document.body.appendChild(el);
+  parseAppleEmoji(el);
+  luckyActive.push(el);
+
+  // Auto-remove after duration
+  setTimeout(() => {
+    if (!el.parentNode || el.classList.contains('lucky-caught')) return;
+    el.classList.add('lucky-fade');
+    // Show "Gemist!" text
+    const miss = document.createElement('div');
+    miss.className = 'lucky-miss';
+    miss.textContent = 'Gemist!';
+    miss.style.left = el.style.left;
+    miss.style.top = el.style.top;
+    document.body.appendChild(miss);
+    setTimeout(() => miss.remove(), 1000);
+    state.stats.luckyMissed++;
+    setTimeout(() => {
+      el.remove();
+      luckyActive = luckyActive.filter(e => e !== el);
+    }, 500);
+  }, LUCKY_DURATION);
+}
+
+function clickLucky(el) {
+  if (el.classList.contains('lucky-caught') || el.classList.contains('lucky-fade')) return;
+  el.classList.add('lucky-caught');
+  sfxLuckyClick();
+  state.stats.luckyClicked++;
+
+  // Check if two are active (double catch)
+  const activeCount = luckyActive.filter(e => e.classList.contains('lucky-caught')).length;
+  if (activeCount >= 2) state.stats.luckyDouble++;
+
+  // Determine reward
+  const roll = Math.random();
+  const dps = getTotalDps();
+
+  if (roll < LUCKY_JACKPOT_CHANCE) {
+    // Jackpot! 15 min DPS
+    const bonus = dps * 900;
+    state.currentPoints += bonus;
+    state.totalEarned += bonus;
+    state.allTime.totalEarned += bonus;
+    state.stats.luckyJackpot++;
+    showToast('\uD83D\uDC1E\uD83C\uDF1F Jackpot! +' + formatNumber(bonus) + ' punten!');
+    // Gold confetti
+    for (let i = 0; i < 12; i++) {
+      const c = document.createElement('div');
+      c.className = 'ach-celebrate';
+      c.textContent = '\u2B50';
+      c.style.left = (30 + Math.random() * 40) + '%';
+      c.style.top = (20 + Math.random() * 40) + '%';
+      document.body.appendChild(c);
+      parseAppleEmoji(c);
+      setTimeout(() => c.remove(), 1200);
+    }
+  } else if (roll < LUCKY_JACKPOT_CHANCE + LUCKY_BUFF_CHANCE * 4) {
+    // Buff (20% total)
+    const buff = BUFF_TYPES[Math.floor(Math.random() * BUFF_TYPES.length)];
+    if (buff.id === 'jackpot') {
+      const bonus = dps * 30;
+      state.currentPoints += bonus;
+      state.totalEarned += bonus;
+      state.allTime.totalEarned += bonus;
+      showToast('\uD83D\uDC1E ' + buff.emoji + ' ' + buff.name + '! +' + formatNumber(bonus) + ' punten!');
+    } else {
+      activeBuff = { type: buff.id, endsAt: Date.now() + BUFF_DURATION, emoji: buff.emoji, name: buff.name, color: buff.color };
+      showToast('\uD83D\uDC1E ' + buff.emoji + ' ' + buff.name + ' actief voor 30 seconden!');
+    }
+  } else {
+    // Points: 5 min DPS
+    const bonus = dps * 300;
+    state.currentPoints += bonus;
+    state.totalEarned += bonus;
+    state.allTime.totalEarned += bonus;
+    showToast('\uD83D\uDC1E +' + formatNumber(bonus) + ' punten!');
+  }
+
+  setTimeout(() => {
+    el.remove();
+    luckyActive = luckyActive.filter(e => e !== el);
+  }, 300);
+}
+
+/* ================================================================
    SECTIE 12: GAME LOOP
    ================================================================ */
 
@@ -921,6 +1062,7 @@ function gameLoop() {
   const now = Date.now();
   if (now - lastAchCheck > 1000) {
     checkAchievements();
+    checkLuckySpawn();
     lastAchCheck = now;
   }
 }
@@ -936,6 +1078,9 @@ function init() {
   applyTheme(state.prestige.theme || 'oerwoud');
   buildShop();
   render();
+
+  // Schedule first lucky bug
+  scheduleLucky();
 
   // One-time Apple emoji parse for all static UI elements
   parseAppleEmoji(document.body);
