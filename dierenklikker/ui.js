@@ -260,7 +260,11 @@ function buildUpgradeCategory(title, upgrades, animal) {
 
 function buildUpgradeShop() {
   const container = document.getElementById('tab-upgrades');
-  let html = '';
+  const allUpgrades = [CLICK_UPGRADES, GLOBAL_UPGRADES, OFFLINE_UPGRADES, ...ANIMALS.map(a => a.upgrades)].flat();
+  const bought = allUpgrades.filter(u => state.upgrades[u.id]).length;
+  const total = allUpgrades.length;
+  const pct = total ? Math.floor(bought / total * 100) : 0;
+  let html = '<div class="upg-summary">' + bought + '/' + total + ' upgrades (' + pct + '%)</div>';
   html += buildUpgradeCategory('👆 Klik-upgrades', CLICK_UPGRADES);
   html += buildUpgradeCategory('🌍 Globale upgrades', GLOBAL_UPGRADES);
   html += buildUpgradeCategory('🌙 Offline upgrades', OFFLINE_UPGRADES);
@@ -586,6 +590,14 @@ function render() {
     const priceEl = document.getElementById('upgprice-' + u.id);
     if (priceEl) priceEl.textContent = bought ? 'Gekocht!' : formatNumber(u.cost);
   });
+  const upgSummary = document.querySelector('.upg-summary');
+  if (upgSummary) {
+    const allUpgrades = allUpgradeSets.flat();
+    const boughtCount = allUpgrades.filter(u => state.upgrades[u.id]).length;
+    const totalCount = allUpgrades.length;
+    const pctUpg = totalCount ? Math.floor(boughtCount / totalCount * 100) : 0;
+    upgSummary.textContent = boughtCount + '/' + totalCount + ' upgrades (' + pctUpg + '%)';
+  }
 
   // Achievements (update earned status)
   achievementDefs.forEach(a => {

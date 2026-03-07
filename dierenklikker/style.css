@@ -447,7 +447,7 @@ img.emoji {
 }
 #tooltip .tip-title { font-weight: 700; color: var(--gold); margin-bottom: 3px; }
 #tooltip .tip-desc { color: var(--text-dim); }
-.ach-summary { font-size: 13px; color: var(--text-dim); margin-bottom: 12px; text-align: center; }
+.ach-summary, .upg-summary { font-size: 13px; color: var(--text-dim); margin-bottom: 12px; text-align: center; }
 .ach-section { margin-bottom: 14px; }
 .ach-section h4 { font-size: 13px; color: var(--text-dim); margin-bottom: 6px; }
 .ach-spoiler-toggle {
