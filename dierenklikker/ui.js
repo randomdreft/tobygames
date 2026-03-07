@@ -683,11 +683,18 @@ function updateCooldown(btnId, textId, lastPlayed, cooldown, active) {
   if (remaining > 0 && !active) {
     btn.disabled = true;
     const pct = Math.round((1 - remaining / cooldown) * 100);
-    const almostReady = remaining <= 5000 ? ' cooldown-pulse' : '';
-    text.innerHTML = 'Wacht ' + Math.ceil(remaining / 1000) + 's...<div class="cooldown-bar"><div class="cooldown-bar-fill' + almostReady + '" style="width:' + pct + '%"></div></div>';
+    const fill = text.querySelector('.cooldown-bar-fill');
+    if (fill) {
+      // Update existing bar without rebuilding DOM (preserves CSS animation)
+      fill.style.width = pct + '%';
+      fill.classList.toggle('cooldown-pulse', remaining <= 5000);
+      text.childNodes[0].textContent = 'Wacht ' + Math.ceil(remaining / 1000) + 's...';
+    } else {
+      text.innerHTML = 'Wacht ' + Math.ceil(remaining / 1000) + 's...<div class="cooldown-bar"><div class="cooldown-bar-fill" style="width:' + pct + '%"></div></div>';
+    }
   } else if (!active) {
     btn.disabled = false;
-    text.innerHTML = '';
+    if (text.innerHTML) text.innerHTML = '';
   }
 }
 
@@ -997,8 +1004,8 @@ function clickLucky(el) {
   sfxLuckyClick();
   state.stats.luckyClicked++;
 
-  // Double catch: clicked 2 bugs within 10 seconds
-  if (luckyRecentCatch > 0) state.stats.luckyDouble++;
+  // Double catch: clicked 2 bugs within 10 seconds (only count once per pair)
+  if (luckyRecentCatch === 1) state.stats.luckyDouble++;
   luckyRecentCatch++;
   setTimeout(() => luckyRecentCatch--, 10000);
 
