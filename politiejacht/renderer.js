@@ -26,6 +26,7 @@ class Renderer {
 
         ctx.restore();
 
+        this.drawFuelArrow();
         this.drawVignette();
         this.drawMinimap();
         this.sirenTick += 0.05;
@@ -342,6 +343,73 @@ class Renderer {
                 life: 1
             });
         }
+    }
+
+    drawFuelArrow() {
+        const g = this.game;
+        if (g.state !== 'playing' || g.jerrycans.length === 0) return;
+        const ctx = this.ctx;
+        const p = g.player;
+        const vw = g.viewW, vh = g.viewH;
+        const cam = g.camera;
+        const margin = 50; // distance from screen edge
+
+        // Find nearest jerrycan
+        let nearest = null, nearDist = Infinity;
+        for (const j of g.jerrycans) {
+            const d = dist(p.x, p.y, j.x, j.y);
+            if (d < nearDist) { nearDist = d; nearest = j; }
+        }
+        if (!nearest) return;
+
+        // Screen position of jerrycan
+        const sx = nearest.x - cam.x;
+        const sy = nearest.y - cam.y;
+
+        // If on screen (with padding), don't show arrow
+        if (sx > 30 && sx < vw - 30 && sy > 30 && sy < vh - 30) return;
+
+        // Arrow position: clamp to screen edge
+        const cx = vw / 2, cy = vh / 2;
+        const angle = Math.atan2(sy - cy, sx - cx);
+
+        // Find edge intersection
+        const cos = Math.cos(angle), sin = Math.sin(angle);
+        const edgeX = clamp(cx + cos * (vw / 2 - margin), margin, vw - margin);
+        const edgeY = clamp(cy + sin * (vh / 2 - margin), margin, vh - margin);
+
+        // Pulsing opacity
+        const pulse = 0.6 + Math.sin(g.time * 5) * 0.2;
+        const arrowColor = g.evMode ? `rgba(46,204,113,${pulse})` : `rgba(241,196,0,${pulse})`;
+
+        ctx.save();
+        ctx.translate(edgeX, edgeY);
+        ctx.rotate(angle);
+
+        // Arrow shape
+        ctx.fillStyle = arrowColor;
+        ctx.beginPath();
+        ctx.moveTo(16, 0);
+        ctx.lineTo(-8, -10);
+        ctx.lineTo(-4, 0);
+        ctx.lineTo(-8, 10);
+        ctx.closePath();
+        ctx.fill();
+
+        // Border
+        ctx.strokeStyle = 'rgba(255,255,255,0.5)';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+
+        // Distance label
+        ctx.rotate(-angle); // un-rotate for text
+        const distM = Math.round(nearDist / 10);
+        ctx.font = 'bold 11px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillStyle = `rgba(255,255,255,${pulse})`;
+        ctx.fillText(distM + 'm', 0, -16);
+
+        ctx.restore();
     }
 
     drawVignette() {
