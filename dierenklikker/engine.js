@@ -2,12 +2,79 @@
    SECTIE 5: BEREKENINGEN
    ================================================================ */
 
+function hasPerk(id) { return !!(state.prestige.perks && state.prestige.perks[id]); }
+
+function getAvailableStars() {
+  let spent = 0;
+  STAR_SHOP.forEach(cat => cat.perks.forEach(p => { if (hasPerk(p.id)) spent += p.cost; }));
+  return state.prestige.stars - spent;
+}
+
+function getSynergyBonus(animalId) {
+  let bonus = 0;
+  STAR_SHOP.forEach(cat => {
+    cat.perks.forEach(p => {
+      if (!p.bonus || !hasPerk(p.id)) return;
+      if (p.animals) {
+        // Specific animal synergy: only boost those animals, and only if all are owned
+        if (p.animals.indexOf(animalId) !== -1 && p.animals.every(a => (state.animals[a] || 0) > 0)) {
+          bonus += p.bonus;
+        }
+      } else if (p.id === 'sp_syn5') {
+        // Dierenrijk: all animals get bonus if all 4 synergies are active
+        if (hasPerk('sp_syn1') && hasPerk('sp_syn2') && hasPerk('sp_syn3') && hasPerk('sp_syn4')) {
+          bonus += p.bonus;
+        }
+      }
+    });
+  });
+  return bonus;
+}
+
+function getCooldownMultiplier() {
+  if (hasPerk('sp_cd2')) return 0.70;
+  if (hasPerk('sp_cd1')) return 0.85;
+  return 1;
+}
+
+function getBuffDuration() {
+  return hasPerk('sp_buff1') ? 60000 : 30000;
+}
+
+function getBuffStrength() {
+  return hasPerk('sp_buff2') ? 1.5 : 1;
+}
+
+function buyPerk(perkId) {
+  const perk = findPerk(perkId);
+  if (!perk) return;
+  if (hasPerk(perkId)) return;
+  if (getAvailableStars() < perk.cost) return;
+  // Check prerequisite (must own previous perk in same category)
+  const cat = STAR_SHOP.find(c => c.perks.some(p => p.id === perkId));
+  if (cat) {
+    const idx = cat.perks.findIndex(p => p.id === perkId);
+    if (idx > 0 && !hasPerk(cat.perks[idx - 1].id)) return;
+  }
+  state.prestige.perks[perkId] = 1;
+  sfxBuy();
+  showToast('⭐ ' + perk.name + ' gekocht!');
+}
+
+function findPerk(id) {
+  for (const cat of STAR_SHOP) {
+    const p = cat.perks.find(p => p.id === id);
+    if (p) return p;
+  }
+  return null;
+}
+
 function getAnimalPrice(animalId) {
   const a = ANIMALS.find(x => x.id === animalId);
   const count = state.animals[animalId] || 0;
   let price = Math.ceil(a.basePrice * Math.pow(COST_MULTIPLIER, count));
   const buff = getActiveBuff();
-  if (buff && buff.type === 'sale') price = Math.ceil(price * 0.5);
+  if (buff && buff.type === 'sale') price = Math.ceil(price * (1 - 0.5 * getBuffStrength()));
   return price;
 }
 
@@ -15,7 +82,7 @@ function getBulkPrice(animalId, qty) {
   const a = ANIMALS.find(x => x.id === animalId);
   const count = state.animals[animalId] || 0;
   const buff = getActiveBuff();
-  const saleMult = (buff && buff.type === 'sale') ? 0.5 : 1;
+  const saleMult = (buff && buff.type === 'sale') ? (1 - 0.5 * getBuffStrength()) : 1;
   let total = 0;
   for (let i = 0; i < qty; i++) {
     total += Math.ceil(a.basePrice * Math.pow(COST_MULTIPLIER, count + i) * saleMult);
@@ -31,6 +98,9 @@ function getAnimalDps(animalId) {
   // Milestone bonuses (auto, ×2 per milestone reached)
   const count = state.animals[animalId] || 0;
   MILESTONES.forEach(m => { if (count >= m) dps *= 2; });
+  // Synergy bonus from star shop
+  const synBonus = getSynergyBonus(animalId);
+  if (synBonus > 0) dps *= (1 + synBonus);
   return dps;
 }
 
@@ -53,9 +123,9 @@ function getTotalDps() {
   total *= (1 + achCount * ACHIEVEMENT_BONUS);
   // Prestige bonus
   total *= (1 + state.prestige.stars * PRESTIGE_BONUS);
-  // Active buff: DPS ×2
+  // Active buff: DPS ×2 (or ×3 with stronger buffs)
   const buff = getActiveBuff();
-  if (buff && buff.type === 'dps2x') total *= 2;
+  if (buff && buff.type === 'dps2x') total *= (1 + 1 * getBuffStrength());
   return total;
 }
 
@@ -72,7 +142,7 @@ function getClickValue() {
   base *= (1 + state.prestige.stars * PRESTIGE_BONUS);
   // Active buff effects on clicks
   const buff = getActiveBuff();
-  if (buff && buff.type === 'clickdps') dpsPct += 5;
+  if (buff && buff.type === 'clickdps') dpsPct += 5 * getBuffStrength();
   return base + getTotalDps() * (dpsPct / 100);
 }
 
@@ -109,7 +179,7 @@ function getMaxAffordable(animalId) {
   const a = ANIMALS.find(x => x.id === animalId);
   const count = state.animals[animalId] || 0;
   const buff = getActiveBuff();
-  const saleMult = (buff && buff.type === 'sale') ? 0.5 : 1;
+  const saleMult = (buff && buff.type === 'sale') ? (1 - 0.5 * getBuffStrength()) : 1;
   let remaining = state.currentPoints;
   let qty = 0;
   while (qty < 10000) {

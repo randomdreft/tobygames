@@ -63,6 +63,33 @@ const RACE_COOLDOWN = 300000;    // 5 min
 const PUZZEL_COOLDOWN = 300000;  // 5 min
 const BUFF_DURATION = 30000;     // 30 sec
 
+const STAR_SHOP = [
+  {cat:'Snelheid', emoji:'⚡', perks:[
+    {id:'sp_cd1', name:'Snellere cooldowns I', desc:'Minigame cooldowns -15%', cost:3},
+    {id:'sp_cd2', name:'Snellere cooldowns II', desc:'Minigame cooldowns -30%', cost:8},
+    {id:'sp_auto', name:'Turbo-klik', desc:'Automatisch 1x per seconde klikken', cost:5},
+  ]},
+  {cat:'Geluk', emoji:'🍀', perks:[
+    {id:'sp_lucky1', name:'Meer geluk', desc:'Lieveheersbeestjes verschijnen 50% vaker', cost:2},
+    {id:'sp_lucky2', name:'Dubbel geluk', desc:'Lieveheersbeestjes geven 2x bonus', cost:5},
+  ]},
+  {cat:'Buffs', emoji:'✨', perks:[
+    {id:'sp_buff1', name:'Langere buffs', desc:'Buffs duren 60s in plaats van 30s', cost:3},
+    {id:'sp_buff2', name:'Sterkere buffs', desc:'Buff-effecten +50% sterker', cost:6},
+  ]},
+  {cat:'Evolutie', emoji:'🚀', perks:[
+    {id:'sp_evo1', name:'Vliegende start', desc:'Begin met 1 min DPS na evolutie', cost:2},
+    {id:'sp_evo2', name:'Raketstart', desc:'Begin met 10 min DPS na evolutie', cost:6},
+  ]},
+  {cat:'Synergieën', emoji:'🤝', perks:[
+    {id:'sp_syn1', name:'Kruipertjes', desc:'Mier, Slak & Kikker krijgen +15% DPS', cost:2, animals:['mier','slak','kikker'], bonus:0.15},
+    {id:'sp_syn2', name:'Boerderij', desc:'Kip, Hond & Lama krijgen +15% DPS', cost:3, animals:['kip','hond','lama'], bonus:0.15},
+    {id:'sp_syn3', name:'Safari', desc:'Paard, Panda & Olifant krijgen +20% DPS', cost:5, animals:['paard','panda','olifant'], bonus:0.20},
+    {id:'sp_syn4', name:'Mythisch verbond', desc:'Walvis & Draak krijgen +25% DPS', cost:8, animals:['walvis','draak'], bonus:0.25},
+    {id:'sp_syn5', name:'Dierenrijk', desc:'Alle synergieën actief: alle dieren +10% DPS', cost:12, bonus:0.10},
+  ]},
+];
+
 const MINIGAME_UNLOCKS = [
   {id:'tellen', reqAnimal:'mier', label:'Koop een Mier'},
   {id:'quiz', reqAnimal:'slak', label:'Koop een Slak'},

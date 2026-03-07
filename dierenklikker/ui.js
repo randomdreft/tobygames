@@ -148,7 +148,8 @@ function completePrestige() {
     stars: totalStars,
     timesReset: state.prestige.timesReset + 1,
     theme: state.prestige.theme || 'oerwoud',
-    themeLocked: state.prestige.themeLocked
+    themeLocked: state.prestige.themeLocked,
+    perks: {...(state.prestige.perks || {})}
   };
 
   const keepUpgrades = {};
@@ -164,6 +165,7 @@ function completePrestige() {
 
   const keepAllTime = {...state.allTime};
   const keepStats = {...state.stats};
+  const keepDaily = {...state.daily};
 
   state = defaultState();
   state.achievements = keepAch;
@@ -171,9 +173,23 @@ function completePrestige() {
   state.upgrades = keepUpgrades;
   state.allTime = keepAllTime;
   state.stats = keepStats;
+  state.daily = keepDaily;
 
   if (!state.achievements['eerste_evolutie']) {
     state.achievements['eerste_evolutie'] = 1;
+  }
+
+  // Evolution start bonus from star shop perks
+  if (hasPerk('sp_evo2')) {
+    const bonus = getTotalDps() * 600; // 10 min DPS
+    state.currentPoints += bonus;
+    state.totalEarned += bonus;
+    state.allTime.totalEarned += bonus;
+  } else if (hasPerk('sp_evo1')) {
+    const bonus = getTotalDps() * 60; // 1 min DPS
+    state.currentPoints += bonus;
+    state.totalEarned += bonus;
+    state.allTime.totalEarned += bonus;
   }
 
   if (!state.prestige.themeLocked) {
@@ -662,18 +678,19 @@ function render() {
     lock.textContent = unlocked ? '' : '🔒 ' + mg.label + ' om te spelen!';
     lock.style.display = unlocked ? 'none' : 'block';
   });
-  updateCooldown('quiz-btn', 'quiz-cooldown', state.minigames.quizLast, QUIZ_COOLDOWN, quizActive);
-  updateCooldown('catcher-btn', 'catcher-cooldown', state.minigames.catcherLast, CATCHER_COOLDOWN, catcherActive);
-  updateCooldown('math-btn', 'math-cooldown', state.minigames.mathLast, MATH_COOLDOWN, mathActive);
-  updateCooldown('buff-btn', 'buff-cooldown', state.minigames.buffLast, BUFF_COOLDOWN, false);
-  updateCooldown('sort-btn', 'sort-cooldown', state.minigames.sortLast, SORT_COOLDOWN, sortActive);
-  updateCooldown('memory-btn', 'memory-cooldown', state.minigames.memoryLast, MEMORY_COOLDOWN, memoryActive);
-  updateCooldown('tellen-btn', 'tellen-cooldown', state.minigames.tellenLast, TELLEN_COOLDOWN, tellenActive);
-  updateCooldown('indringer-btn', 'indringer-cooldown', state.minigames.indringerLast, INDRINGER_COOLDOWN, indringerActive);
-  updateCooldown('groter-btn', 'groter-cooldown', state.minigames.groterLast, GROTER_COOLDOWN, groterActive);
-  updateCooldown('voedsel-btn', 'voedsel-cooldown', state.minigames.voedselLast, VOEDSEL_COOLDOWN, voedselActive);
-  updateCooldown('race-btn', 'race-cooldown', state.minigames.raceLast, RACE_COOLDOWN, raceActive);
-  updateCooldown('puzzel-btn', 'puzzel-cooldown', state.minigames.puzzelLast, PUZZEL_COOLDOWN, puzzelActive);
+  const cdm = getCooldownMultiplier();
+  updateCooldown('quiz-btn', 'quiz-cooldown', state.minigames.quizLast, QUIZ_COOLDOWN * cdm, quizActive);
+  updateCooldown('catcher-btn', 'catcher-cooldown', state.minigames.catcherLast, CATCHER_COOLDOWN * cdm, catcherActive);
+  updateCooldown('math-btn', 'math-cooldown', state.minigames.mathLast, MATH_COOLDOWN * cdm, mathActive);
+  updateCooldown('buff-btn', 'buff-cooldown', state.minigames.buffLast, BUFF_COOLDOWN * cdm, false);
+  updateCooldown('sort-btn', 'sort-cooldown', state.minigames.sortLast, SORT_COOLDOWN * cdm, sortActive);
+  updateCooldown('memory-btn', 'memory-cooldown', state.minigames.memoryLast, MEMORY_COOLDOWN * cdm, memoryActive);
+  updateCooldown('tellen-btn', 'tellen-cooldown', state.minigames.tellenLast, TELLEN_COOLDOWN * cdm, tellenActive);
+  updateCooldown('indringer-btn', 'indringer-cooldown', state.minigames.indringerLast, INDRINGER_COOLDOWN * cdm, indringerActive);
+  updateCooldown('groter-btn', 'groter-cooldown', state.minigames.groterLast, GROTER_COOLDOWN * cdm, groterActive);
+  updateCooldown('voedsel-btn', 'voedsel-cooldown', state.minigames.voedselLast, VOEDSEL_COOLDOWN * cdm, voedselActive);
+  updateCooldown('race-btn', 'race-cooldown', state.minigames.raceLast, RACE_COOLDOWN * cdm, raceActive);
+  updateCooldown('puzzel-btn', 'puzzel-cooldown', state.minigames.puzzelLast, PUZZEL_COOLDOWN * cdm, puzzelActive);
 
   // Buff indicator
   const buffInd = document.getElementById('buff-indicator');
@@ -688,6 +705,10 @@ function render() {
     buffInd.style.visibility = 'hidden';
     buffInd.innerHTML = '';
   }
+
+  // Star shop tab visibility
+  const ssTab = document.getElementById('starshop-tab');
+  if (ssTab) ssTab.style.display = state.prestige.timesReset > 0 ? '' : 'none';
 
   // Daily challenges
   renderDailyChallenges();
@@ -731,6 +752,41 @@ function updateCooldown(btnId, textId, lastPlayed, cooldown, active) {
   }
 }
 
+function buildStarShop() {
+  const el = document.getElementById('starshop-list');
+  if (!el) return;
+  const available = getAvailableStars();
+  let html = '<div class="ss-header">';
+  html += '<div class="ss-stars">⭐ ' + available + ' sterren beschikbaar</div>';
+  html += '<div class="ss-hint">Elke ster geeft +5% DPS. Besteed ze verstandig!</div>';
+  html += '</div>';
+
+  STAR_SHOP.forEach(cat => {
+    html += '<div class="ss-category">';
+    html += '<h4>' + cat.emoji + ' ' + cat.cat + '</h4>';
+    cat.perks.forEach((p, i) => {
+      const owned = hasPerk(p.id);
+      const prevOwned = i === 0 || hasPerk(cat.perks[i-1].id);
+      const canBuy = !owned && prevOwned && available >= p.cost;
+      const locked = !owned && !prevOwned;
+      let cls = 'ss-perk';
+      if (owned) cls += ' ss-owned';
+      else if (canBuy) cls += ' ss-buyable';
+      else if (locked) cls += ' ss-locked';
+      else cls += ' ss-expensive';
+      html += '<div class="' + cls + '"' + (canBuy ? ' onclick="buyPerk(\'' + p.id + '\');buildStarShop()"' : '') + '>';
+      html += '<div class="ss-perk-top">';
+      html += '<span class="ss-perk-name">' + p.name + '</span>';
+      html += '<span class="ss-perk-cost">' + (owned ? '✓' : p.cost + '⭐') + '</span>';
+      html += '</div>';
+      html += '<div class="ss-perk-desc">' + p.desc + '</div>';
+      html += '</div>';
+    });
+    html += '</div>';
+  });
+  el.innerHTML = html;
+}
+
 function renderDailyChallenges() {
   const el = document.getElementById('daily-challenges');
   if (!el) return;
@@ -739,32 +795,36 @@ function renderDailyChallenges() {
     return;
   }
   const allDone = state.daily.completed.every(v => v);
-  let html = '<div class="dc-card' + (allDone ? ' dc-done' : '') + '">';
-  html += '<div class="dc-header">📋 Dagelijkse uitdagingen';
-  if (state.daily.streak > 0) html += '<span class="dc-streak">🔥 ' + state.daily.streak + 'd</span>';
-  html += '</div>';
-  html += '<div class="dc-items">';
-  state.daily.challenges.forEach((cid, i) => {
-    const c = DAILY_CHALLENGE_POOL.find(x => x.id === cid);
-    if (!c) return;
-    const done = state.daily.completed[i];
-    const p = getDailyChallengeProgress(c);
-    const pct = Math.min(100, Math.floor(Math.min(p.cur, p.max) / p.max * 100));
-    html += '<div class="dc-item' + (done ? ' dc-item-done' : '') + '">';
-    html += '<span class="dc-emoji">' + (done ? '✅' : c.emoji) + '</span>';
-    html += '<div class="dc-info">';
-    html += '<span class="dc-desc">' + c.desc + '</span>';
-    if (!done) {
-      html += '<div class="dc-bar"><div class="dc-bar-fill" style="width:' + pct + '%"></div></div>';
-      html += '<span class="dc-progress">' + formatNumber(Math.min(p.cur, p.max)) + '/' + formatNumber(p.max) + '</span>';
-    }
-    html += '</div></div>';
-  });
-  html += '</div>'; // close dc-items
+  let html = '';
   if (allDone) {
-    html += '<div class="dc-bonus">🌟 Alle uitdagingen voltooid!</div>';
+    html = '<div class="dc-card dc-done dc-compact">🌟 Alle uitdagingen voltooid!';
+    if (state.daily.streak > 0) html += ' <span class="dc-streak">🔥 ' + state.daily.streak + 'd</span>';
+    html += '</div>';
+  } else {
+    html = '<div class="dc-card">';
+    html += '<div class="dc-header">📋 Dagelijkse uitdagingen';
+    if (state.daily.streak > 0) html += '<span class="dc-streak">🔥 ' + state.daily.streak + 'd</span>';
+    html += '</div>';
+    html += '<div class="dc-items">';
+    state.daily.challenges.forEach((cid, i) => {
+      const c = DAILY_CHALLENGE_POOL.find(x => x.id === cid);
+      if (!c) return;
+      const done = state.daily.completed[i];
+      const p = getDailyChallengeProgress(c);
+      const pct = Math.min(100, Math.floor(Math.min(p.cur, p.max) / p.max * 100));
+      html += '<div class="dc-item' + (done ? ' dc-item-done' : '') + '">';
+      html += '<span class="dc-emoji">' + (done ? '✅' : c.emoji) + '</span>';
+      html += '<div class="dc-info">';
+      html += '<span class="dc-desc">' + c.desc + '</span>';
+      if (!done) {
+        html += '<div class="dc-bar"><div class="dc-bar-fill" style="width:' + pct + '%"></div></div>';
+        html += '<span class="dc-progress">' + formatNumber(Math.min(p.cur, p.max)) + '/' + formatNumber(p.max) + '</span>';
+      }
+      html += '</div></div>';
+    });
+    html += '</div>';
+    html += '</div>';
   }
-  html += '</div>';
   el.innerHTML = html;
 }
 
@@ -925,10 +985,14 @@ function positionTooltip(e) {
 
 function showMidTab(tabId) {
   document.querySelectorAll('.mid-tab').forEach((t, i) =>
-    t.classList.toggle('active', (tabId === 'games' && i === 0) || (tabId === 'stats' && i === 1))
+    t.classList.toggle('active',
+      (tabId === 'games' && i === 0) || (tabId === 'stats' && i === 1) || (tabId === 'starshop' && i === 2))
   );
   document.getElementById('mid-games').classList.toggle('active', tabId === 'games');
   document.getElementById('mid-stats').classList.toggle('active', tabId === 'stats');
+  const ssEl = document.getElementById('mid-starshop');
+  if (ssEl) ssEl.classList.toggle('active', tabId === 'starshop');
+  if (tabId === 'starshop') buildStarShop();
   try { localStorage.setItem('dk_midtab', tabId); } catch(e) {}
 }
 
@@ -1034,7 +1098,8 @@ let luckyRecentCatch = 0;
 function getLuckyInterval() {
   // Faster spawns with more prestige stars (10% faster per 5 stars, max 40%)
   const speedBonus = Math.min(0.4, Math.floor(state.prestige.stars / 5) * 0.1);
-  const base = LUCKY_BASE_INTERVAL * (1 - speedBonus);
+  let base = LUCKY_BASE_INTERVAL * (1 - speedBonus);
+  if (hasPerk('sp_lucky1')) base *= 0.667; // 50% more frequent = 2/3 interval
   return base + (Math.random() * 2 - 1) * LUCKY_VARIANCE;
 }
 
@@ -1105,10 +1170,11 @@ function clickLucky(el) {
   // Determine reward
   const roll = Math.random();
   const dps = getTotalDps();
+  const luckyMult = hasPerk('sp_lucky2') ? 2 : 1;
 
   if (roll < LUCKY_JACKPOT_CHANCE) {
     // Jackpot! 15 min DPS
-    const bonus = dps * 900;
+    const bonus = dps * 900 * luckyMult;
     state.currentPoints += bonus;
     state.totalEarned += bonus;
     state.allTime.totalEarned += bonus;
@@ -1129,18 +1195,18 @@ function clickLucky(el) {
     // Buff (20% total)
     const buff = BUFF_TYPES[Math.floor(Math.random() * BUFF_TYPES.length)];
     if (buff.id === 'jackpot') {
-      const bonus = dps * 30;
+      const bonus = dps * 30 * luckyMult;
       state.currentPoints += bonus;
       state.totalEarned += bonus;
       state.allTime.totalEarned += bonus;
       showToast('\uD83D\uDC1E ' + buff.emoji + ' ' + buff.name + '! +' + formatNumber(bonus) + ' punten!');
     } else {
-      activeBuff = { type: buff.id, endsAt: Date.now() + BUFF_DURATION, emoji: buff.emoji, name: buff.name, color: buff.color, desc: buff.desc };
-      showToast('\uD83D\uDC1E ' + buff.emoji + ' ' + buff.name + ' actief voor 30 seconden!');
+      activeBuff = { type: buff.id, endsAt: Date.now() + getBuffDuration(), emoji: buff.emoji, name: buff.name, color: buff.color, desc: buff.desc };
+      showToast('\uD83D\uDC1E ' + buff.emoji + ' ' + buff.name + ' actief voor ' + (getBuffDuration()/1000) + ' seconden!');
     }
   } else {
     // Points: 5 min DPS
-    const bonus = dps * 300;
+    const bonus = dps * 300 * luckyMult;
     state.currentPoints += bonus;
     state.totalEarned += bonus;
     state.allTime.totalEarned += bonus;
@@ -1157,6 +1223,7 @@ function clickLucky(el) {
    SECTIE 12: GAME LOOP
    ================================================================ */
 
+let autoClickAccum = 0;
 function tick() {
   const now = Date.now();
   const dt = Math.min((now - state.lastTick) / 1000, 1); // cap at 1 second per tick
@@ -1169,6 +1236,20 @@ function tick() {
   state.playTimeSeconds += dt;
   state.allTime.totalEarned += earned;
   state.allTime.playTimeSeconds += dt;
+
+  // Auto-click perk (1x per second)
+  if (hasPerk('sp_auto')) {
+    autoClickAccum += dt;
+    if (autoClickAccum >= 1) {
+      autoClickAccum -= 1;
+      const value = getClickValue();
+      state.currentPoints += value;
+      state.totalEarned += value;
+      state.totalClicks++;
+      state.allTime.totalEarned += value;
+      state.allTime.totalClicks++;
+    }
+  }
 }
 
 let lastAchCheck = 0;

@@ -12,7 +12,7 @@ function defaultState() {
     animals: {},
     upgrades: {},
     achievements: {},
-    prestige: { stars: 0, timesReset: 0, theme: 'oerwoud', themeLocked: false },
+    prestige: { stars: 0, timesReset: 0, theme: 'oerwoud', themeLocked: false, perks: {} },
     allTime: { totalClicks: 0, totalEarned: 0, totalAnimals: 0, playTimeSeconds: 0 },
     stats: {
       quizPlayed: 0, quizCorrect: 0, quizWrong: 0,
@@ -140,6 +140,9 @@ function stateToIni() {
   lines.push('thema=' + (state.prestige.theme || 'oerwoud'));
   lines.push('thema_vast=' + (state.prestige.themeLocked ? '1' : '0'));
   lines.push('');
+  lines.push('[sterrenwinkel]');
+  Object.keys(state.prestige.perks || {}).forEach(id => { if (state.prestige.perks[id]) lines.push(id + '=1'); });
+  lines.push('');
   lines.push('[allertijden]');
   lines.push('totaal_klikken=' + state.allTime.totalClicks);
   lines.push('totaal_verdiend=' + Math.floor(state.allTime.totalEarned));
@@ -260,6 +263,14 @@ function iniToState(text) {
   s.prestige.timesReset = safeInt(de.keer_geevolueerd || de.times_reset, 0, 0);
   s.prestige.theme = (de.thema || de.theme || 'oerwoud').toString();
   s.prestige.themeLocked = (de.thema_vast === '1');
+
+  // Star shop perks
+  const sw = ini.sterrenwinkel || {};
+  const validPerks = new Set();
+  STAR_SHOP.forEach(cat => cat.perks.forEach(p => validPerks.add(p.id)));
+  Object.keys(sw).forEach(id => {
+    if (validPerks.has(id) && safeInt(sw[id], 0) > 0) s.prestige.perks[id] = 1;
+  });
 
   // All-time stats
   const at = ini.allertijden || {};

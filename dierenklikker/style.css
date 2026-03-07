@@ -169,6 +169,31 @@ img.emoji {
   text-align: center; font-size: 12px; color: var(--gold);
   margin-top: 6px; font-weight: 700;
 }
+.dc-compact {
+  text-align: center; font-size: 12px; font-weight: 700; color: var(--gold);
+  padding: 8px 12px;
+}
+/* Star shop */
+.ss-header { text-align: center; margin-bottom: 14px; }
+.ss-stars { font-size: 18px; font-weight: 700; color: var(--gold); }
+.ss-hint { font-size: 11px; color: var(--text-dim); margin-top: 2px; }
+.ss-category { margin-bottom: 14px; }
+.ss-category h4 { font-size: 13px; color: var(--gold); margin-bottom: 6px; }
+.ss-perk {
+  background: rgba(0,0,0,0.25); border-radius: 8px; padding: 8px 10px;
+  margin-bottom: 4px; border: 1px solid transparent; transition: all 0.2s;
+}
+.ss-perk-top { display: flex; justify-content: space-between; align-items: center; }
+.ss-perk-name { font-size: 13px; font-weight: 600; color: var(--text); }
+.ss-perk-cost { font-size: 12px; font-weight: 700; color: var(--gold); }
+.ss-perk-desc { font-size: 11px; color: var(--text-dim); margin-top: 2px; }
+.ss-owned { border-color: var(--gold); background: rgba(255,215,0,0.1); }
+.ss-owned .ss-perk-cost { color: var(--green-light); }
+.ss-buyable { cursor: pointer; border-color: rgba(255,215,0,0.3); }
+.ss-buyable:hover { background: rgba(255,215,0,0.15); transform: scale(1.01); }
+.ss-locked { opacity: 0.35; }
+.ss-expensive { opacity: 0.6; }
+
 #animal-name {
   font-size: clamp(16px, 3vw, 22px); font-weight: 600; margin-top: 8px;
   text-align: center;
