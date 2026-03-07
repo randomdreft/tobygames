@@ -82,11 +82,11 @@ const STAR_SHOP = [
     {id:'sp_evo2', name:'Raketstart', desc:'Begin met 10 min DPS na evolutie', cost:6},
   ]},
   {cat:'Synergieën', emoji:'🤝', perks:[
-    {id:'sp_syn1', name:'Kruipertjes', desc:'Mier, Slak & Kikker krijgen +50% DPS', cost:1, animals:['mier','slak','kikker'], bonus:0.50},
-    {id:'sp_syn2', name:'Boerderij', desc:'Kip, Hond & Lama krijgen +50% DPS', cost:2, animals:['kip','hond','lama'], bonus:0.50},
-    {id:'sp_syn3', name:'Safari', desc:'Paard, Panda & Olifant krijgen +75% DPS', cost:3, animals:['paard','panda','olifant'], bonus:0.75},
-    {id:'sp_syn4', name:'Mythisch verbond', desc:'Walvis & Draak krijgen +100% DPS', cost:5, animals:['walvis','draak'], bonus:1.00},
-    {id:'sp_syn5', name:'Dierenrijk', desc:'Alle synergieën actief: alle dieren +25% DPS', cost:8, bonus:0.25},
+    {id:'sp_syn1', name:'Kruipertjes', desc:'Mier, Slak & Kikker krijgen +15% DPS', cost:2, animals:['mier','slak','kikker'], bonus:0.15},
+    {id:'sp_syn2', name:'Boerderij', desc:'Kip, Hond & Lama krijgen +15% DPS', cost:3, animals:['kip','hond','lama'], bonus:0.15},
+    {id:'sp_syn3', name:'Safari', desc:'Paard, Panda & Olifant krijgen +20% DPS', cost:5, animals:['paard','panda','olifant'], bonus:0.20},
+    {id:'sp_syn4', name:'Mythisch verbond', desc:'Walvis & Draak krijgen +25% DPS', cost:8, animals:['walvis','draak'], bonus:0.25},
+    {id:'sp_syn5', name:'Dierenrijk', desc:'Alle synergieën actief: alle dieren +10% DPS', cost:12, bonus:0.10},
   ]},
 ];
 
