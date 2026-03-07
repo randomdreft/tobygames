@@ -331,7 +331,7 @@ const QUIZ_QUESTIONS = [
   {q:"Welk dier heeft geen botten?", a:["Kwal","Slak","Slang","Worm"], c:0},
   {q:"Welk dier kan het langst slapen?", a:["Luiaard","Kat","Koala","Beer"], c:0},
   {q:"Hoeveel kleuren kan een kameleon worden?", a:["Heel veel!","2","3","Alleen groen"], c:0},
-  {q:"Welk dier heeft de grootste tanden?", a:["Nijlpaard","Olifant","Walrus","Haai"], c:0},
+  {q:"Welk dier heeft de grootste tanden?", a:["Olifant","Nijlpaard","Walrus","Haai"], c:0},
   {q:"Hoe noem je een baby geit?", a:["Geitje","Lam","Kalf","Veulen"], c:0},
   {q:"Welk dier kan over water lopen?", a:["Basilisk hagedis","Kikker","Spin","Muis"], c:0},
   {q:"Hoeveel nieren heeft een mens?", a:["2","1","4","3"], c:0},
