@@ -7,8 +7,10 @@ function showPrestigeModal() {
   const stars = getPrestigeStars();
   const totalAfter = state.prestige.stars + stars;
   document.getElementById('prestige-stars-preview').textContent = '+' + stars + ' ⭐';
+  const spentStars = state.prestige.stars - getAvailableStars();
+  const availAfter = totalAfter - spentStars;
   document.getElementById('prestige-current-info').innerHTML =
-    'Nu: ' + state.prestige.stars + '⭐ → Na evolutie: <b style="color:var(--gold)">' + totalAfter + '⭐</b> (+' + (totalAfter * 5) + '% DPS)';
+    'Nu: ' + state.prestige.stars + '⭐ → Na evolutie: <b style="color:var(--gold)">' + totalAfter + '⭐</b> (+' + (availAfter * 5) + '% DPS)';
   // Show which upgrades are kept
   let keepHtml = '';
   const hasOffline = OFFLINE_UPGRADES.some(u => state.upgrades[u.id]);
@@ -405,9 +407,13 @@ function buildEvolution() {
   let html = '<div class="opt-section">';
 
   if (state.prestige.stars > 0) {
+    const avail = getAvailableStars();
+    const spent = state.prestige.stars - avail;
     html += '<div style="text-align:center;font-size:20px;margin-bottom:12px">';
     html += '⭐'.repeat(Math.min(state.prestige.stars, 20)) + '<br>';
-    html += '<b>' + state.prestige.stars + ' sterren</b> (+' + (state.prestige.stars * 5) + '% op alles)';
+    html += '<b>' + state.prestige.stars + ' sterren</b>';
+    if (spent > 0) html += ' (' + spent + ' besteed, ' + avail + ' vrij: +' + (avail * 5) + '% DPS)';
+    else html += ' (+' + (avail * 5) + '% op alles)';
     html += '</div>';
   }
 
@@ -872,7 +878,8 @@ function renderStats() {
   html += heading('Algemeen');
   html += row('Dieren per klik', formatNumber(Math.floor(getClickValue())));
   html += row('Prestaties', achCount + '/' + achievementDefs.length + ' (+' + (achCount * 2) + '% DPS)');
-  html += row('Evolutiesterren', state.prestige.stars + ' ⭐ (+' + (state.prestige.stars * 5) + '%)');
+  const availStars = getAvailableStars();
+  html += row('Evolutiesterren', state.prestige.stars + ' ⭐' + (state.prestige.stars !== availStars ? ' (' + availStars + ' vrij)' : '') + ' (+' + (availStars * 5) + '%)');
   html += row('Offline bonus', getOfflinePercent() + '%');
   html += row('Evoluties', state.prestige.timesReset + 'x');
 
@@ -1098,7 +1105,7 @@ let luckyRecentCatch = 0;
 
 function getLuckyInterval() {
   // Faster spawns with more prestige stars (10% faster per 5 stars, max 40%)
-  const speedBonus = Math.min(0.4, Math.floor(state.prestige.stars / 5) * 0.1);
+  const speedBonus = Math.min(0.4, Math.floor(getAvailableStars() / 5) * 0.1);
   let base = LUCKY_BASE_INTERVAL * (1 - speedBonus);
   if (hasPerk('sp_lucky1')) base *= 0.667; // 50% more frequent = 2/3 interval
   return base + (Math.random() * 2 - 1) * LUCKY_VARIANCE;

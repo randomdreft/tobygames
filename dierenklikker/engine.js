@@ -121,8 +121,8 @@ function getTotalDps() {
   // Achievement bonus
   const achCount = Object.keys(state.achievements).filter(k => state.achievements[k]).length;
   total *= (1 + achCount * ACHIEVEMENT_BONUS);
-  // Prestige bonus
-  total *= (1 + state.prestige.stars * PRESTIGE_BONUS);
+  // Prestige bonus (only unspent stars)
+  total *= (1 + getAvailableStars() * PRESTIGE_BONUS);
   // Active buff: DPS ×2 (or ×3 with stronger buffs)
   const buff = getActiveBuff();
   if (buff && buff.type === 'dps2x') total *= (1 + 1 * getBuffStrength());
@@ -138,8 +138,8 @@ function getClickValue() {
       if (u.dpsPercent) dpsPct += u.dpsPercent;
     }
   });
-  // Prestige bonus on clicks too
-  base *= (1 + state.prestige.stars * PRESTIGE_BONUS);
+  // Prestige bonus on clicks too (only unspent stars)
+  base *= (1 + getAvailableStars() * PRESTIGE_BONUS);
   // Active buff effects on clicks
   const buff = getActiveBuff();
   if (buff && buff.type === 'clickdps') dpsPct += 5 * getBuffStrength();
@@ -169,7 +169,7 @@ function getDpsBreakdown() {
   // Add bonus info
   const achCount = Object.keys(state.achievements).filter(k => state.achievements[k]).length;
   const achPct = achCount * ACHIEVEMENT_BONUS * 100;
-  const starPct = state.prestige.stars * PRESTIGE_BONUS * 100;
+  const starPct = getAvailableStars() * PRESTIGE_BONUS * 100;
   const buff = getActiveBuff();
   const buffActive = buff && buff.type === 'dps2x';
   return {animals: breakdown, rawTotal: rawAnimalTotal, total: total, achPct: achPct, starPct: starPct, buffActive: buffActive};
