@@ -13,45 +13,49 @@ const PRODUCTS = {
     watermeloen:{ name: 'Watermeloen', emoji: '\u{1F349}', price: 10, color: '#66BB6A', unlockLevel: 4 },
 };
 
+// Shelves: starter products (champignon, tomaat) always closest to the register (right side)
 const SHELF_LAYOUTS = {
     1: [
-        { x: 100, y: 80, product: 'champignon' },
-        { x: 300, y: 80, product: 'tomaat' },
+        { x: 400, y: 80, product: 'tomaat' },
+        { x: 570, y: 80, product: 'champignon' },
     ],
     2: [
-        { x: 100, y: 80, product: 'champignon' },
-        { x: 300, y: 80, product: 'tomaat' },
-        { x: 500, y: 80, product: 'broccoli' },
+        { x: 200, y: 80, product: 'broccoli' },
+        { x: 400, y: 80, product: 'tomaat' },
+        { x: 570, y: 80, product: 'champignon' },
     ],
     3: [
-        { x: 80,  y: 80, product: 'champignon' },
-        { x: 250, y: 80, product: 'tomaat' },
-        { x: 420, y: 80, product: 'broccoli' },
-        { x: 590, y: 80, product: 'wortel' },
+        { x: 80,  y: 80, product: 'wortel' },
+        { x: 250, y: 80, product: 'broccoli' },
+        { x: 430, y: 80, product: 'tomaat' },
+        { x: 590, y: 80, product: 'champignon' },
     ],
     4: [
-        { x: 80,  y: 80, product: 'champignon' },
-        { x: 220, y: 80, product: 'tomaat' },
-        { x: 360, y: 80, product: 'broccoli' },
-        { x: 500, y: 80, product: 'wortel' },
-        { x: 640, y: 80, product: 'kaas' },
+        { x: 60,  y: 80, product: 'watermeloen' },
+        { x: 190, y: 80, product: 'kaas' },
+        { x: 330, y: 80, product: 'wortel' },
+        { x: 460, y: 80, product: 'broccoli' },
+        { x: 590, y: 80, product: 'tomaat' },
+        { x: 690, y: 80, product: 'champignon' },
     ],
     5: [
-        { x: 60,  y: 70, product: 'champignon' },
-        { x: 190, y: 70, product: 'tomaat' },
-        { x: 320, y: 70, product: 'broccoli' },
-        { x: 450, y: 70, product: 'wortel' },
-        { x: 580, y: 70, product: 'kaas' },
-        { x: 710, y: 70, product: 'vis' },
+        { x: 50,  y: 70, product: 'vis' },
+        { x: 170, y: 70, product: 'watermeloen' },
+        { x: 290, y: 70, product: 'kaas' },
+        { x: 400, y: 70, product: 'wortel' },
+        { x: 510, y: 70, product: 'broccoli' },
+        { x: 610, y: 70, product: 'tomaat' },
+        { x: 700, y: 70, product: 'champignon' },
     ],
     6: [
-        { x: 50,  y: 70, product: 'champignon' },
-        { x: 160, y: 70, product: 'tomaat' },
-        { x: 270, y: 70, product: 'broccoli' },
-        { x: 380, y: 70, product: 'wortel' },
-        { x: 490, y: 70, product: 'kaas' },
-        { x: 600, y: 70, product: 'vis' },
-        { x: 710, y: 70, product: 'taart' },
+        { x: 30,  y: 70, product: 'taart' },
+        { x: 130, y: 70, product: 'vis' },
+        { x: 230, y: 70, product: 'watermeloen' },
+        { x: 330, y: 70, product: 'kaas' },
+        { x: 430, y: 70, product: 'wortel' },
+        { x: 530, y: 70, product: 'broccoli' },
+        { x: 620, y: 70, product: 'tomaat' },
+        { x: 700, y: 70, product: 'champignon' },
     ],
 };
 
@@ -66,19 +70,19 @@ const LEVEL_THRESHOLDS = [
 ];
 
 // Day length in ms
-const DAY_LENGTH = 90000; // 90 seconds per day
+const DAY_LENGTH = 120000; // 120 seconds per day
 
 // Customer patience base (ms) - decreases slightly each level
-const BASE_PATIENCE = 12000;
+const BASE_PATIENCE = 15000;
 const PATIENCE_PER_LEVEL = -500;
 
 // Customer spawn interval
-const BASE_SPAWN_INTERVAL = 4000;
+const BASE_SPAWN_INTERVAL = 5000;
 const SPAWN_INTERVAL_PER_LEVEL = -300;
-const MIN_SPAWN_INTERVAL = 1500;
+const MIN_SPAWN_INTERVAL = 1800;
 
 // Max queue size
-const MAX_QUEUE = 8;
+const MAX_QUEUE = 6;
 
 const UPGRADES = [
     {

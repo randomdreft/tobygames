@@ -333,7 +333,7 @@ const Game = (() => {
         const queuePos = customers.length;
 
         customers.push({
-            x: state.cashRegister.x - 50 - queuePos * 32,
+            x: state.cashRegister.x - 50 - queuePos * 55,
             y: state.cashRegister.y + 5,
             color: CUSTOMER_COLORS[Math.floor(Math.random() * CUSTOMER_COLORS.length)],
             hairColor: HAIR_COLORS[Math.floor(Math.random() * HAIR_COLORS.length)],
@@ -351,7 +351,7 @@ const Game = (() => {
             const c = customers[i];
 
             // Smoothly move to queue position
-            const targetX = state.cashRegister.x - 50 - c.queuePosition * 32;
+            const targetX = state.cashRegister.x - 50 - c.queuePosition * 55;
             c.x += (targetX - c.x) * 0.1;
 
             // Only first in queue loses patience
