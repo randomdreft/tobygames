@@ -12,7 +12,7 @@ Alle spellen op [tobygames.nl](https://tobygames.nl). Grotere spellen zijn opges
 | `worms.html` | Neuswormen | Trek wormen uit neusgaten met een pincet |
 | `boter-kaas-eieren-xl.html` | BKE XL | 5x5 boter-kaas-en-eieren met AI-modus |
 | `winkeltje.html` | Winkeltje | Winkelsimulatie: verzamel items, help klanten |
-| `politie.html` | Politie Jacht | Politie-achtervolgingsspel |
+| `politiejacht.html` + `politiejacht/` | Politiejacht | Stadachtervolging met brandstofmechanisme, EV-modus, meerdere politieauto's |
 
 ---
 
@@ -296,10 +296,108 @@ Alle geluiden procedureel gegenereerd, geen externe bestanden:
 - AI-tegenstander
 - Scorebord en confetti
 
-### Politie Jacht (`politie.html`)
-- Race/ontsnappingsspel
-- Sterretjes verzamelen voor bonus
-- Countdown timer
+---
+
+## Politiejacht
+
+Stadachtervolging vanuit vogelperspectief. Vlucht voor de politie door een procedureel gegenereerde stad. Rijden kost brandstof; jerrycans (of batterijen in EV-modus) vullen je tank. Tank leeg of gepakt door de politie = game over. Score = resterende brandstof.
+
+### Bestandsstructuur (`politiejacht/`)
+
+| Bestand | Regels | Inhoud |
+|---------|--------|--------|
+| `style.css` | ~300 | CSS variabelen, glassmorphism overlays, HUD, joystick, responsive |
+| `sound.js` | ~160 | Web Audio API: motor (pitch varieert met snelheid), sirene (afstandsafhankelijk), pickup, crash, waarschuwingspiep, countdown |
+| `renderer.js` | ~510 | Canvas rendering: stad (wegen, gebouwen, parken), auto's, jerrycans/batterijen, particles, bandensporen, vignette, minimap, brandstofpijl |
+| `game.js` | ~830 | Game class, input, physics, politie-AI, spawning, collision, pauze, high scores |
+
+### Wereld
+
+- **Stadsraster**: 14x14 grid van cellen (elk 240px: 80px weg + 160px blok)
+- **Totale wereld**: 3360x3360 pixels met scrollende camera (look-ahead)
+- **Gebouwen**: gevarieerde kleuren, daken, ramen (verlicht/donker), solide collision
+- **Parken**: ~12% van de blokken, doorrijdbaar terrein met bomen (shortcut!)
+- **Wegen**: donker asfalt met gele stippellijnen, kruispunten
+
+### Brandstof-/scoresysteem
+
+| Parameter | Waarde |
+|-----------|--------|
+| Startbrandstof | 60 |
+| Verbruik stilstaand | 0.3/s |
+| Verbruik bij max snelheid | 3.0/s (proportioneel) |
+| Jerrycan/batterij opbrengst | +22 |
+| Max op de kaart | 6 tegelijk |
+| Spawn-interval | 2-5s (langzamer over tijd) |
+| Geen maximum | brandstof kan boven 100 komen |
+
+**Score = resterende brandstof bij game over.** Efficient rijden (korte routes naar jerrycans) levert de hoogste score.
+
+### Speler
+
+- **Besturing**: pijltjestoetsen of WASD, touch-joystick (floating, verschijnt waar je tikt)
+- **Snelheid**: max 220 px/s, acceleratie 280, remmen 350, frictie 120
+- **Stuurgedrag**: draaien alleen bij snelheid, proportioneel aan snelheid
+- **Collision**: cirkel-gebaseerd (radius 14px), slide langs gebouwen
+- **Bandensporen**: verschijnen bij snel bochtenwerk
+
+### Politie-AI
+
+- **Weg-navigatie**: detecteert of agent op kruispunt, horizontale weg, verticale weg, of in park is
+- **Kruispunt-beslissing**: Manhattan-optimale richting naar speler, met 10% kans op willekeurige omweg
+- **Park-gedrag**: directe achtervolging (recht op speler af)
+- **Wegcentrering**: automatische correctie naar midden van de weg, even/oneven agenten op verschillende rijstroken
+- **Variatie per agent**: `randomBias` beinvloedt routekeuze en snelheid
+- **Onderlinge collision**: politieauto's duwen elkaar uit elkaar, langzamere wijkt meer
+- **Moeilijkheidsopbouw**:
+
+| Tijd | Max politie | Snelheid |
+|------|------------|----------|
+| 0s | 1 | 130 px/s |
+| 25s | 2 | 140 px/s |
+| 50s | 3 | 150 px/s |
+| 75s | 4 | 160 px/s |
+| max | 6 | 200 px/s |
+
+### Modus-keuze
+
+- **Benzine**: rode auto, rode jerrycans met gele dop, brandstof-icoon
+- **Elektrisch (EV)**: groene auto, groene batterijen met bliksemschicht, batterij-icoon
+- Toggle op het startscherm, puur visueel/thematisch verschil
+
+### Visuele effecten
+
+- **Vignette**: rood pulsend bij lage brandstof (< 25), blauw flitsend bij politie dichtbij (< 150px)
+- **Particles**: uitlaatdampen bij rijden, vonken bij crash, glitter bij pickup
+- **Bandensporen**: persistent op het wegdek, langzaam vervagende zwarte markeringen
+- **Jerrycan-animatie**: zwevend/bobbend met glow-effect
+- **Sirene-gloed**: afwisselend rood/blauw op politieauto's
+- **Minimap**: rechtsbovenhoek, toont wegen, speler (rood/groen), politie (blauw), jerrycans (geel/groen), viewport
+
+### Brandstofpijl
+
+Pulserende richtingspijl aan de schermrand die naar de dichtstbijzijnde jerrycan/batterij wijst:
+- Verschijnt alleen als de jerrycan buiten beeld is
+- Kleur past bij modus (geel/groen)
+- Toont afstand in meters
+
+### Geluid (Web Audio API)
+
+| Geluid | Beschrijving |
+|--------|-------------|
+| Motor | Sawtooth oscillator, frequentie 40-120 Hz op basis van snelheid |
+| Sirene | Twee sinusgolven (600/800 Hz) die alterneren, volume op basis van afstand |
+| Pickup | Stijgende drietoon (600-900-1200 Hz) |
+| Crash | Noise burst (0.3s) |
+| Waarschuwing | Pieptoon elke 600ms bij brandstof < 20 |
+| Countdown | Sinus 440 Hz, "GO!" = 880 Hz |
+
+### Overig
+
+- **Pauze**: spatiebalk, Escape, of P. Overlay met hervat-knop.
+- **High scores**: top 10 in localStorage (`politiejacht_scores`), toont score, tijd, verzamelde items, modus, datum
+- **Responsive**: canvas vult volledig scherm, devicePixelRatio-ondersteuning
+- **Oude versie**: `politie.html` is nog aanwezig maar niet meer gelinkt vanuit index
 
 ---
 
