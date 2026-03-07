@@ -30,6 +30,12 @@ function defaultState() {
       luckyClicked: 0, luckyMissed: 0, luckyDouble: 0, luckyJackpot: 0
     },
     minigames: { quizLast: 0, catcherLast: 0, mathLast: 0, buffLast: 0, sortLast: 0, memoryLast: 0, tellenLast: 0, indringerLast: 0, groterLast: 0, voedselLast: 0, raceLast: 0, puzzelLast: 0 },
+    daily: {
+      date: '', challenges: [], completed: [], bonusClaimed: false,
+      streak: 0, lastCompletedDate: '',
+      uniqueMinigames: [], upgradesBought: 0, memoryLowFaults: 0,
+      snapshots: {}
+    },
     lastTick: Date.now()
   };
   ANIMALS.forEach(a => s.animals[a.id] = 0);
@@ -142,6 +148,18 @@ function stateToIni() {
   lines.push('');
   lines.push('[statistieken]');
   Object.keys(state.stats).forEach(k => lines.push(k + '=' + state.stats[k]));
+  lines.push('');
+  lines.push('[dagelijks]');
+  lines.push('datum=' + (state.daily.date || ''));
+  lines.push('uitdagingen=' + (state.daily.challenges || []).join(','));
+  lines.push('voltooid=' + (state.daily.completed || []).map(v => v ? '1' : '0').join(','));
+  lines.push('bonus_geclaimd=' + (state.daily.bonusClaimed ? '1' : '0'));
+  lines.push('streak=' + (state.daily.streak || 0));
+  lines.push('laatste_voltooid=' + (state.daily.lastCompletedDate || ''));
+  lines.push('unieke_minigames=' + (state.daily.uniqueMinigames || []).join(','));
+  lines.push('upgrades_gekocht=' + (state.daily.upgradesBought || 0));
+  lines.push('memory_low_faults=' + (state.daily.memoryLowFaults || 0));
+  lines.push('snapshots=' + JSON.stringify(state.daily.snapshots || {}));
   lines.push('');
   lines.push('[minispellen]');
   lines.push('quiz_laatst=' + state.minigames.quizLast);
@@ -270,6 +288,19 @@ function iniToState(text) {
   s.minigames.voedselLast = safeInt(dm.voedsel_laatst, 0, 0);
   s.minigames.raceLast = safeInt(dm.race_laatst, 0, 0);
   s.minigames.puzzelLast = safeInt(dm.puzzel_laatst, 0, 0);
+
+  // Daily challenges
+  const dd = ini.dagelijks || {};
+  s.daily.date = (dd.datum || '').toString();
+  s.daily.challenges = (dd.uitdagingen || '').split(',').filter(x => x);
+  s.daily.completed = (dd.voltooid || '').split(',').map(v => v === '1');
+  s.daily.bonusClaimed = dd.bonus_geclaimd === '1';
+  s.daily.streak = safeInt(dd.streak, 0, 0);
+  s.daily.lastCompletedDate = (dd.laatste_voltooid || '').toString();
+  s.daily.uniqueMinigames = (dd.unieke_minigames || '').split(',').filter(x => x);
+  s.daily.upgradesBought = safeInt(dd.upgrades_gekocht, 0, 0);
+  s.daily.memoryLowFaults = safeInt(dd.memory_low_faults, 0, 0);
+  try { s.daily.snapshots = JSON.parse(dd.snapshots || '{}'); } catch(e) { s.daily.snapshots = {}; }
 
   // === Save migration ===
   const saveVersion = safeInt((ini.meta || {}).versie, 1, 1);

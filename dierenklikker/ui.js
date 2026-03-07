@@ -342,15 +342,10 @@ function buildAchievements() {
       let achTip, progressHtml = '';
       if (e) {
         achTip = escHtml(a.name) + '|' + escHtml(a.desc);
-      } else if (achSpoilerActive) {
-        let tipDesc = escHtml(a.desc);
+      } else {
+        // Progress bar for unearned achievements (always visible)
         if (a.progress) {
           const p = a.progress();
-          if (p.invert) {
-            tipDesc += ' (beste: ' + (p.cur >= 999 ? '-' : p.cur) + ' zetten)';
-          } else {
-            tipDesc += ' (' + formatNumber(Math.min(p.cur, p.max)) + '/' + formatNumber(p.max) + ')';
-          }
           const pct = p.invert
             ? (p.cur >= 999 ? 0 : Math.min(100, Math.max(0, (1 - (p.cur - p.max) / (999 - p.max)) * 100)))
             : Math.min(100, Math.floor(p.cur / p.max * 100));
@@ -358,9 +353,20 @@ function buildAchievements() {
             progressHtml = '<div class="ach-progress" style="height:' + pct + '%"></div>';
           }
         }
-        achTip = escHtml(a.name) + '|' + tipDesc;
-      } else {
-        achTip = '???|Nog niet ontgrendeld';
+        if (achSpoilerActive) {
+          let tipDesc = escHtml(a.desc);
+          if (a.progress) {
+            const p = a.progress();
+            if (p.invert) {
+              tipDesc += ' (beste: ' + (p.cur >= 999 ? '-' : p.cur) + ' zetten)';
+            } else {
+              tipDesc += ' (' + formatNumber(Math.min(p.cur, p.max)) + '/' + formatNumber(p.max) + ')';
+            }
+          }
+          achTip = escHtml(a.name) + '|' + tipDesc;
+        } else {
+          achTip = '???|Nog niet ontgrendeld';
+        }
       }
       html += '<div class="ach-item ' + (e ? 'earned' : 'unearned') + '" id="ach-' + a.id + '" data-tip="' + achTip + '">' +
         progressHtml + a.emoji +
@@ -683,6 +689,9 @@ function render() {
     buffInd.innerHTML = '';
   }
 
+  // Daily challenges
+  renderDailyChallenges();
+
   // Stats
   renderStats();
 
@@ -720,6 +729,41 @@ function updateCooldown(btnId, textId, lastPlayed, cooldown, active) {
     btn.disabled = false;
     if (text.innerHTML) text.innerHTML = '';
   }
+}
+
+function renderDailyChallenges() {
+  const el = document.getElementById('daily-challenges');
+  if (!el) return;
+  if (!state.daily.date || !state.daily.challenges.length) {
+    el.innerHTML = '';
+    return;
+  }
+  const allDone = state.daily.completed.every(v => v);
+  let html = '<div class="dc-card' + (allDone ? ' dc-done' : '') + '">';
+  html += '<div class="dc-header">📋 Dagelijkse uitdagingen';
+  if (state.daily.streak > 0) html += '<span class="dc-streak">🔥 ' + state.daily.streak + 'd</span>';
+  html += '</div>';
+  state.daily.challenges.forEach((cid, i) => {
+    const c = DAILY_CHALLENGE_POOL.find(x => x.id === cid);
+    if (!c) return;
+    const done = state.daily.completed[i];
+    const p = getDailyChallengeProgress(c);
+    const pct = Math.min(100, Math.floor(Math.min(p.cur, p.max) / p.max * 100));
+    html += '<div class="dc-item' + (done ? ' dc-item-done' : '') + '">';
+    html += '<span class="dc-emoji">' + (done ? '✅' : c.emoji) + '</span>';
+    html += '<div class="dc-info">';
+    html += '<span class="dc-desc">' + c.desc + '</span>';
+    if (!done) {
+      html += '<div class="dc-bar"><div class="dc-bar-fill" style="width:' + pct + '%"></div></div>';
+      html += '<span class="dc-progress">' + formatNumber(Math.min(p.cur, p.max)) + '/' + formatNumber(p.max) + '</span>';
+    }
+    html += '</div></div>';
+  });
+  if (allDone) {
+    html += '<div class="dc-bonus">🌟 Alle uitdagingen voltooid!</div>';
+  }
+  html += '</div>';
+  el.innerHTML = html;
 }
 
 function renderStats() {
@@ -1133,7 +1177,10 @@ function gameLoop() {
   const now = Date.now();
   if (now - lastAchCheck > 1000) {
     checkAchievements();
+    checkDailyChallenges();
     checkLuckySpawn();
+    // Check if day changed
+    if (getTodayStr() !== state.daily.date) initDailyChallenges();
     lastAchCheck = now;
   }
 }
@@ -1145,6 +1192,7 @@ function gameLoop() {
 function init() {
   loadSoundSettings();
   loadGame();
+  initDailyChallenges();
   if (!state.prestige.themeLocked) state.prestige.theme = getHighestUnlockedTheme();
   applyTheme(state.prestige.theme || 'oerwoud');
   buildShop();

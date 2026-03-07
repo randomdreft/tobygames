@@ -130,7 +130,7 @@ function answerQuiz(chosen, correct) {
   if (!quizActive) return;
   quizActive = false; mgSetActive('quiz', false);
   state.minigames.quizLast = Date.now();
-  state.stats.quizPlayed++;
+  state.stats.quizPlayed++; dailyTrackMinigame('quiz');
 
   const buttons = document.querySelectorAll('.quiz-answer');
   buttons.forEach((b, i) => {
@@ -210,7 +210,7 @@ function endCatcher() {
   catcherActive = false; mgSetActive('catcher', false);
   sfxGameEnd();
   state.minigames.catcherLast = Date.now();
-  state.stats.catcherPlayed++;
+  state.stats.catcherPlayed++; dailyTrackMinigame('catcher');
   state.stats.catcherCaught += catcherScore;
   clearInterval(catcherInterval);
   clearInterval(catcherSpawnInterval);
@@ -289,7 +289,7 @@ function answerMath(chosen, correct) {
   if (!mathActive) return;
   mathActive = false; mgSetActive('math', false);
   state.minigames.mathLast = Date.now();
-  state.stats.mathPlayed++;
+  state.stats.mathPlayed++; dailyTrackMinigame('math');
 
   const buttons = document.querySelectorAll('#math-game .quiz-answer');
   buttons.forEach((b, i) => {
@@ -355,7 +355,7 @@ function chooseBuff(buffId) {
 
   // Start cooldown when buff is actually chosen, not when menu opens
   state.minigames.buffLast = Date.now();
-  state.stats.buffPlayed++;
+  state.stats.buffPlayed++; dailyTrackMinigame('buff');
 
   // Apply jackpot immediately
   if (buff.id === 'jackpot') {
@@ -455,7 +455,7 @@ function endSort() {
   sortActive = false; mgSetActive('sort', false);
   sfxGameEnd();
   state.minigames.sortLast = Date.now();
-  state.stats.sortPlayed++;
+  state.stats.sortPlayed++; dailyTrackMinigame('sort');
   state.stats.sortCorrect += sortScore;
   if (sortScore > state.stats.sortBestStreak) state.stats.sortBestStreak = sortScore;
   clearInterval(sortInterval);
@@ -590,9 +590,10 @@ function endMemory() {
   memoryActive = false; mgSetActive('memory', false);
   sfxGameEnd();
   state.minigames.memoryLast = Date.now();
-  state.stats.memoryPlayed++;
+  state.stats.memoryPlayed++; dailyTrackMinigame('memory');
   state.stats.memoryPairsFound += memoryPairs;
   if (memoryMistakes === 0) state.stats.memoryWon++;
+  if (memoryMistakes <= 1 && state.daily.date) state.daily.memoryLowFaults++;
 
   // 0-3 fouten = 100%, daarna aflopend: 4=96%, 5=84%, 6=64%, 7=36%, 8+=10%
   const penaltyMult = memoryMistakes <= 3 ? 1 : Math.max(0.1, 1 - Math.pow(memoryMistakes - 3, 2) / 25);
@@ -693,7 +694,7 @@ function answerTellen(n) {
   if (!tellenActive) return;
   tellenActive = false; mgSetActive('tellen', false);
   state.minigames.tellenLast = Date.now();
-  state.stats.tellenPlayed++;
+  state.stats.tellenPlayed++; dailyTrackMinigame('tellen');
 
   const buttons = document.querySelectorAll('.tellen-ans');
   buttons.forEach(b => {
@@ -800,7 +801,7 @@ function endIndringer() {
   indringerActive = false; mgSetActive('indringer', false);
   sfxGameEnd();
   state.minigames.indringerLast = Date.now();
-  state.stats.indringerPlayed++;
+  state.stats.indringerPlayed++; dailyTrackMinigame('indringer');
   if (indringerScore > state.stats.indringerBest) state.stats.indringerBest = indringerScore;
   clearInterval(indringerInterval);
 
@@ -912,7 +913,7 @@ function endGroter() {
   sfxGameEnd();
   groterActive = false; mgSetActive('groter', false);
   state.minigames.groterLast = Date.now();
-  state.stats.groterPlayed++;
+  state.stats.groterPlayed++; dailyTrackMinigame('groter');
   if (groterScore >= 10) state.stats.groterPerfect++;
 
   const bonus = getTotalDps() * 60 * groterScore;
@@ -1040,7 +1041,7 @@ function endRace() {
   raceActive = false; mgSetActive('race', false);
   sfxGameEnd();
   state.minigames.raceLast = Date.now();
-  state.stats.racePlayed++;
+  state.stats.racePlayed++; dailyTrackMinigame('race');
 
   // Determine winner
   let maxPos = -1, winner = 0;
@@ -1155,7 +1156,7 @@ function endPuzzel() {
   puzzelActive = false; mgSetActive('puzzel', false);
   sfxGameEnd();
   state.minigames.puzzelLast = Date.now();
-  state.stats.puzzelPlayed++;
+  state.stats.puzzelPlayed++; dailyTrackMinigame('puzzel');
   state.stats.puzzelWon++;
   if (state.stats.puzzelBestMoves === 0 || puzzelMoves < state.stats.puzzelBestMoves) {
     state.stats.puzzelBestMoves = puzzelMoves;
@@ -1265,7 +1266,7 @@ function endVoedsel() {
   sfxGameEnd();
   voedselActive = false; mgSetActive('voedsel', false);
   state.minigames.voedselLast = Date.now();
-  state.stats.voedselPlayed++;
+  state.stats.voedselPlayed++; dailyTrackMinigame('voedsel');
   if (voedselScore >= 10) state.stats.voedselPerfect++;
 
   const bonus = getTotalDps() * 60 * voedselScore;

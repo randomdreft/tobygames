@@ -95,8 +95,7 @@ function getDpsBreakdown() {
       breakdown.push({name: a.emoji + ' ' + a.name, dps: dps});
     }
   });
-  // Apply global multipliers to get proportional share
-  breakdown.sort((a, b) => b.dps - a.dps);
+  // Keep ANIMALS array order (shop order)
   // Add bonus info
   const achCount = Object.keys(state.achievements).filter(k => state.achievements[k]).length;
   const achPct = achCount * ACHIEVEMENT_BONUS * 100;
@@ -431,6 +430,26 @@ function buildAchievementDefs() {
     progress: () => ({cur: state.stats.voedselPerfect || 0, max: 1})
   });
 
+  // Daily challenges
+  defs.push({
+    id: 'dc_streak_3', emoji: '📅', name: 'Trouwe speler',
+    desc: '3 dagen op rij alle uitdagingen gehaald!', group: 'Dagelijks',
+    check: () => (state.daily.streak || 0) >= 3,
+    progress: () => ({cur: state.daily.streak || 0, max: 3})
+  });
+  defs.push({
+    id: 'dc_streak_7', emoji: '📅', name: 'Weekkampioen',
+    desc: '7 dagen op rij alle uitdagingen gehaald!', group: 'Dagelijks',
+    check: () => (state.daily.streak || 0) >= 7,
+    progress: () => ({cur: state.daily.streak || 0, max: 7})
+  });
+  defs.push({
+    id: 'dc_streak_30', emoji: '📅', name: 'Maandlegende',
+    desc: '30 dagen op rij alle uitdagingen gehaald!', group: 'Dagelijks',
+    check: () => (state.daily.streak || 0) >= 30,
+    progress: () => ({cur: state.daily.streak || 0, max: 30})
+  });
+
   // Special
   defs.push({
     id: 'alle_dieren', emoji: '🌈', name: 'Alle dieren!',
@@ -451,6 +470,187 @@ function buildAchievementDefs() {
 }
 
 let achievementDefs = buildAchievementDefs();
+
+/* ================================================================
+   SECTIE 6b: DAGELIJKSE UITDAGINGEN
+   ================================================================ */
+
+const DAILY_CHALLENGE_POOL = [
+  // Klikken
+  {id:'dc_click_100', emoji:'👆', desc:'Klik 100 keer', stat:'totalClicks', target:100},
+  {id:'dc_click_250', emoji:'👆', desc:'Klik 250 keer', stat:'totalClicks', target:250},
+  {id:'dc_click_500', emoji:'👆', desc:'Klik 500 keer', stat:'totalClicks', target:500},
+  // Kopen
+  {id:'dc_buy_5', emoji:'🛒', desc:'Koop 5 dieren', stat:'totalAnimals', target:5},
+  {id:'dc_buy_10', emoji:'🛒', desc:'Koop 10 dieren', stat:'totalAnimals', target:10},
+  {id:'dc_buy_25', emoji:'🛒', desc:'Koop 25 dieren', stat:'totalAnimals', target:25},
+  {id:'dc_upgrade', emoji:'⬆️', desc:'Koop een upgrade', daily:'upgradesBought', target:1},
+  // Minigames — algemeen
+  {id:'dc_mg_2', emoji:'🎮', desc:'Speel 2 verschillende minigames', daily:'uniqueMinigames', target:2},
+  {id:'dc_mg_3', emoji:'🎮', desc:'Speel 3 verschillende minigames', daily:'uniqueMinigames', target:3},
+  {id:'dc_mg_5', emoji:'🎮', desc:'Speel 5 minigames', stat:'mgTotal', target:5},
+  // Minigames — specifiek
+  {id:'dc_race', emoji:'🏇', desc:'Win een paardenrace', stat:'raceWon', target:1, req:'paard'},
+  {id:'dc_catcher', emoji:'🎯', desc:'Vang 10 dieren in de Vanger', stat:'catcherCaught', target:10, req:'kikker'},
+  {id:'dc_quiz', emoji:'🧠', desc:'Beantwoord 5 quizvragen goed', stat:'quizCorrect', target:5, req:'slak'},
+  {id:'dc_puzzel', emoji:'🧩', desc:'Los een puzzel op', stat:'puzzelWon', target:1, req:'panda'},
+  {id:'dc_sort', emoji:'📦', desc:'Sorteer 10 dieren goed', stat:'sortCorrect', target:10, req:'walvis'},
+  {id:'dc_tellen', emoji:'🔢', desc:'Beantwoord 5 telvragen goed', stat:'tellenCorrect', target:5, req:'mier'},
+  {id:'dc_math', emoji:'🔢', desc:'Beantwoord 5 rekenvragen goed', stat:'mathCorrect', target:5, req:'kat'},
+  {id:'dc_voedsel', emoji:'🍽️', desc:'Beantwoord 5 voedsel-vragen goed', stat:'voedselCorrect', target:5, req:'olifant'},
+  {id:'dc_indringer', emoji:'🕵️', desc:'Scoor 5+ bij de Indringer', stat:'indringerBest', target:5, req:'kip', best:true},
+  // Geluk & buff
+  {id:'dc_lucky', emoji:'🐞', desc:'Vang een lieveheersbeestje', stat:'luckyClicked', target:1},
+  {id:'dc_buff', emoji:'✨', desc:'Gebruik een buff', stat:'buffPlayed', target:1, req:'lama'},
+  // Speciaal
+  {id:'dc_memory', emoji:'🃏', desc:'Win memory met max 1 fout', daily:'memoryLowFaults', target:1, req:'draak'},
+  {id:'dc_groter_perfect', emoji:'⚖️', desc:'Haal 10/10 bij Groter/Kleiner', stat:'groterPerfect', target:1, req:'hond'},
+];
+
+function getTodayStr() {
+  const d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+
+function dailySeed(str) {
+  let h = 0;
+  for (let i = 0; i < str.length; i++) { h = ((h << 5) - h) + str.charCodeAt(i); h |= 0; }
+  return Math.abs(h);
+}
+
+function takeDailySnapshots() {
+  const snap = {};
+  // allTime stats
+  snap.totalClicks = state.allTime.totalClicks;
+  snap.totalAnimals = state.allTime.totalAnimals;
+  // minigame stats
+  const mgKeys = ['quizCorrect','catcherCaught','mathCorrect','sortCorrect','memoryPlayed',
+    'tellenCorrect','indringerBest','groterCorrect','groterPerfect','raceWon',
+    'puzzelWon','voedselCorrect','voedselPerfect','luckyClicked','buffPlayed',
+    'quizPlayed','catcherPlayed','mathPlayed','sortPlayed','tellenPlayed',
+    'indringerPlayed','groterPlayed','racePlayed','puzzelPlayed','voedselPlayed',
+    'memoryPlayed','buffPlayed'];
+  mgKeys.forEach(k => { snap[k] = state.stats[k] || 0; });
+  // Combined minigames total
+  snap.mgTotal = ['quizPlayed','catcherPlayed','mathPlayed','sortPlayed','memoryPlayed',
+    'tellenPlayed','indringerPlayed','groterPlayed','racePlayed','puzzelPlayed',
+    'voedselPlayed','buffPlayed'].reduce((s,k) => s + (state.stats[k]||0), 0);
+  return snap;
+}
+
+function initDailyChallenges() {
+  const today = getTodayStr();
+  if (state.daily.date === today) return; // already initialized
+
+  // Check if yesterday was completed for streak
+  if (state.daily.date && state.daily.completed.every(v => v)) {
+    state.daily.lastCompletedDate = state.daily.date;
+  }
+  // Check streak continuity
+  if (state.daily.lastCompletedDate) {
+    const last = new Date(state.daily.lastCompletedDate);
+    const now = new Date(today);
+    const diff = Math.round((now - last) / 86400000);
+    if (diff === 1) {
+      state.daily.streak++;
+    } else if (diff > 1) {
+      state.daily.streak = 0;
+    }
+  }
+
+  // Pick 3 challenges based on date seed
+  const available = DAILY_CHALLENGE_POOL.filter(c => {
+    if (c.req && !(state.animals[c.req] > 0)) return false;
+    return true;
+  });
+
+  const seed = dailySeed(today);
+  const picked = [];
+  const pool = available.slice();
+  for (let i = 0; i < 3 && pool.length > 0; i++) {
+    const idx = (seed * (i + 7) + i * 13) % pool.length;
+    picked.push(pool[idx].id);
+    pool.splice(idx, 1);
+  }
+
+  state.daily.date = today;
+  state.daily.challenges = picked;
+  state.daily.completed = [false, false, false];
+  state.daily.bonusClaimed = false;
+  state.daily.uniqueMinigames = [];
+  state.daily.upgradesBought = 0;
+  state.daily.memoryLowFaults = 0;
+  state.daily.snapshots = takeDailySnapshots();
+}
+
+function getDailyChallengeProgress(c) {
+  const snap = state.daily.snapshots || {};
+  if (c.daily === 'uniqueMinigames') {
+    return {cur: (state.daily.uniqueMinigames || []).length, max: c.target};
+  }
+  if (c.daily === 'upgradesBought') {
+    return {cur: state.daily.upgradesBought || 0, max: c.target};
+  }
+  if (c.daily === 'memoryLowFaults') {
+    return {cur: state.daily.memoryLowFaults || 0, max: c.target};
+  }
+  if (c.stat === 'totalClicks') {
+    return {cur: state.allTime.totalClicks - (snap.totalClicks || 0), max: c.target};
+  }
+  if (c.stat === 'totalAnimals') {
+    return {cur: state.allTime.totalAnimals - (snap.totalAnimals || 0), max: c.target};
+  }
+  if (c.stat === 'mgTotal') {
+    const curTotal = ['quizPlayed','catcherPlayed','mathPlayed','sortPlayed','memoryPlayed',
+      'tellenPlayed','indringerPlayed','groterPlayed','racePlayed','puzzelPlayed',
+      'voedselPlayed','buffPlayed'].reduce((s,k) => s + (state.stats[k]||0), 0);
+    return {cur: curTotal - (snap.mgTotal || 0), max: c.target};
+  }
+  if (c.best) {
+    // "best" stats: check if current best meets target (not delta-based)
+    return {cur: state.stats[c.stat] || 0, max: c.target};
+  }
+  // Default: delta from snapshot
+  return {cur: (state.stats[c.stat] || 0) - (snap[c.stat] || 0), max: c.target};
+}
+
+function checkDailyChallenges() {
+  if (!state.daily.date || !state.daily.challenges.length) return;
+  let anyNew = false;
+  state.daily.challenges.forEach((cid, i) => {
+    if (state.daily.completed[i]) return;
+    const c = DAILY_CHALLENGE_POOL.find(x => x.id === cid);
+    if (!c) return;
+    const p = getDailyChallengeProgress(c);
+    if (p.cur >= p.max) {
+      state.daily.completed[i] = true;
+      anyNew = true;
+      // Reward: 10 min DPS
+      const reward = getTotalDps() * 60 * 10;
+      state.currentPoints += reward;
+      state.totalEarned += reward;
+      state.allTime.totalEarned += reward;
+      showToast('⭐ Uitdaging voltooid: ' + c.desc + ' (+' + formatNumber(Math.floor(reward)) + ')');
+      sfxAchievement();
+    }
+  });
+  // All 3 done bonus
+  if (anyNew && state.daily.completed.every(v => v) && !state.daily.bonusClaimed) {
+    state.daily.bonusClaimed = true;
+    const bonus = getTotalDps() * 60 * 30;
+    state.currentPoints += bonus;
+    state.totalEarned += bonus;
+    state.allTime.totalEarned += bonus;
+    showToast('🌟 Alle uitdagingen voltooid! Bonus: +' + formatNumber(Math.floor(bonus)));
+  }
+}
+
+function dailyTrackMinigame(mgId) {
+  if (!state.daily.date) return;
+  if (state.daily.uniqueMinigames.indexOf(mgId) === -1) {
+    state.daily.uniqueMinigames.push(mgId);
+  }
+}
 
 function checkAchievements() {
   let newOnes = [];
@@ -531,6 +731,7 @@ function buyUpgrade(upgradeId) {
   }
   state.currentPoints -= u.cost;
   state.upgrades[upgradeId] = 1;
+  if (state.daily.date) state.daily.upgradesBought++;
   sfxBuy();
   // Update only the purchased item instead of rebuilding the whole list
   const el = document.getElementById('upg-' + upgradeId);
