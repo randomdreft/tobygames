@@ -474,7 +474,8 @@ class Game {
     // (collision is now circle-based via canDrive)
 
     updatePolice(dt) {
-        for (const cop of this.police) {
+        for (let ci = 0; ci < this.police.length; ci++) {
+            const cop = this.police[ci];
             const p = this.player;
             const dx = p.x - cop.x;
             const dy = p.y - cop.y;
@@ -482,64 +483,76 @@ class Game {
             // Determine road context
             const cx = ((cop.x % CELL) + CELL) % CELL;
             const cy = ((cop.y % CELL) + CELL) % CELL;
-            const onVRoad = cx < ROAD_W;  // on a vertical road strip
-            const onHRoad = cy < ROAD_W;  // on a horizontal road strip
+            const onVRoad = cx < ROAD_W;
+            const onHRoad = cy < ROAD_W;
             const atIntersection = onVRoad && onHRoad;
 
             let targetAngle;
 
             if (atIntersection) {
-                // At intersection: pick the direction that brings us closest
-                // Use Manhattan-optimal: go along the axis with larger gap
-                // Small random factor so cops don't all behave identically
+                // At intersection: pick direction, with per-cop variation
                 const absDx = Math.abs(dx), absDy = Math.abs(dy);
-                const preferX = absDx > absDy + (cop.randomBias || 0);
-                if (preferX) {
-                    targetAngle = dx > 0 ? 0 : Math.PI;
-                } else {
-                    targetAngle = dy > 0 ? Math.PI / 2 : -Math.PI / 2;
+                const preferX = absDx > absDy + cop.randomBias;
+
+                // Occasionally take a random detour (10% chance per intersection visit)
+                if (!cop.decided) {
+                    cop.decided = true;
+                    if (Math.random() < 0.1) {
+                        // Random turn: pick a perpendicular direction
+                        if (preferX) {
+                            targetAngle = dy > 0 ? Math.PI / 2 : -Math.PI / 2;
+                        } else {
+                            targetAngle = dx > 0 ? 0 : Math.PI;
+                        }
+                    } else if (preferX) {
+                        targetAngle = dx > 0 ? 0 : Math.PI;
+                    } else {
+                        targetAngle = dy > 0 ? Math.PI / 2 : -Math.PI / 2;
+                    }
+                    cop.chosenAngle = targetAngle;
                 }
-                // Remember chosen direction until we leave intersection
-                cop.chosenAngle = targetAngle;
-            } else if (onHRoad) {
-                // On horizontal road: drive left/right toward player X
-                // Unless we're close enough in X, then head to nearest intersection to turn
-                if (Math.abs(dx) < ROAD_W) {
-                    // Close in X: head toward nearest vertical road to turn
-                    const nearestVRoad = Math.round(cop.x / CELL) * CELL + ROAD_W / 2;
-                    targetAngle = nearestVRoad > cop.x ? 0 : Math.PI;
-                } else {
-                    targetAngle = dx > 0 ? 0 : Math.PI;
-                }
-                // Stay centered on horizontal road (correct Y drift)
-                const roadCenterY = Math.round(cop.y / CELL) * CELL + ROAD_W / 2;
-                cop.y = lerp(cop.y, roadCenterY, 8 * dt);
-            } else if (onVRoad) {
-                // On vertical road: drive up/down toward player Y
-                if (Math.abs(dy) < ROAD_W) {
-                    const nearestHRoad = Math.round(cop.y / CELL) * CELL + ROAD_W / 2;
-                    targetAngle = nearestHRoad > cop.y ? Math.PI / 2 : -Math.PI / 2;
-                } else {
-                    targetAngle = dy > 0 ? Math.PI / 2 : -Math.PI / 2;
-                }
-                // Stay centered on vertical road (correct X drift)
-                const roadCenterX = Math.round(cop.x / CELL) * CELL + ROAD_W / 2;
-                cop.x = lerp(cop.x, roadCenterX, 8 * dt);
+                targetAngle = cop.chosenAngle;
             } else {
-                // Off-road (shouldn't happen): drive back to nearest road
-                const snap = nearestRoadCenter(cop.x, cop.y);
-                targetAngle = Math.atan2(snap.y - cop.y, snap.x - cop.x);
+                // Left intersection, allow new decision at next one
+                cop.decided = false;
+
+                if (onHRoad) {
+                    if (Math.abs(dx) < ROAD_W) {
+                        const nearestVRoad = Math.round(cop.x / CELL) * CELL + ROAD_W / 2;
+                        targetAngle = nearestVRoad > cop.x ? 0 : Math.PI;
+                    } else {
+                        targetAngle = dx > 0 ? 0 : Math.PI;
+                    }
+                    // Stay centered but offset by cop index to reduce overlap
+                    const laneOffset = (ci % 2 === 0 ? -1 : 1) * 10;
+                    const roadCenterY = Math.round(cop.y / CELL) * CELL + ROAD_W / 2 + laneOffset;
+                    cop.y = lerp(cop.y, roadCenterY, 8 * dt);
+                } else if (onVRoad) {
+                    if (Math.abs(dy) < ROAD_W) {
+                        const nearestHRoad = Math.round(cop.y / CELL) * CELL + ROAD_W / 2;
+                        targetAngle = nearestHRoad > cop.y ? Math.PI / 2 : -Math.PI / 2;
+                    } else {
+                        targetAngle = dy > 0 ? Math.PI / 2 : -Math.PI / 2;
+                    }
+                    const laneOffset = (ci % 2 === 0 ? -1 : 1) * 10;
+                    const roadCenterX = Math.round(cop.x / CELL) * CELL + ROAD_W / 2 + laneOffset;
+                    cop.x = lerp(cop.x, roadCenterX, 8 * dt);
+                } else {
+                    const snap = nearestRoadCenter(cop.x, cop.y);
+                    targetAngle = Math.atan2(snap.y - cop.y, snap.x - cop.x);
+                }
             }
 
-            // Smooth turning (fast enough to corner well)
+            // Smooth turning
             let angleDiff = targetAngle - cop.angle;
             while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
             while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
             cop.angle += clamp(angleDiff, -5 * dt, 5 * dt);
 
-            // Speed: fast on straights, slow into turns
+            // Speed: vary per cop
             const turnPenalty = 1 - Math.min(Math.abs(angleDiff) / Math.PI, 0.6);
-            const targetSpeed = cop.maxSpeed * turnPenalty;
+            const speedVar = 1 + cop.randomBias * 0.003; // slight speed variation
+            const targetSpeed = cop.maxSpeed * turnPenalty * speedVar;
             cop.speed = lerp(cop.speed, targetSpeed, 3 * dt);
 
             // Move
@@ -548,6 +561,27 @@ class Game {
 
             cop.x = clamp(cop.x, ROAD_W / 2, WORLD - ROAD_W / 2);
             cop.y = clamp(cop.y, ROAD_W / 2, WORLD - ROAD_W / 2);
+        }
+
+        // Cop-vs-cop collision: push apart
+        for (let i = 0; i < this.police.length; i++) {
+            for (let j = i + 1; j < this.police.length; j++) {
+                const a = this.police[i], b = this.police[j];
+                const d = dist(a.x, a.y, b.x, b.y);
+                const minDist = (a.w + b.w) / 2;
+                if (d < minDist && d > 0.1) {
+                    const overlap = (minDist - d) / 2;
+                    const nx = (b.x - a.x) / d;
+                    const ny = (b.y - a.y) / d;
+                    a.x -= nx * overlap;
+                    a.y -= ny * overlap;
+                    b.x += nx * overlap;
+                    b.y += ny * overlap;
+                    // Slower cop yields more
+                    if (a.speed < b.speed) a.speed *= 0.7;
+                    else b.speed *= 0.7;
+                }
+            }
         }
     }
 
