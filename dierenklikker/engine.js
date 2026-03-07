@@ -159,7 +159,8 @@ function buildAchievementDefs() {
         name: m + ' ' + a.plural,
         desc: 'Je hebt ' + m + ' ' + a.plural + '!',
         group: a.name,
-        check: () => (state.animals[a.id] || 0) >= m
+        check: () => (state.animals[a.id] || 0) >= m,
+        progress: () => ({cur: state.animals[a.id] || 0, max: m})
       });
     });
   });
@@ -172,7 +173,8 @@ function buildAchievementDefs() {
     defs.push({
       id: 'totaal_' + n, emoji: '🏠', name: name,
       desc: n + ' dieren in totaal!', group: 'Totaal',
-      check: () => ANIMALS.reduce((s, a) => s + (state.animals[a.id]||0), 0) >= n
+      check: () => ANIMALS.reduce((s, a) => s + (state.animals[a.id]||0), 0) >= n,
+      progress: () => ({cur: ANIMALS.reduce((s, a) => s + (state.animals[a.id]||0), 0), max: n})
     });
   });
   // Click milestones
@@ -184,7 +186,8 @@ function buildAchievementDefs() {
     defs.push({
       id: 'klik_' + n, emoji: '👆', name: name,
       desc: formatNumber(n) + ' keer geklikt!', group: 'Klikken',
-      check: () => state.allTime.totalClicks >= n
+      check: () => state.allTime.totalClicks >= n,
+      progress: () => ({cur: state.allTime.totalClicks, max: n})
     });
   });
   // Points milestones
@@ -196,7 +199,8 @@ function buildAchievementDefs() {
     defs.push({
       id: 'punten_' + n, emoji: em, name: name,
       desc: formatNumber(n) + ' punten verdiend!', group: 'Punten',
-      check: () => state.totalEarned >= n
+      check: () => state.totalEarned >= n,
+      progress: () => ({cur: state.totalEarned, max: n})
     });
   });
   // Upgrade mastery (all upgrades for an animal)
@@ -230,7 +234,8 @@ function buildAchievementDefs() {
     defs.push({
       id: 'saldo_' + n, emoji: em, name: name,
       desc: formatNumber(n) + ' punten op je saldo!', group: 'Saldo',
-      check: () => state.currentPoints >= n
+      check: () => state.currentPoints >= n,
+      progress: () => ({cur: state.currentPoints, max: n})
     });
   });
 
@@ -238,17 +243,20 @@ function buildAchievementDefs() {
   defs.push({
     id: 'lucky_1', emoji: '🐞', name: 'Geluksvogel',
     desc: 'Je eerste lieveheersbeestje gevangen!', group: 'Geluk',
-    check: () => (state.stats.luckyClicked || 0) >= 1
+    check: () => (state.stats.luckyClicked || 0) >= 1,
+    progress: () => ({cur: state.stats.luckyClicked || 0, max: 1})
   });
   defs.push({
     id: 'lucky_25', emoji: '🐞', name: 'Geluksjager',
     desc: '25 lieveheersbeestjes gevangen!', group: 'Geluk',
-    check: () => (state.stats.luckyClicked || 0) >= 25
+    check: () => (state.stats.luckyClicked || 0) >= 25,
+    progress: () => ({cur: state.stats.luckyClicked || 0, max: 25})
   });
   defs.push({
     id: 'lucky_100', emoji: '🐞', name: 'Meester der fortuin',
     desc: '100 lieveheersbeestjes gevangen!', group: 'Geluk',
-    check: () => (state.stats.luckyClicked || 0) >= 100
+    check: () => (state.stats.luckyClicked || 0) >= 100,
+    progress: () => ({cur: state.stats.luckyClicked || 0, max: 100})
   });
   defs.push({
     id: 'lucky_double', emoji: '🐞', name: 'Dubbel geluk!',
@@ -262,70 +270,82 @@ function buildAchievementDefs() {
   });
 
   // Minigames — Overkoepelend
+  const mgPlayedKeys = ['quizPlayed','catcherPlayed','mathPlayed','sortPlayed','memoryPlayed','tellenPlayed','indringerPlayed','groterPlayed','racePlayed','puzzelPlayed','voedselPlayed','buffPlayed'];
   defs.push({
     id: 'mg_alleskunner', emoji: '🎮', name: 'Alleskunner',
     desc: 'Elke minigame minstens 1 keer gespeeld!', group: 'Minigames',
-    check: () => ['quizPlayed','catcherPlayed','mathPlayed','sortPlayed','memoryPlayed','tellenPlayed','indringerPlayed','groterPlayed','racePlayed','puzzelPlayed','voedselPlayed','buffPlayed'].every(k => (state.stats[k] || 0) >= 1)
+    check: () => mgPlayedKeys.every(k => (state.stats[k] || 0) >= 1),
+    progress: () => ({cur: mgPlayedKeys.filter(k => (state.stats[k] || 0) >= 1).length, max: mgPlayedKeys.length})
   });
   defs.push({
     id: 'mg_meester', emoji: '🎮', name: 'Minigame Meester',
     desc: '100 minigames gespeeld!', group: 'Minigames',
-    check: () => ['quizPlayed','catcherPlayed','mathPlayed','sortPlayed','memoryPlayed','tellenPlayed','indringerPlayed','groterPlayed','racePlayed','puzzelPlayed','voedselPlayed','buffPlayed'].reduce((s, k) => s + (state.stats[k] || 0), 0) >= 100
+    check: () => mgPlayedKeys.reduce((s, k) => s + (state.stats[k] || 0), 0) >= 100,
+    progress: () => ({cur: mgPlayedKeys.reduce((s, k) => s + (state.stats[k] || 0), 0), max: 100})
   });
 
   // Minigames — Quiz
   defs.push({
     id: 'mg_quiz_25', emoji: '❓', name: 'Slimmerik',
     desc: '25 quizvragen goed beantwoord!', group: 'Minigames',
-    check: () => (state.stats.quizCorrect || 0) >= 25
+    check: () => (state.stats.quizCorrect || 0) >= 25,
+    progress: () => ({cur: state.stats.quizCorrect || 0, max: 25})
   });
   defs.push({
     id: 'mg_quiz_100', emoji: '❓', name: 'Wandelende encyclopedie',
     desc: '100 quizvragen goed beantwoord!', group: 'Minigames',
-    check: () => (state.stats.quizCorrect || 0) >= 100
+    check: () => (state.stats.quizCorrect || 0) >= 100,
+    progress: () => ({cur: state.stats.quizCorrect || 0, max: 100})
   });
 
   // Minigames — Catcher
   defs.push({
     id: 'mg_catcher_100', emoji: '🪤', name: 'Dierenvanger',
     desc: '100 dieren gevangen!', group: 'Minigames',
-    check: () => (state.stats.catcherCaught || 0) >= 100
+    check: () => (state.stats.catcherCaught || 0) >= 100,
+    progress: () => ({cur: state.stats.catcherCaught || 0, max: 100})
   });
   defs.push({
     id: 'mg_catcher_500', emoji: '🪤', name: 'Snelle handen',
     desc: '500 dieren gevangen!', group: 'Minigames',
-    check: () => (state.stats.catcherCaught || 0) >= 500
+    check: () => (state.stats.catcherCaught || 0) >= 500,
+    progress: () => ({cur: state.stats.catcherCaught || 0, max: 500})
   });
 
   // Minigames — Wiskunde
   defs.push({
     id: 'mg_math_25', emoji: '🔢', name: 'Rekenwonder',
     desc: '25 rekenvragen goed beantwoord!', group: 'Minigames',
-    check: () => (state.stats.mathCorrect || 0) >= 25
+    check: () => (state.stats.mathCorrect || 0) >= 25,
+    progress: () => ({cur: state.stats.mathCorrect || 0, max: 25})
   });
   defs.push({
     id: 'mg_math_100', emoji: '🔢', name: 'Wiskunde kampioen',
     desc: '100 rekenvragen goed beantwoord!', group: 'Minigames',
-    check: () => (state.stats.mathCorrect || 0) >= 100
+    check: () => (state.stats.mathCorrect || 0) >= 100,
+    progress: () => ({cur: state.stats.mathCorrect || 0, max: 100})
   });
 
   // Minigames — Sorteren
   defs.push({
     id: 'mg_sort_50', emoji: '📦', name: 'Sorteerder',
     desc: '50 dieren goed gesorteerd!', group: 'Minigames',
-    check: () => (state.stats.sortCorrect || 0) >= 50
+    check: () => (state.stats.sortCorrect || 0) >= 50,
+    progress: () => ({cur: state.stats.sortCorrect || 0, max: 50})
   });
   defs.push({
     id: 'mg_sort_streak', emoji: '📦', name: 'Sorteerkoning',
     desc: 'Een streak van 15 in één sorteer-potje!', group: 'Minigames',
-    check: () => (state.stats.sortBestStreak || 0) >= 15
+    check: () => (state.stats.sortBestStreak || 0) >= 15,
+    progress: () => ({cur: state.stats.sortBestStreak || 0, max: 15})
   });
 
   // Minigames — Memory
   defs.push({
     id: 'mg_memory_10', emoji: '🧠', name: 'Goed geheugen',
     desc: '10 memory potjes gewonnen!', group: 'Minigames',
-    check: () => (state.stats.memoryPlayed || 0) >= 10
+    check: () => (state.stats.memoryPlayed || 0) >= 10,
+    progress: () => ({cur: state.stats.memoryPlayed || 0, max: 10})
   });
   defs.push({
     id: 'mg_memory_perfect', emoji: '🧠', name: 'Fotografisch geheugen',
@@ -337,67 +357,78 @@ function buildAchievementDefs() {
   defs.push({
     id: 'mg_tellen_25', emoji: '🔍', name: 'Goed geteld!',
     desc: '25 telvragen goed beantwoord!', group: 'Minigames',
-    check: () => (state.stats.tellenCorrect || 0) >= 25
+    check: () => (state.stats.tellenCorrect || 0) >= 25,
+    progress: () => ({cur: state.stats.tellenCorrect || 0, max: 25})
   });
 
   // Minigames — Indringer
   defs.push({
     id: 'mg_indringer_10', emoji: '🕵️', name: 'Speurder',
     desc: 'Score van 10 in één indringer-potje!', group: 'Minigames',
-    check: () => (state.stats.indringerBest || 0) >= 10
+    check: () => (state.stats.indringerBest || 0) >= 10,
+    progress: () => ({cur: state.stats.indringerBest || 0, max: 10})
   });
   defs.push({
     id: 'mg_indringer_20', emoji: '🕵️', name: 'Detective',
     desc: 'Score van 20 in één indringer-potje!', group: 'Minigames',
-    check: () => (state.stats.indringerBest || 0) >= 20
+    check: () => (state.stats.indringerBest || 0) >= 20,
+    progress: () => ({cur: state.stats.indringerBest || 0, max: 20})
   });
 
   // Minigames — Groter of Kleiner
   defs.push({
     id: 'mg_groter_50', emoji: '⚖️', name: 'Dierenkenner',
     desc: '50 groter/kleiner-vragen goed beantwoord!', group: 'Minigames',
-    check: () => (state.stats.groterCorrect || 0) >= 50
+    check: () => (state.stats.groterCorrect || 0) >= 50,
+    progress: () => ({cur: state.stats.groterCorrect || 0, max: 50})
   });
   defs.push({
     id: 'mg_groter_perfect', emoji: '⚖️', name: 'Gewichtsexpert',
     desc: '10/10 goed in één groter/kleiner-potje!', group: 'Minigames',
-    check: () => (state.stats.groterPerfect || 0) >= 1
+    check: () => (state.stats.groterPerfect || 0) >= 1,
+    progress: () => ({cur: state.stats.groterPerfect || 0, max: 1})
   });
 
   // Minigames — Paardenrace
   defs.push({
     id: 'mg_race_10', emoji: '🏇', name: 'Gokker',
     desc: '10 races gewonnen!', group: 'Minigames',
-    check: () => (state.stats.raceWon || 0) >= 10
+    check: () => (state.stats.raceWon || 0) >= 10,
+    progress: () => ({cur: state.stats.raceWon || 0, max: 10})
   });
   defs.push({
     id: 'mg_race_25', emoji: '🏇', name: 'Geluksvogel',
     desc: '25 races gewonnen!', group: 'Minigames',
-    check: () => (state.stats.raceWon || 0) >= 25
+    check: () => (state.stats.raceWon || 0) >= 25,
+    progress: () => ({cur: state.stats.raceWon || 0, max: 25})
   });
 
   // Minigames — Puzzel
   defs.push({
     id: 'mg_puzzel_10', emoji: '🧩', name: 'Puzzelaar',
     desc: '10 puzzels opgelost!', group: 'Minigames',
-    check: () => (state.stats.puzzelWon || 0) >= 10
+    check: () => (state.stats.puzzelWon || 0) >= 10,
+    progress: () => ({cur: state.stats.puzzelWon || 0, max: 10})
   });
   defs.push({
     id: 'mg_puzzel_fast', emoji: '🧩', name: 'Puzzel genie',
     desc: 'Puzzel opgelost in minder dan 30 zetten!', group: 'Minigames',
-    check: () => (state.stats.puzzelBestMoves || 999) <= 30
+    check: () => (state.stats.puzzelBestMoves || 999) <= 30,
+    progress: () => ({cur: Math.min(state.stats.puzzelBestMoves || 999, 999), max: 30, invert: true})
   });
 
   // Minigames — Voedsel
   defs.push({
     id: 'mg_voedsel_50', emoji: '🍽️', name: 'Voedselkenner',
     desc: '50 voedsel-vragen goed beantwoord!', group: 'Minigames',
-    check: () => (state.stats.voedselCorrect || 0) >= 50
+    check: () => (state.stats.voedselCorrect || 0) >= 50,
+    progress: () => ({cur: state.stats.voedselCorrect || 0, max: 50})
   });
   defs.push({
     id: 'mg_voedsel_perfect', emoji: '🍽️', name: 'Dierendiëtist',
     desc: '10/10 goed in één voedsel-potje!', group: 'Minigames',
-    check: () => (state.stats.voedselPerfect || 0) >= 1
+    check: () => (state.stats.voedselPerfect || 0) >= 1,
+    progress: () => ({cur: state.stats.voedselPerfect || 0, max: 1})
   });
 
   // Special

@@ -142,6 +142,13 @@ function sfxHeaven() {
   });
 }
 
+function sfxCooldownReady() {
+  if (!soundEnabled || soundVolume === 0) return;
+  // Gentle bell ding - two soft high tones
+  playTone(1047, 0.12, 'sine', 0.06, true);
+  setTimeout(() => playTone(1319, 0.18, 'sine', 0.07, true), 100);
+}
+
 function sfxMemoryMatch() {
   playTone(600, 0.08, 'sine', 0.1, true);
   setTimeout(() => playTone(900, 0.12, 'sine', 0.1, true), 70);

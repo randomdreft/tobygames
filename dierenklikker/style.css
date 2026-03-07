@@ -342,6 +342,16 @@ img.emoji {
 .voedsel-opt.wrong { border-color: var(--red); background: rgba(239,83,80,0.3); }
 
 /* Stats */
+.stat-dashboard {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+  margin-bottom: 12px;
+}
+.stat-big {
+  background: rgba(0,0,0,0.3); border-radius: 10px; padding: 10px 8px;
+  display: flex; flex-direction: column; align-items: center; text-align: center;
+}
+.stat-big-val { font-size: 18px; font-weight: 700; color: var(--gold); }
+.stat-big-label { font-size: 11px; color: var(--text-dim); margin-top: 2px; }
 .stat-heading {
   font-size: 13px; font-weight: 700; color: var(--gold);
   margin: 10px 0 4px; padding-bottom: 3px;
@@ -439,6 +449,12 @@ img.emoji {
 }
 .ach-item.earned { background: rgba(255,215,0,0.15); border-color: var(--gold); }
 .ach-item.unearned { filter: grayscale(1); opacity: 0.3; }
+.ach-item.unearned:has(.ach-progress) { opacity: 0.6; filter: grayscale(0.5); }
+.ach-progress {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  background: rgba(255,215,0,0.25); border-radius: 0 0 6px 6px;
+  pointer-events: none; z-index: 0;
+}
 /* Global tooltip (fixed, always on top) */
 #tooltip {
   display: none; position: fixed; z-index: 500;

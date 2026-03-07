@@ -339,13 +339,31 @@ function buildAchievements() {
     html += '<div class="ach-section"><h4>' + g + '</h4><div class="ach-grid">';
     groups[g].forEach(a => {
       const e = state.achievements[a.id];
-      const achTip = e
-        ? escHtml(a.name) + '|' + escHtml(a.desc)
-        : achSpoilerActive
-          ? escHtml(a.name) + '|' + escHtml(a.desc)
-          : '???|Nog niet ontgrendeld';
+      let achTip, progressHtml = '';
+      if (e) {
+        achTip = escHtml(a.name) + '|' + escHtml(a.desc);
+      } else if (achSpoilerActive) {
+        let tipDesc = escHtml(a.desc);
+        if (a.progress) {
+          const p = a.progress();
+          if (p.invert) {
+            tipDesc += ' (beste: ' + (p.cur >= 999 ? '-' : p.cur) + ' zetten)';
+          } else {
+            tipDesc += ' (' + formatNumber(Math.min(p.cur, p.max)) + '/' + formatNumber(p.max) + ')';
+          }
+          const pct = p.invert
+            ? (p.cur >= 999 ? 0 : Math.min(100, Math.max(0, (1 - (p.cur - p.max) / (999 - p.max)) * 100)))
+            : Math.min(100, Math.floor(p.cur / p.max * 100));
+          if (pct > 0 && pct < 100) {
+            progressHtml = '<div class="ach-progress" style="height:' + pct + '%"></div>';
+          }
+        }
+        achTip = escHtml(a.name) + '|' + tipDesc;
+      } else {
+        achTip = '???|Nog niet ontgrendeld';
+      }
       html += '<div class="ach-item ' + (e ? 'earned' : 'unearned') + '" id="ach-' + a.id + '" data-tip="' + achTip + '">' +
-        a.emoji +
+        progressHtml + a.emoji +
         '</div>';
     });
     html += '</div></div>';
@@ -675,12 +693,14 @@ function render() {
   if (curBuff && buffInd) parseAppleEmoji(buffInd);
 }
 
+const _cooldownActive = {};
 function updateCooldown(btnId, textId, lastPlayed, cooldown, active) {
   const btn = document.getElementById(btnId);
   const text = document.getElementById(textId);
   if (!btn || !text) return;
   const remaining = cooldown - (Date.now() - lastPlayed);
   if (remaining > 0 && !active) {
+    _cooldownActive[btnId] = true;
     btn.disabled = true;
     const pct = Math.round((1 - remaining / cooldown) * 100);
     const fill = text.querySelector('.cooldown-bar-fill');
@@ -693,6 +713,10 @@ function updateCooldown(btnId, textId, lastPlayed, cooldown, active) {
       text.innerHTML = 'Wacht ' + Math.ceil(remaining / 1000) + 's...<div class="cooldown-bar"><div class="cooldown-bar-fill" style="width:' + pct + '%"></div></div>';
     }
   } else if (!active) {
+    if (_cooldownActive[btnId]) {
+      _cooldownActive[btnId] = false;
+      sfxCooldownReady();
+    }
     btn.disabled = false;
     if (text.innerHTML) text.innerHTML = '';
   }
@@ -706,8 +730,27 @@ function renderStats() {
 
   const row = (l, v) => '<div class="stat-row"><span class="stat-label">' + l + '</span><span>' + v + '</span></div>';
   const heading = (t) => '<div class="stat-heading">' + t + '</div>';
+  const bigStat = (emoji, val, label) => '<div class="stat-big"><span class="stat-big-val">' + emoji + ' ' + val + '</span><span class="stat-big-label">' + label + '</span></div>';
 
-  let html = heading('Deze evolutie');
+  // Highlight dashboard
+  const s = state.stats;
+  const totalMgPlayed = s.quizPlayed + s.catcherPlayed + s.mathPlayed + s.buffPlayed + s.sortPlayed + s.memoryPlayed + s.tellenPlayed + s.indringerPlayed + s.groterPlayed + s.voedselPlayed + s.racePlayed + s.puzzelPlayed;
+  const bd = getDpsBreakdown();
+  let html = '<div class="stat-dashboard">';
+  html += bigStat('', formatDps(bd.total || 0) + '/s', 'DPS');
+  html += bigStat('', formatTime(state.allTime.playTimeSeconds), 'Speeltijd');
+  html += bigStat('', formatNumber(state.allTime.totalClicks), 'Klikken');
+  html += bigStat('', state.prestige.timesReset + 'x', 'Evoluties');
+  html += '</div>';
+
+  // Favoriete minigame
+  const mgNames = {quizPlayed:'Quiz', catcherPlayed:'Vanger', mathPlayed:'Wiskunde', buffPlayed:'Buffs', sortPlayed:'Sorteren', memoryPlayed:'Memory', tellenPlayed:'Tellen', indringerPlayed:'Indringer', groterPlayed:'Groter/Kleiner', voedselPlayed:'Wat Eet Ik?', racePlayed:'Paardenrace', puzzelPlayed:'Puzzel'};
+  let favMg = '', favMgCount = 0;
+  Object.keys(mgNames).forEach(k => {
+    if ((s[k] || 0) > favMgCount) { favMgCount = s[k]; favMg = mgNames[k]; }
+  });
+
+  html += heading('Deze evolutie');
   html += row('Totaal geklikt', formatNumber(state.totalClicks));
   html += row('Totaal verdiend', formatNumber(Math.floor(state.totalEarned)));
   html += row('Totaal dieren', formatNumber(totalAnimals));
@@ -727,7 +770,6 @@ function renderStats() {
   html += row('Evoluties', state.prestige.timesReset + 'x');
 
   // DPS breakdown
-  const bd = getDpsBreakdown();
   if (bd.total > 0) {
     html += heading('DPS Uitsplitsing');
     bd.animals.forEach(a => {
@@ -740,10 +782,9 @@ function renderStats() {
     html += row('<b>Totaal</b>', '<b>' + formatDps(bd.total) + '/s</b>');
   }
 
-  const s = state.stats;
-  const totalMgPlayed = s.quizPlayed + s.catcherPlayed + s.mathPlayed + s.buffPlayed + s.sortPlayed + s.memoryPlayed + s.tellenPlayed + s.indringerPlayed + s.groterPlayed + s.voedselPlayed + s.racePlayed + s.puzzelPlayed;
   html += heading('Minigames');
   html += row('Totaal gespeeld', totalMgPlayed + 'x');
+  if (favMg) html += row('Favoriete game', favMg + ' (' + favMgCount + 'x)');
   if (s.tellenPlayed) html += row('🔢 Tellen', s.tellenCorrect + '/' + s.tellenPlayed + ' goed');
   if (s.quizPlayed) html += row('🧠 Quiz', s.quizCorrect + '/' + s.quizPlayed + ' goed');
   if (s.catcherPlayed) html += row('🎯 Vanger', s.catcherCaught + ' gevangen (' + s.catcherPlayed + 'x)');
@@ -753,14 +794,20 @@ function renderStats() {
   if (s.buffPlayed) html += row('✨ Buffs', s.buffPlayed + 'x gekozen');
   if (s.voedselPlayed) html += row('🍽️ Wat Eet Ik?', s.voedselCorrect + '/' + (s.voedselCorrect+s.voedselWrong) + ' goed');
   if (s.sortPlayed) html += row('🗂️ Sorteren', s.sortCorrect + ' goed (beste: ' + s.sortBestStreak + ')');
-  if (s.racePlayed) html += row('🏇 Paardenrace', s.raceWon + '/' + s.racePlayed + ' gewonnen');
+  if (s.racePlayed) html += row('🏇 Paardenrace', s.raceWon + '/' + s.racePlayed + ' gewonnen (' + Math.round(s.raceWon/s.racePlayed*100) + '%)');
   if (s.puzzelPlayed) html += row('🧩 Puzzel', s.puzzelWon + 'x opgelost (beste: ' + (s.puzzelBestMoves || '-') + ' zetten)');
   if (s.memoryPlayed) html += row('🃏 Memory', s.memoryWon + '/' + s.memoryPlayed + ' perfect');
+  if (s.groterPerfect) html += row('⚖️ Perfect scores', s.groterPerfect + 'x');
+  if (s.voedselPerfect) html += row('🍽️ Perfect scores', s.voedselPerfect + 'x');
 
   if (s.luckyClicked || s.luckyMissed) {
+    const luckyTotal = (s.luckyClicked || 0) + (s.luckyMissed || 0);
+    const luckyPct = luckyTotal > 0 ? Math.round((s.luckyClicked || 0) / luckyTotal * 100) : 0;
     html += heading('Geluksbeestjes');
-    html += row('🐞 Gevangen', s.luckyClicked || 0);
+    html += row('🐞 Gevangen', (s.luckyClicked || 0) + ' (' + luckyPct + '% vangratio)');
     html += row('🐞 Gemist', s.luckyMissed || 0);
+    if (s.luckyDouble) html += row('🐞🐞 Dubbel', s.luckyDouble + 'x');
+    if (s.luckyJackpot) html += row('💰 Jackpots', s.luckyJackpot + 'x');
   }
 
   list.innerHTML = html;
