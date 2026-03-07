@@ -199,6 +199,20 @@ function buildAchievementDefs() {
       check: () => state.totalEarned >= n
     });
   });
+  // Upgrade mastery (all upgrades for an animal)
+  ANIMALS.forEach(a => {
+    defs.push({
+      id: 'upgmax_' + a.id, emoji: a.emoji, name: a.name + '-meester',
+      desc: 'Alle ' + a.name.toLowerCase() + '-upgrades gekocht!', group: 'Upgrades',
+      check: () => a.upgrades.every(u => !!state.upgrades[u.id])
+    });
+  });
+  defs.push({
+    id: 'upgmax_alle', emoji: '🏅', name: 'Volledig getraind!',
+    desc: 'Alle dier-upgrades gekocht!', group: 'Upgrades',
+    check: () => ANIMALS.every(a => a.upgrades.every(u => !!state.upgrades[u.id]))
+  });
+
   // Special
   defs.push({
     id: 'alle_dieren', emoji: '🌈', name: 'Alle dieren!',
