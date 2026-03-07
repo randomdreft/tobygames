@@ -293,9 +293,9 @@ class Game {
         this.police = [];
         this._spawnPolice();
 
-        // Initial jerrycans
+        // Initial jerrycans (plenty to find)
         this.jerrycans = [];
-        for (let i = 0; i < 3; i++) this._spawnJerrycan();
+        for (let i = 0; i < 5; i++) this._spawnJerrycan();
 
         this._updateHUD();
     }
@@ -325,7 +325,8 @@ class Game {
                 speed: 0,
                 w: 42, h: 26,
                 maxSpeed: 130 + this.police.length * 8,
-                stuckTimer: 0
+                randomBias: (Math.random() - 0.5) * 60, // variation in pathfinding
+                chosenAngle: angle
             });
             return;
         }
@@ -341,7 +342,7 @@ class Game {
             // Not too close to existing jerrycans
             let tooClose = false;
             for (const j of this.jerrycans) {
-                if (dist(x, y, j.x, j.y) < 150) { tooClose = true; break; }
+                if (dist(x, y, j.x, j.y) < 100) { tooClose = true; break; }
             }
             if (tooClose) continue;
             this.jerrycans.push({ x, y });
@@ -477,51 +478,76 @@ class Game {
             const p = this.player;
             const dx = p.x - cop.x;
             const dy = p.y - cop.y;
-            const d = Math.hypot(dx, dy);
 
-            // Target angle toward player
-            const targetAngle = Math.atan2(dy, dx);
+            // Determine road context
+            const cx = ((cop.x % CELL) + CELL) % CELL;
+            const cy = ((cop.y % CELL) + CELL) % CELL;
+            const onVRoad = cx < ROAD_W;  // on a vertical road strip
+            const onHRoad = cy < ROAD_W;  // on a horizontal road strip
+            const atIntersection = onVRoad && onHRoad;
+
+            let targetAngle;
+
+            if (atIntersection) {
+                // At intersection: pick the direction that brings us closest
+                // Use Manhattan-optimal: go along the axis with larger gap
+                // Small random factor so cops don't all behave identically
+                const absDx = Math.abs(dx), absDy = Math.abs(dy);
+                const preferX = absDx > absDy + (cop.randomBias || 0);
+                if (preferX) {
+                    targetAngle = dx > 0 ? 0 : Math.PI;
+                } else {
+                    targetAngle = dy > 0 ? Math.PI / 2 : -Math.PI / 2;
+                }
+                // Remember chosen direction until we leave intersection
+                cop.chosenAngle = targetAngle;
+            } else if (onHRoad) {
+                // On horizontal road: drive left/right toward player X
+                // Unless we're close enough in X, then head to nearest intersection to turn
+                if (Math.abs(dx) < ROAD_W) {
+                    // Close in X: head toward nearest vertical road to turn
+                    const nearestVRoad = Math.round(cop.x / CELL) * CELL + ROAD_W / 2;
+                    targetAngle = nearestVRoad > cop.x ? 0 : Math.PI;
+                } else {
+                    targetAngle = dx > 0 ? 0 : Math.PI;
+                }
+                // Stay centered on horizontal road (correct Y drift)
+                const roadCenterY = Math.round(cop.y / CELL) * CELL + ROAD_W / 2;
+                cop.y = lerp(cop.y, roadCenterY, 8 * dt);
+            } else if (onVRoad) {
+                // On vertical road: drive up/down toward player Y
+                if (Math.abs(dy) < ROAD_W) {
+                    const nearestHRoad = Math.round(cop.y / CELL) * CELL + ROAD_W / 2;
+                    targetAngle = nearestHRoad > cop.y ? Math.PI / 2 : -Math.PI / 2;
+                } else {
+                    targetAngle = dy > 0 ? Math.PI / 2 : -Math.PI / 2;
+                }
+                // Stay centered on vertical road (correct X drift)
+                const roadCenterX = Math.round(cop.x / CELL) * CELL + ROAD_W / 2;
+                cop.x = lerp(cop.x, roadCenterX, 8 * dt);
+            } else {
+                // Off-road (shouldn't happen): drive back to nearest road
+                const snap = nearestRoadCenter(cop.x, cop.y);
+                targetAngle = Math.atan2(snap.y - cop.y, snap.x - cop.x);
+            }
+
+            // Smooth turning (fast enough to corner well)
             let angleDiff = targetAngle - cop.angle;
             while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
             while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
+            cop.angle += clamp(angleDiff, -5 * dt, 5 * dt);
 
-            cop.angle += clamp(angleDiff, -2.5 * dt, 2.5 * dt);
-
-            // Speed: approach max, slow at turns
-            const turnPenalty = 1 - Math.abs(angleDiff) / Math.PI * 0.5;
+            // Speed: fast on straights, slow into turns
+            const turnPenalty = 1 - Math.min(Math.abs(angleDiff) / Math.PI, 0.6);
             const targetSpeed = cop.maxSpeed * turnPenalty;
-            cop.speed = lerp(cop.speed, targetSpeed, 2 * dt);
+            cop.speed = lerp(cop.speed, targetSpeed, 3 * dt);
 
-            // Movement with building collision
-            const nx = cop.x + Math.cos(cop.angle) * cop.speed * dt;
-            const ny = cop.y + Math.sin(cop.angle) * cop.speed * dt;
+            // Move
+            cop.x += Math.cos(cop.angle) * cop.speed * dt;
+            cop.y += Math.sin(cop.angle) * cop.speed * dt;
 
-            const onRoadX = isRoad(nx, cop.y);
-            const onRoadY = isRoad(cop.x, ny);
-            const onRoadBoth = isRoad(nx, ny);
-
-            if (onRoadBoth) {
-                cop.x = nx;
-                cop.y = ny;
-                cop.stuckTimer = 0;
-            } else if (onRoadX) {
-                cop.x = nx;
-                cop.stuckTimer = 0;
-            } else if (onRoadY) {
-                cop.y = ny;
-                cop.stuckTimer = 0;
-            } else {
-                cop.stuckTimer += dt;
-                // If stuck, snap toward nearest road center
-                if (cop.stuckTimer > 0.5) {
-                    const snap = nearestRoadCenter(cop.x, cop.y);
-                    cop.x = lerp(cop.x, snap.x, 3 * dt);
-                    cop.y = lerp(cop.y, snap.y, 3 * dt);
-                }
-            }
-
-            cop.x = clamp(cop.x, 20, WORLD - 20);
-            cop.y = clamp(cop.y, 20, WORLD - 20);
+            cop.x = clamp(cop.x, ROAD_W / 2, WORLD - ROAD_W / 2);
+            cop.y = clamp(cop.y, ROAD_W / 2, WORLD - ROAD_W / 2);
         }
     }
 
@@ -597,10 +623,10 @@ class Game {
             cop.maxSpeed = Math.min(200, 130 + this.time * 0.4);
         }
 
-        // Jerrycan spawning
+        // Jerrycan spawning (keep the map stocked)
         this.jerrycanTimer += dt;
-        const jerryInterval = Math.min(8, 4 + this.time * 0.02);
-        if (this.jerrycanTimer > jerryInterval && this.jerrycans.length < 3) {
+        const jerryInterval = Math.min(5, 2 + this.time * 0.015);
+        if (this.jerrycanTimer > jerryInterval && this.jerrycans.length < 6) {
             this._spawnJerrycan();
             this.jerrycanTimer = 0;
         }
