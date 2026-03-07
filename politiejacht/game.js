@@ -37,23 +37,18 @@ function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
 function dist(x1, y1, x2, y2) { return Math.hypot(x2 - x1, y2 - y1); }
 function lerp(a, b, t) { return a + (b - a) * t; }
 
-function nearestRoadPos(x, y) {
-    // Snap to nearest road position
-    const cx = ((x % CELL) + CELL) % CELL;
-    const cy = ((y % CELL) + CELL) % CELL;
-    const onH = cx < ROAD_W;
-    const onV = cy < ROAD_W;
-    if (onH || onV) return { x, y }; // already on road
-    // Find nearest road edge
-    const distToLeft = cx - ROAD_W;
-    const distToTop = cy - ROAD_W;
-    const distToRight = CELL - cx;
-    const distToBottom = CELL - cy;
-    const minDist = Math.min(distToLeft, distToTop, distToRight, distToBottom);
-    if (minDist === distToLeft) return { x: x - distToLeft, y };
-    if (minDist === distToTop) return { x, y: y - distToTop };
-    if (minDist === distToRight) return { x: x + distToRight, y };
-    return { x, y: y + distToBottom };
+function nearestRoadCenter(x, y) {
+    // Snap to the CENTER of the nearest intersection (safe for car-sized entities)
+    const cellX = Math.round(x / CELL);
+    const cellY = Math.round(y / CELL);
+    return { x: cellX * CELL + ROAD_W / 2, y: cellY * CELL + ROAD_W / 2 };
+}
+
+function canDrive(x, y, radius) {
+    // Circle-based road check: test center + 4 cardinal points at given radius
+    if (!isRoad(x, y)) return false;
+    return isRoad(x + radius, y) && isRoad(x - radius, y)
+        && isRoad(x, y + radius) && isRoad(x, y - radius);
 }
 
 // === GAME CLASS ===
@@ -285,13 +280,13 @@ class Game {
         this.particles = [];
         this.renderer.tireMarks = [];
 
-        // Player start position: center of the world, on a road
+        // Player start position: center of nearest intersection
         const center = WORLD / 2;
-        const startPos = nearestRoadPos(center, center);
+        const startPos = nearestRoadCenter(center, center);
         this.player = {
             x: startPos.x, y: startPos.y,
             angle: 0, speed: 0,
-            w: 40, h: 24
+            w: 40, h: 24, r: 14 // r = collision radius
         };
 
         // Initial police car
@@ -318,7 +313,7 @@ class Game {
 
             x = clamp(x, ROAD_W / 2, WORLD - ROAD_W / 2);
             y = clamp(y, ROAD_W / 2, WORLD - ROAD_W / 2);
-            const snap = nearestRoadPos(x, y);
+            const snap = nearestRoadCenter(x, y);
             x = snap.x; y = snap.y;
 
             // Not too close to player
@@ -447,37 +442,22 @@ class Game {
         const turnDir = p.speed >= 0 ? 1 : -1;
         p.angle += turnInput * PLAYER_TURN * speedFactor * turnDir * dt;
 
-        // Movement with road collision
-        const nx = p.x + Math.cos(p.angle) * p.speed * dt;
-        const ny = p.y + Math.sin(p.angle) * p.speed * dt;
+        // Movement with road collision (circle-based for smooth driving)
+        const moveX = Math.cos(p.angle) * p.speed * dt;
+        const moveY = Math.sin(p.angle) * p.speed * dt;
+        const nx = p.x + moveX;
+        const ny = p.y + moveY;
 
-        // Check all four corners of the car
-        const corners = this._carCorners(nx, ny, p.angle, p.w, p.h);
-        let blocked = false;
-        for (const c of corners) {
-            if (!isRoad(c.x, c.y)) { blocked = true; break; }
-        }
-
-        if (!blocked) {
+        if (canDrive(nx, ny, p.r)) {
             p.x = nx;
             p.y = ny;
         } else {
-            // Try sliding along X only
-            const nxOnly = p.x + Math.cos(p.angle) * p.speed * dt;
-            const cornersX = this._carCorners(nxOnly, p.y, p.angle, p.w, p.h);
-            let xOk = true;
-            for (const c of cornersX) { if (!isRoad(c.x, c.y)) { xOk = false; break; } }
-
-            const nyOnly = p.y + Math.sin(p.angle) * p.speed * dt;
-            const cornersY = this._carCorners(p.x, nyOnly, p.angle, p.w, p.h);
-            let yOk = true;
-            for (const c of cornersY) { if (!isRoad(c.x, c.y)) { yOk = false; break; } }
-
-            if (xOk) p.x = nxOnly;
-            if (yOk) p.y = nyOnly;
-            if (!xOk && !yOk) {
-                p.speed *= 0.5; // Bounce off walls
-            }
+            // Try sliding: X only, then Y only
+            const xOk = canDrive(p.x + moveX, p.y, p.r);
+            const yOk = canDrive(p.x, p.y + moveY, p.r);
+            if (xOk) p.x += moveX;
+            if (yOk) p.y += moveY;
+            if (!xOk && !yOk) p.speed *= 0.5;
         }
 
         // Clamp to world
@@ -490,16 +470,7 @@ class Game {
         }
     }
 
-    _carCorners(x, y, angle, w, h) {
-        const cos = Math.cos(angle), sin = Math.sin(angle);
-        const hw = w / 2, hh = h / 2 + 2;
-        return [
-            { x: x + cos * hw - sin * hh, y: y + sin * hw + cos * hh },
-            { x: x + cos * hw + sin * hh, y: y + sin * hw - cos * hh },
-            { x: x - cos * hw - sin * hh, y: y - sin * hw + cos * hh },
-            { x: x - cos * hw + sin * hh, y: y - sin * hw - cos * hh },
-        ];
-    }
+    // (collision is now circle-based via canDrive)
 
     updatePolice(dt) {
         for (const cop of this.police) {
@@ -541,9 +512,9 @@ class Game {
                 cop.stuckTimer = 0;
             } else {
                 cop.stuckTimer += dt;
-                // If stuck, try to find road
+                // If stuck, snap toward nearest road center
                 if (cop.stuckTimer > 0.5) {
-                    const snap = nearestRoadPos(cop.x, cop.y);
+                    const snap = nearestRoadCenter(cop.x, cop.y);
                     cop.x = lerp(cop.x, snap.x, 3 * dt);
                     cop.y = lerp(cop.y, snap.y, 3 * dt);
                 }
