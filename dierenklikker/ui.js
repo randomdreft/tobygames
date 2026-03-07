@@ -928,6 +928,7 @@ const LUCKY_JACKPOT_CHANCE = 0.05;  // 5% jackpot
 
 let luckyNextSpawn = 0;
 let luckyActive = [];
+let luckyRecentCatch = 0;
 
 function getLuckyInterval() {
   // Faster spawns with more prestige stars (10% faster per 5 stars, max 40%)
@@ -995,9 +996,11 @@ function clickLucky(el) {
   sfxLuckyClick();
   state.stats.luckyClicked++;
 
-  // Check if two are active (double catch)
+  // Check if two are caught (count recently removed ones too)
   const activeCount = luckyActive.filter(e => e.classList.contains('lucky-caught')).length;
-  if (activeCount >= 2) state.stats.luckyDouble++;
+  if (activeCount >= 2 || (activeCount >= 1 && luckyRecentCatch > 0)) state.stats.luckyDouble++;
+  luckyRecentCatch++;
+  setTimeout(() => luckyRecentCatch--, 2000);
 
   // Determine reward
   const roll = Math.random();
