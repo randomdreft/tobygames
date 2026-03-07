@@ -366,7 +366,7 @@ function chooseBuff(buffId) {
     showToast(buff.emoji + ' Jackpot! +' + formatNumber(bonus) + ' punten!');
   } else {
     // Set timed buff
-    activeBuff = { type: buff.id, endsAt: Date.now() + BUFF_DURATION, emoji: buff.emoji, name: buff.name, color: buff.color };
+    activeBuff = { type: buff.id, endsAt: Date.now() + BUFF_DURATION, emoji: buff.emoji, name: buff.name, color: buff.color, desc: buff.desc };
     showToast(buff.emoji + ' ' + buff.name + ' actief voor 30 seconden!');
   }
 

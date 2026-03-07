@@ -659,7 +659,7 @@ function render() {
     buffInd.style.visibility = 'visible';
     buffInd.style.background = curBuff.color + '30';
     buffInd.style.color = curBuff.color;
-    buffInd.innerHTML = curBuff.emoji + ' ' + curBuff.name + ' — ' + remaining + 's';
+    buffInd.innerHTML = curBuff.emoji + ' ' + curBuff.name + ' — ' + remaining + 's' + (curBuff.desc ? '<div class="buff-desc">' + curBuff.desc + '</div>' : '');
   } else if (buffInd) {
     buffInd.style.visibility = 'hidden';
     buffInd.innerHTML = '';
@@ -1035,7 +1035,7 @@ function clickLucky(el) {
       state.allTime.totalEarned += bonus;
       showToast('\uD83D\uDC1E ' + buff.emoji + ' ' + buff.name + '! +' + formatNumber(bonus) + ' punten!');
     } else {
-      activeBuff = { type: buff.id, endsAt: Date.now() + BUFF_DURATION, emoji: buff.emoji, name: buff.name, color: buff.color };
+      activeBuff = { type: buff.id, endsAt: Date.now() + BUFF_DURATION, emoji: buff.emoji, name: buff.name, color: buff.color, desc: buff.desc };
       showToast('\uD83D\uDC1E ' + buff.emoji + ' ' + buff.name + ' actief voor 30 seconden!');
     }
   } else {
