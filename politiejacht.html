@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Politiejacht - TobyGames</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚔</text></svg>">
+<link rel="stylesheet" href="politiejacht/style.css">
+</head>
+<body>
+<a href="index.html" class="back-btn">&larr; TobyGames</a>
+
+<div id="game-container">
+    <canvas id="gameCanvas"></canvas>
+
+    <!-- HUD -->
+    <div id="hud">
+        <div id="fuel-display">
+            <span id="fuel-icon">&#x26FD;</span>
+            <div id="fuel-bar-container">
+                <div id="fuel-bar"></div>
+            </div>
+            <span id="fuel-value">60</span>
+        </div>
+        <div id="stats-display">
+            <span id="time-display">0:00</span>
+            <span id="collected-display">0 &#x26FD;</span>
+        </div>
+    </div>
+
+    <!-- Start Screen -->
+    <div id="start-screen" class="overlay">
+        <h1>&#x1F694; Politiejacht</h1>
+        <p>
+            Vlucht voor de politie door de stad!
+            Rijden kost brandstof &mdash; verzamel jerrycans om je tank te vullen.
+            Hoeveel brandstof kun jij overhouden?
+        </p>
+        <div id="mode-toggle">
+            <button id="mode-fuel" class="mode-btn active">&#x26FD; Benzine</button>
+            <button id="mode-ev" class="mode-btn">&#x1F50B; Elektrisch</button>
+        </div>
+        <button id="start-btn" class="action-btn">&#x25B6; Start de Jacht!</button>
+        <div id="controls-info">
+            <p><kbd>&#x2191;</kbd><kbd>&#x2193;</kbd><kbd>&#x2190;</kbd><kbd>&#x2192;</kbd> of <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> &mdash; Touch: sleep om te sturen</p>
+        </div>
+    </div>
+
+    <!-- Countdown -->
+    <div id="countdown" class="overlay" style="display:none">
+        <span id="countdown-text">3</span>
+    </div>
+
+    <!-- Game Over -->
+    <div id="gameover-screen" class="overlay" style="display:none">
+        <h1 id="gameover-title">&#x1F4A5; Gepakt!</h1>
+        <div id="gameover-reason"></div>
+        <div id="final-score">Score: <span id="score-value">0</span></div>
+        <div id="scoreboard">
+            <h3>&#x1F3C6; Top 10</h3>
+            <div id="score-list"></div>
+        </div>
+        <button id="restart-btn" class="action-btn">&#x1F504; Opnieuw Spelen</button>
+    </div>
+
+    <!-- Touch Joystick -->
+    <div id="joystick-base">
+        <div id="joystick-knob"></div>
+    </div>
+</div>
+
+<script src="politiejacht/sound.js"></script>
+<script src="politiejacht/renderer.js"></script>
+<script src="politiejacht/game.js"></script>
+</body>
+</html>
