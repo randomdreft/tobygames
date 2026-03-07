@@ -124,7 +124,7 @@ img.emoji {
   margin-top: 12px; font-size: 14px; color: var(--text-dim); text-align: center;
 }
 /* Daily challenges card */
-#daily-challenges { width: 100%; }
+#daily-challenges { width: 100%; margin-top: auto; }
 .dc-card {
   margin-top: 14px; background: rgba(0,0,0,0.3); border-radius: 12px;
   padding: 10px 12px; border: 1px solid rgba(255,215,0,0.15); width: 100%;
