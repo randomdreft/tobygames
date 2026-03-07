@@ -520,9 +520,18 @@ class Game {
             const onHRoad = cy < ROAD_W;
             const atIntersection = onVRoad && onHRoad;
 
+            // Check if in a park (free movement)
+            const gx = Math.floor(cop.x / CELL);
+            const gy = Math.floor(cop.y / CELL);
+            const inPark = gx >= 0 && gx < GRID_N && gy >= 0 && gy < GRID_N
+                && _buildings[gy * GRID_N + gx] && _buildings[gy * GRID_N + gx].isPark;
+
             let targetAngle;
 
-            if (atIntersection) {
+            if (inPark && !onVRoad && !onHRoad) {
+                // In a park: drive straight toward player
+                targetAngle = Math.atan2(dy, dx);
+            } else if (atIntersection) {
                 // At intersection: pick direction, with per-cop variation
                 const absDx = Math.abs(dx), absDy = Math.abs(dy);
                 const preferX = absDx > absDy + cop.randomBias;
