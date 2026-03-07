@@ -4,909 +4,104 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Winkeltje - TobyGames</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        body {
-            font-family: Arial, sans-serif;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            padding: 20px;
-        }
-        
-        h1 {
-            color: white;
-            margin-bottom: 10px;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
-        }
-        
-        #gameCanvas {
-            border: 4px solid #333;
-            background: #8B7355;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            cursor: none;
-        }
-        
-        #ui {
-            margin-top: 15px;
-            color: white;
-            font-size: 18px;
-            text-align: center;
-            background: rgba(0,0,0,0.3);
-            padding: 10px 20px;
-            border-radius: 10px;
-        }
-        
-        #instructions {
-            margin-top: 10px;
-            color: white;
-            font-size: 14px;
-            text-align: center;
-            background: rgba(0,0,0,0.2);
-            padding: 10px;
-            border-radius: 5px;
-        }
-        
-        #gameOver {
-            display: none;
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(0, 0, 0, 0.9);
-            color: white;
-            padding: 30px;
-            border-radius: 15px;
-            text-align: center;
-            z-index: 1000;
-        }
-        
-        #gameOver h2 {
-            font-size: 2rem;
-            margin-bottom: 20px;
-        }
-        
-        #restartButton {
-            background: linear-gradient(45deg, #667eea, #764ba2);
-            color: white;
-            border: none;
-            padding: 15px 30px;
-            font-size: 1.2rem;
-            border-radius: 25px;
-            cursor: pointer;
-            margin-top: 20px;
-            font-weight: bold;
-        }
-        
-        #restartButton:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
-        }
-        
-        #gameControls {
-            margin-top: 15px;
-            display: flex;
-            gap: 10px;
-        }
-        
-        .control-button {
-            background: linear-gradient(45deg, #667eea, #764ba2);
-            color: white;
-            border: none;
-            padding: 10px 25px;
-            font-size: 1rem;
-            border-radius: 20px;
-            cursor: pointer;
-            font-weight: bold;
-            transition: all 0.2s ease;
-        }
-        
-        .control-button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.5);
-        }
-        
-        .control-button.paused {
-            background: linear-gradient(45deg, #27ae60, #2ecc71);
-        }
-        
-        #pauseOverlay {
-            display: none;
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(0, 0, 0, 0.8);
-            color: white;
-            padding: 30px 50px;
-            border-radius: 15px;
-            text-align: center;
-            z-index: 999;
-            font-size: 2rem;
-            font-weight: bold;
-        }
-    </style>
+    <link rel="stylesheet" href="winkeltje/style.css">
 </head>
 <body>
-    <h1>🛒 Winkeltje</h1>
-    <canvas id="gameCanvas" width="800" height="600"></canvas>
-    <div id="ui">
-        <div>Geld: €<span id="money">0</span></div>
-        <div>Klanten bediend: <span id="customersServed">0</span></div>
-        <div>Level: <span id="level">1</span></div>
-    </div>
-    <div id="instructions">
-        Gebruik de pijltjestoetsen om te bewegen. Druk op SPATIE om artikelen op te pakken bij de schappen, om artikelen aan klanten te geven bij de kassa, of om items weg te gooien bij de prullenbak! Je kunt maximaal 5 items tegelijk dragen.
-    </div>
-    <div id="gameControls">
-        <button class="control-button" id="pauseButton" onclick="togglePause()">⏸️ Pauze</button>
-        <button class="control-button" onclick="restartGame()">🔄 Herstart</button>
-    </div>
-    <div id="pauseOverlay">⏸️ GEPAUZEERD</div>
-    <div id="gameOver">
-        <h2>Game Over!</h2>
-        <p>Je hebt te veel geld verloren.</p>
-        <button id="restartButton" onclick="restartGame()">Opnieuw Beginnen</button>
+    <!-- Header -->
+    <div class="game-header">
+        <a href="index.html" class="back-link">< TobyGames</a>
+        <h1>Winkeltje</h1>
     </div>
 
+    <!-- HUD -->
+    <div class="hud">
+        <div class="hud-item">
+            <span class="icon">&#x1F4B0;</span>
+            <div>
+                <div class="value" id="hudMoney">&#x20AC;0</div>
+                <div class="label">Geld</div>
+            </div>
+        </div>
+        <div class="hud-item">
+            <span class="icon">&#x1F465;</span>
+            <div>
+                <div class="value" id="hudServed">0</div>
+                <div class="label">Bediend</div>
+            </div>
+        </div>
+        <div class="hud-item">
+            <span class="icon">&#x2B50;</span>
+            <div>
+                <div class="value" id="hudLevel">1</div>
+                <div class="label">Level</div>
+            </div>
+        </div>
+        <div class="hud-item">
+            <span class="icon">&#x1F324;</span>
+            <div>
+                <div class="value" id="hudDay">1</div>
+                <div class="label">Dag</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Carry bar -->
+    <div class="carry-bar" id="carryBar"></div>
+
+    <!-- Canvas -->
+    <div class="canvas-wrapper">
+        <canvas id="gameCanvas" width="800" height="500"></canvas>
+
+        <!-- Overlays inside wrapper -->
+        <div class="level-up-banner" id="levelBanner"></div>
+
+        <div class="overlay" id="pauseOverlay">
+            <div class="overlay-content">
+                <h2>Gepauzeerd</h2>
+                <p>Druk op <strong>ESC</strong> of <strong>P</strong> om verder te gaan.</p>
+                <button class="overlay-btn" onclick="Game.togglePause()">Hervat</button>
+            </div>
+        </div>
+
+        <div class="overlay" id="dayOverlay">
+            <div class="overlay-content"></div>
+        </div>
+
+        <div class="overlay" id="gameOverOverlay">
+            <div class="overlay-content"></div>
+        </div>
+
+        <!-- Upgrade panel -->
+        <div class="upgrade-panel" id="upgradePanel">
+            <h3>Upgrades</h3>
+            <div class="upgrade-list"></div>
+        </div>
+    </div>
+
+    <!-- Controls -->
+    <div class="controls-bar">
+        <button class="ctrl-btn" id="pauseBtn" onclick="Game.togglePause()">Pauze</button>
+        <button class="ctrl-btn" onclick="Game.toggleUpgradePanel()">Upgrades (U)</button>
+        <button class="ctrl-btn" onclick="Game.restart()">Herstart</button>
+    </div>
+
+    <!-- Instructions -->
+    <div class="instructions">
+        <kbd>Pijltjes</kbd> of <kbd>WASD</kbd> om te lopen &bull;
+        <kbd>Spatie</kbd> om items op te pakken, af te rekenen of weg te gooien &bull;
+        <kbd>U</kbd> voor upgrades &bull;
+        <kbd>P</kbd> / <kbd>ESC</kbd> voor pauze
+    </div>
+
+    <script src="winkeltje/data.js"></script>
+    <script src="winkeltje/renderer.js"></script>
+    <script src="winkeltje/game.js"></script>
     <script>
-        let canvas, ctx;
-        let money = 0;
-        let customersServed = 0;
-        let gameTime = 0;
-        let gameOver = false;
-        let currentLevel = 1;
-        let isPaused = false;
-        
-        // Item prices
-        const itemPrices = {
-            champignon: 1,
-            tomaat: 5,
-            broccoli: 8
-        };
-        
-        // Item emojis
-        const itemEmojis = {
-            champignon: '🍄',
-            tomaat: '🍅',
-            broccoli: '🥦'
-        };
-        
-        // Player
-        const player = {
-            x: 400,
-            y: 300,
-            width: 30,
-            height: 30,
-            speed: 3.6, // 20% faster (3 * 1.2)
-            carrying: [], // Array of max 5 items
-            maxCarrying: 5,
-            color: '#4CAF50'
-        };
-        
-        // Shelves (infinite items)
-        let shelves = [
-            { 
-                x: 150, 
-                y: 150, 
-                width: 150, 
-                height: 50, 
-                productType: 'champignon'
-            },
-            { 
-                x: 500, 
-                y: 150, 
-                width: 150, 
-                height: 50, 
-                productType: 'tomaat'
-            }
-        ];
-        
-        // Cash register
-        const cashRegister = {
-            x: 600,
-            y: 400,
-            width: 60,
-            height: 40
-        };
-        
-        // Trash can
-        const trashCan = {
-            x: 720, // Further right of cash register
-            y: 400,
-            width: 40,
-            height: 40
-        };
-        
-        // Customers
-        let customers = [];
-        let nextCustomerSpawn = 3000; // milliseconds
-        let lastCustomerSpawn = 0;
-        
-        // Keys
-        const keys = {
-            ArrowUp: false,
-            ArrowDown: false,
-            ArrowLeft: false,
-            ArrowRight: false,
-            ' ': false // Spacebar
-        };
-        
-        let spacePressed = false;
-        let spaceJustPressed = false;
-        let keydownHandler, keyupHandler;
-        let activeTimeouts = [];
-        
-        // Floating text particles (for money earned effects)
-        let floatingTexts = [];
-        
-        function addFloatingText(x, y, text, color = '#00FF00') {
-            floatingTexts.push({
-                x: x,
-                y: y,
-                text: text,
-                opacity: 1,
-                speed: 1.5
-            });
-        }
-        
-        function updateFloatingTexts() {
-            for (let i = floatingTexts.length - 1; i >= 0; i--) {
-                const ft = floatingTexts[i];
-                ft.y -= ft.speed; // Float upward
-                ft.opacity -= 0.02; // Fade out
-                
-                if (ft.opacity <= 0) {
-                    floatingTexts.splice(i, 1);
-                }
-            }
-        }
-        
-        function drawFloatingTexts() {
-            floatingTexts.forEach(ft => {
-                ctx.save();
-                ctx.globalAlpha = ft.opacity;
-                ctx.fillStyle = '#00FF00';
-                ctx.font = 'bold 16px Arial';
-                ctx.textAlign = 'center';
-                ctx.fillText(ft.text, ft.x, ft.y);
-                ctx.restore();
-            });
-        }
-        
-        // Item colors
-        const itemColors = {
-            champignon: '#F5F5DC',
-            tomaat: '#FF6347',
-            broccoli: '#90EE90'
-        };
-        
-        // Random customer colors
-        function getRandomCustomerColor() {
-            const colors = [
-                '#FFD700', '#FF6347', '#4CAF50', '#2196F3', '#9C27B0',
-                '#FF9800', '#00BCD4', '#E91E63', '#795548', '#607D8B',
-                '#FFEB3B', '#8BC34A', '#3F51B5', '#F44336', '#009688'
-            ];
-            return colors[Math.floor(Math.random() * colors.length)];
-        }
-        
-        // Initialize
-        function init() {
-            // Remove old event listeners if they exist
-            if (keydownHandler) {
-                document.removeEventListener('keydown', keydownHandler);
-            }
-            if (keyupHandler) {
-                document.removeEventListener('keyup', keyupHandler);
-            }
-            
-            // Clear all active timeouts
-            activeTimeouts.forEach(timeout => clearTimeout(timeout));
-            activeTimeouts = [];
-            
-            // Get canvas and context
-            canvas = document.getElementById('gameCanvas');
-            if (!canvas) {
-                console.error('Canvas element not found!');
-                return;
-            }
-            ctx = canvas.getContext('2d');
-            if (!ctx) {
-                console.error('Could not get 2D context!');
-                return;
-            }
-            
-            // Create event handlers
-            keydownHandler = (e) => {
-                if (e.key === ' ') {
-                    if (!spacePressed) {
-                        spacePressed = true;
-                        spaceJustPressed = true;
-                        keys[' '] = true;
-                        e.preventDefault();
-                    }
-                } else if (keys.hasOwnProperty(e.key)) {
-                    keys[e.key] = true;
-                    e.preventDefault();
-                }
-            };
-            
-            keyupHandler = (e) => {
-                if (e.key === ' ') {
-                    spacePressed = false;
-                    keys[' '] = false;
-                    e.preventDefault();
-                } else if (keys.hasOwnProperty(e.key)) {
-                    keys[e.key] = false;
-                    e.preventDefault();
-                }
-            };
-            
-            document.addEventListener('keydown', keydownHandler);
-            document.addEventListener('keyup', keyupHandler);
-            
-            gameLoop();
-        }
-        
-        // Update player position
-        function updatePlayer() {
-            let newX = player.x;
-            let newY = player.y;
-            
-            if (keys.ArrowUp) newY -= player.speed;
-            if (keys.ArrowDown) newY += player.speed;
-            if (keys.ArrowLeft) newX -= player.speed;
-            if (keys.ArrowRight) newX += player.speed;
-            
-            // Boundary check
-            if (newX >= 0 && newX <= canvas.width - player.width) {
-                player.x = newX;
-            }
-            if (newY >= 0 && newY <= canvas.height - player.height) {
-                player.y = newY;
-            }
-            
-            // Pick up items from shelves (only on spacebar press)
-            if (spaceJustPressed && player.carrying.length < player.maxCarrying) {
-                let itemPickedUp = false;
-                shelves.forEach(shelf => {
-                    const shelfCenterX = shelf.x + shelf.width / 2;
-                    const shelfCenterY = shelf.y + shelf.height / 2;
-                    const playerCenterX = player.x + player.width / 2;
-                    const playerCenterY = player.y + player.height / 2;
-                    const distance = Math.sqrt(
-                        Math.pow(shelfCenterX - playerCenterX, 2) + 
-                        Math.pow(shelfCenterY - playerCenterY, 2)
-                    );
-                    
-                    if (distance < 50 && !itemPickedUp) {
-                        // Infinite items - just add the product type
-                        player.carrying.push(shelf.productType);
-                        itemPickedUp = true;
-                        spaceJustPressed = false; // Consume the space press
-                    }
-                });
-            }
-            
-            // Trash can - throw away all items
-            if (spaceJustPressed && player.carrying.length > 0) {
-                const trashCenterX = trashCan.x + trashCan.width / 2;
-                const trashCenterY = trashCan.y + trashCan.height / 2;
-                const playerCenterX = player.x + player.width / 2;
-                const playerCenterY = player.y + player.height / 2;
-                const distance = Math.sqrt(
-                    Math.pow(trashCenterX - playerCenterX, 2) + 
-                    Math.pow(trashCenterY - playerCenterY, 2)
-                );
-                
-                if (distance < 50) {
-                    player.carrying = []; // Remove all items
-                    spaceJustPressed = false;
-                }
-            }
-            
-            // Deliver items to cash register (only on spacebar press)
-            if (spaceJustPressed && player.carrying.length > 0) {
-                const registerCenterX = cashRegister.x + cashRegister.width / 2;
-                const registerCenterY = cashRegister.y + cashRegister.height / 2;
-                const playerCenterX = player.x + player.width / 2;
-                const playerCenterY = player.y + player.height / 2;
-                const distance = Math.sqrt(
-                    Math.pow(registerCenterX - playerCenterX, 2) + 
-                    Math.pow(registerCenterY - playerCenterY, 2)
-                );
-                
-                if (distance < 50) {
-                    // Find the first customer in queue (at the cash register)
-                    const firstCustomer = customers.find(c => c.queuePosition === 0 && !c.served);
-                    
-                    if (firstCustomer) {
-                        // Check each item we're carrying against customer's order
-                        for (let i = player.carrying.length - 1; i >= 0; i--) {
-                            const item = player.carrying[i];
-                            // Check if customer wants this item
-                            const orderItem = firstCustomer.order.find(o => o.item === item && o.received < o.quantity);
-                            if (orderItem) {
-                                orderItem.received++;
-                                player.carrying.splice(i, 1);
-                                
-                                // Add 5 seconds to patience (50 = half of 100, which is 5 seconds out of 10)
-                                firstCustomer.patience = Math.min(firstCustomer.maxPatience, firstCustomer.patience + 50);
-                                
-                                // Check if customer has all items
-                                const allItemsReceived = firstCustomer.order.every(o => o.received >= o.quantity);
-                                if (allItemsReceived) {
-                                    firstCustomer.served = true;
-                                    let totalPrice = 0;
-                                    firstCustomer.order.forEach(o => {
-                                        totalPrice += itemPrices[o.item] * o.quantity;
-                                    });
-                                    money += totalPrice;
-                                    customersServed++;
-                                    
-                                    // Show floating euro text above player
-                                    addFloatingText(
-                                        player.x + player.width / 2,
-                                        player.y - 20,
-                                        `+€${totalPrice} 😊`
-                                    );
-                                    
-                                    checkLevelUp();
-                                    updateUI();
-                                    
-                                    // Remove customer and shift queue
-                                    const timeoutId = setTimeout(() => {
-                                        const idx = customers.findIndex(c => c === firstCustomer);
-                                        if (idx !== -1) {
-                                            customers.splice(idx, 1);
-                                            // Update queue positions
-                                            customers.forEach(c => {
-                                                if (c.queuePosition > 0) {
-                                                    c.queuePosition--;
-                                                }
-                                            });
-                                        }
-                                        // Remove timeout from active list
-                                        const timeoutIdx = activeTimeouts.indexOf(timeoutId);
-                                        if (timeoutIdx !== -1) {
-                                            activeTimeouts.splice(timeoutIdx, 1);
-                                        }
-                                    }, 500);
-                                    activeTimeouts.push(timeoutId);
-                                }
-                                spaceJustPressed = false; // Consume the space press
-                                break; // Only deliver one item at a time
-                            }
-                        }
-                    }
-                }
-            }
-            
-            // Reset spaceJustPressed after processing
-            if (spaceJustPressed) {
-                spaceJustPressed = false;
-            }
-            
-            // Check game over
-            if (money <= -1 && !gameOver) {
-                gameOver = true;
-                document.getElementById('gameOver').style.display = 'block';
-            }
-        }
-        
-        // Spawn customers
-        function spawnCustomer() {
-            if (gameOver) return;
-            
-            const now = Date.now();
-            const difficultyMultiplier = Math.max(0.3, 1 - (gameTime / 300000)); // Faster spawns over 5 minutes
-            const spawnInterval = nextCustomerSpawn * difficultyMultiplier;
-            
-            // Max 10 customers in queue
-            if (customers.length < 10 && now - lastCustomerSpawn > spawnInterval) {
-                // Available items based on level
-                const availableItems = currentLevel >= 2 
-                    ? ['champignon', 'tomaat', 'broccoli']
-                    : ['champignon', 'tomaat'];
-                
-                // Customer can want 1-3 different items (but not more than available items)
-                const maxItems = Math.min(3, availableItems.length);
-                const numItems = Math.floor(Math.random() * maxItems) + 1; // 1 to maxItems
-                const order = [];
-                const usedItems = [];
-                
-                for (let i = 0; i < numItems; i++) {
-                    // Get available items that haven't been used yet
-                    const remainingItems = availableItems.filter(item => !usedItems.includes(item));
-                    if (remainingItems.length === 0) break;
-                    
-                    const item = remainingItems[Math.floor(Math.random() * remainingItems.length)];
-                    usedItems.push(item);
-                    const quantity = Math.floor(Math.random() * 2) + 1; // 1 or 2 items
-                    order.push({
-                        item: item,
-                        quantity: quantity,
-                        received: 0
-                    });
-                }
-                
-                // Queue position is the current queue length
-                const queuePosition = customers.length;
-                
-                // 10 seconds = 10000ms, at 60fps (16.67ms per frame) = 600 frames
-                // patienceDecrease per frame = 100 / 600 = 0.1667
-                const patienceDecrease = 100 / 600; // Exactly 10 seconds
-                
-                customers.push({
-                    x: cashRegister.x - 40 - (queuePosition * 35), // Position in queue
-                    y: cashRegister.y,
-                    width: 25,
-                    height: 25,
-                    order: order, // Array of {item, quantity, received}
-                    patience: 100,
-                    maxPatience: 100,
-                    patienceDecrease: patienceDecrease, // Exactly 10 seconds
-                    served: false,
-                    queuePosition: queuePosition,
-                    color: getRandomCustomerColor()
-                });
-                
-                lastCustomerSpawn = now;
-                nextCustomerSpawn = Math.max(2000, 5000 - (gameTime / 100)); // Spawns get faster
-            }
-        }
-        
-        // Check level up
-        function checkLevelUp() {
-            if (money >= 200 && currentLevel === 1) {
-                currentLevel = 2;
-                // Increase max carrying capacity to 6
-                player.maxCarrying = 6;
-                // Add broccoli shelf
-                shelves.push({
-                    x: 325,
-                    y: 150,
-                    width: 150,
-                    height: 50,
-                    productType: 'broccoli'
-                });
-                updateUI();
-            }
-        }
-        
-        // Update customers
-        function updateCustomers() {
-            if (gameOver) return;
-            
-            // Use reverse iteration to safely remove items while iterating
-            for (let i = customers.length - 1; i >= 0; i--) {
-                const customer = customers[i];
-                
-                // Update positions based on queue
-                customer.x = cashRegister.x - 40 - (customer.queuePosition * 35);
-                
-                // Only decrease patience for the first customer in queue (at cash register)
-                if (!customer.served && customer.queuePosition === 0) {
-                    customer.patience -= customer.patienceDecrease;
-                    
-                    if (customer.patience <= 0) {
-                        // Customer leaves without paying - penalty
-                        let penalty = 0;
-                        customer.order.forEach(o => {
-                            penalty += itemPrices[o.item] * o.quantity;
-                        });
-                        money -= penalty;
-                        updateUI();
-                        customers.splice(i, 1);
-                        // Shift queue positions
-                        for (let j = 0; j < customers.length; j++) {
-                            if (customers[j].queuePosition > 0) {
-                                customers[j].queuePosition--;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        
-        // Draw functions
-        function drawPlayer() {
-            ctx.fillStyle = player.color;
-            ctx.fillRect(player.x, player.y, player.width, player.height);
-            
-            // Draw eyes
-            ctx.fillStyle = '#000';
-            ctx.fillRect(player.x + 8, player.y + 8, 4, 4);
-            ctx.fillRect(player.x + 18, player.y + 8, 4, 4);
-            
-            // Draw items being carried
-            player.carrying.forEach((item, index) => {
-                const offsetY = -15 - (index * 12);
-                ctx.fillStyle = itemColors[item];
-                ctx.beginPath();
-                ctx.arc(player.x + player.width / 2, player.y + offsetY, 8, 0, Math.PI * 2);
-                ctx.fill();
-            });
-        }
-        
-        function drawShelves() {
-            shelves.forEach(shelf => {
-                // Shelf base
-                ctx.fillStyle = '#8B4513';
-                ctx.fillRect(shelf.x, shelf.y, shelf.width, shelf.height);
-                
-                // Shelf border
-                ctx.strokeStyle = '#654321';
-                ctx.lineWidth = 2;
-                ctx.strokeRect(shelf.x, shelf.y, shelf.width, shelf.height);
-                
-                // Draw emoji for product type
-                ctx.font = '40px Arial';
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                ctx.fillText(
-                    itemEmojis[shelf.productType],
-                    shelf.x + shelf.width / 2,
-                    shelf.y + shelf.height / 2
-                );
-                
-                // Draw price above shelf
-                ctx.fillStyle = '#FFF';
-                ctx.font = 'bold 14px Arial';
-                ctx.textBaseline = 'bottom';
-                ctx.fillText(
-                    `€${itemPrices[shelf.productType]}`,
-                    shelf.x + shelf.width / 2,
-                    shelf.y - 5
-                );
-                
-                ctx.textAlign = 'left';
-                ctx.textBaseline = 'alphabetic';
-            });
-        }
-        
-        function drawCashRegister() {
-            ctx.fillStyle = '#C0C0C0';
-            ctx.fillRect(cashRegister.x, cashRegister.y, cashRegister.width, cashRegister.height);
-            
-            ctx.strokeStyle = '#808080';
-            ctx.lineWidth = 2;
-            ctx.strokeRect(cashRegister.x, cashRegister.y, cashRegister.width, cashRegister.height);
-            
-            // Draw register display
-            ctx.fillStyle = '#000';
-            ctx.font = '12px Arial';
-            ctx.fillText('KASSA', cashRegister.x + 10, cashRegister.y + 25);
-        }
-        
-        function drawTrashCan() {
-            // Trash can body
-            ctx.fillStyle = '#555';
-            ctx.fillRect(trashCan.x, trashCan.y, trashCan.width, trashCan.height);
-            
-            ctx.strokeStyle = '#333';
-            ctx.lineWidth = 2;
-            ctx.strokeRect(trashCan.x, trashCan.y, trashCan.width, trashCan.height);
-            
-            // Draw trash icon
-            ctx.fillStyle = '#FFF';
-            ctx.font = '24px Arial';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillText('🗑️', trashCan.x + trashCan.width / 2, trashCan.y + trashCan.height / 2);
-            ctx.textAlign = 'left';
-            ctx.textBaseline = 'alphabetic';
-        }
-        
-        function drawCustomers() {
-            customers.forEach(customer => {
-                // Customer body
-                ctx.fillStyle = customer.color;
-                ctx.fillRect(customer.x, customer.y, customer.width, customer.height);
-                
-                // Customer eyes
-                ctx.fillStyle = '#000';
-                ctx.fillRect(customer.x + 6, customer.y + 6, 3, 3);
-                ctx.fillRect(customer.x + 16, customer.y + 6, 3, 3);
-                
-                // Show what customer wants with emoji (above head)
-                ctx.fillStyle = '#FFF';
-                ctx.font = '10px Arial';
-                ctx.textAlign = 'center';
-                
-                // Count remaining items to calculate height needed
-                let itemCount = 0;
-                customer.order.forEach(orderItem => {
-                    const remaining = orderItem.quantity - orderItem.received;
-                    if (remaining > 0) itemCount++;
-                });
-                
-                // Draw order items above head (starting from closest to head, going up)
-                let currentY = customer.y - 8;
-                customer.order.forEach(orderItem => {
-                    const emoji = itemEmojis[orderItem.item];
-                    const remaining = orderItem.quantity - orderItem.received;
-                    if (remaining > 0) {
-                        ctx.fillText(
-                            `${emoji} x${remaining}`,
-                            customer.x + customer.width / 2,
-                            currentY
-                        );
-                        currentY -= 12;
-                    }
-                });
-                
-                // Patience bar (only for first customer in queue) - at the very top
-                if (customer.queuePosition === 0) {
-                    const barWidth = 40;
-                    const barHeight = 6;
-                    const barX = customer.x - 8;
-                    const barY = currentY - 5; // Above all the order items
-                    
-                    // Background
-                    ctx.fillStyle = '#333';
-                    ctx.fillRect(barX, barY, barWidth, barHeight);
-                    
-                    // Patience fill
-                    const patiencePercent = customer.patience / customer.maxPatience;
-                    ctx.fillStyle = patiencePercent > 0.5 ? '#0F0' : patiencePercent > 0.25 ? '#FF0' : '#F00';
-                    ctx.fillRect(barX, barY, barWidth * patiencePercent, barHeight);
-                    
-                    // Border
-                    ctx.strokeStyle = '#000';
-                    ctx.lineWidth = 1;
-                    ctx.strokeRect(barX, barY, barWidth, barHeight);
-                }
-                
-                ctx.textAlign = 'left';
-            });
-        }
-        
-        function drawFloor() {
-            // Draw floor tiles
-            ctx.fillStyle = '#8B7355';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            
-            // Draw grid pattern
-            ctx.strokeStyle = '#7A6345';
-            ctx.lineWidth = 1;
-            for (let x = 0; x < canvas.width; x += 40) {
-                ctx.beginPath();
-                ctx.moveTo(x, 0);
-                ctx.lineTo(x, canvas.height);
-                ctx.stroke();
-            }
-            for (let y = 0; y < canvas.height; y += 40) {
-                ctx.beginPath();
-                ctx.moveTo(0, y);
-                ctx.lineTo(canvas.width, y);
-                ctx.stroke();
-            }
-        }
-        
-        function draw() {
-            // Clear canvas
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            
-            // Draw everything
-            drawFloor();
-            drawShelves();
-            drawCashRegister();
-            drawTrashCan();
-            drawCustomers();
-            drawPlayer();
-            drawFloatingTexts();
-        }
-        
-        function updateUI() {
-            document.getElementById('money').textContent = money;
-            document.getElementById('customersServed').textContent = customersServed;
-            document.getElementById('level').textContent = currentLevel;
-        }
-        
-        // Restart game
-        function restartGame() {
-            // Clear all active timeouts
-            activeTimeouts.forEach(timeout => clearTimeout(timeout));
-            activeTimeouts = [];
-            
-            // Clear floating texts
-            floatingTexts = [];
-            
-            money = 0;
-            customersServed = 0;
-            gameTime = 0;
-            gameOver = false;
-            currentLevel = 1;
-            customers = [];
-            player.carrying = [];
-            player.x = 400;
-            player.y = 300;
-            player.maxCarrying = 5; // Reset to level 1 capacity
-            lastCustomerSpawn = 0;
-            
-            // Reset shelves
-            shelves = [
-                { 
-                    x: 150, 
-                    y: 150, 
-                    width: 150, 
-                    height: 50, 
-                    productType: 'champignon'
-                },
-                { 
-                    x: 500, 
-                    y: 150, 
-                    width: 150, 
-                    height: 50, 
-                    productType: 'tomaat'
-                }
-            ];
-            
-            document.getElementById('gameOver').style.display = 'none';
-            document.getElementById('pauseOverlay').style.display = 'none';
-            isPaused = false;
-            updatePauseButton();
-            updateUI();
-        }
-        
-        // Toggle pause
-        function togglePause() {
-            if (gameOver) return;
-            isPaused = !isPaused;
-            document.getElementById('pauseOverlay').style.display = isPaused ? 'block' : 'none';
-            updatePauseButton();
-        }
-        
-        function updatePauseButton() {
-            const btn = document.getElementById('pauseButton');
-            if (isPaused) {
-                btn.textContent = '▶️ Hervat';
-                btn.classList.add('paused');
-            } else {
-                btn.textContent = '⏸️ Pauze';
-                btn.classList.remove('paused');
-            }
-        }
-        
-        // Game loop
-        function gameLoop() {
-            if (!gameOver && !isPaused) {
-                gameTime += 16; // ~60 FPS
-            }
-            
-            if (!isPaused) {
-                updatePlayer();
-                if (!gameOver) {
-                    spawnCustomer();
-                    updateCustomers();
-                }
-                updateFloatingTexts();
-            }
-            draw();
-            
-            requestAnimationFrame(gameLoop);
-        }
-        
-        // Start game when DOM is ready
         if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', init);
+            document.addEventListener('DOMContentLoaded', Game.init);
         } else {
-            init();
+            Game.init();
         }
-        
-        // Make functions globally accessible
-        window.restartGame = restartGame;
-        window.togglePause = togglePause;
     </script>
 </body>
 </html>
