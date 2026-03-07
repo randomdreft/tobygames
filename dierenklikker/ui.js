@@ -743,6 +743,7 @@ function renderDailyChallenges() {
   html += '<div class="dc-header">📋 Dagelijkse uitdagingen';
   if (state.daily.streak > 0) html += '<span class="dc-streak">🔥 ' + state.daily.streak + 'd</span>';
   html += '</div>';
+  html += '<div class="dc-items">';
   state.daily.challenges.forEach((cid, i) => {
     const c = DAILY_CHALLENGE_POOL.find(x => x.id === cid);
     if (!c) return;
@@ -759,6 +760,7 @@ function renderDailyChallenges() {
     }
     html += '</div></div>';
   });
+  html += '</div>'; // close dc-items
   if (allDone) {
     html += '<div class="dc-bonus">🌟 Alle uitdagingen voltooid!</div>';
   }

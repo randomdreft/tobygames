@@ -124,9 +124,10 @@ img.emoji {
   margin-top: 12px; font-size: 14px; color: var(--text-dim); text-align: center;
 }
 /* Daily challenges card */
+#daily-challenges { width: 100%; }
 .dc-card {
   margin-top: 14px; background: rgba(0,0,0,0.3); border-radius: 12px;
-  padding: 10px 12px; border: 1px solid rgba(255,215,0,0.15);
+  padding: 10px 12px; border: 1px solid rgba(255,215,0,0.15); width: 100%;
 }
 .dc-card.dc-done { border-color: rgba(255,215,0,0.4); }
 .dc-header {
@@ -134,6 +135,17 @@ img.emoji {
   display: flex; justify-content: space-between; align-items: center;
 }
 .dc-streak { font-size: 12px; color: var(--orange); }
+.dc-items { display: flex; flex-direction: column; gap: 2px; }
+@media (min-width: 900px) {
+  .dc-items { flex-direction: row; gap: 8px; }
+  .dc-item { flex: 1; flex-direction: column; align-items: flex-start;
+    border-bottom: none; border-right: 1px solid rgba(255,255,255,0.05);
+    padding: 4px 8px 4px 0;
+  }
+  .dc-item:last-of-type { border-right: none; padding-right: 0; }
+  .dc-emoji { width: auto; }
+  .dc-info { width: 100%; }
+}
 .dc-item {
   display: flex; align-items: center; gap: 8px; padding: 5px 0;
   border-bottom: 1px solid rgba(255,255,255,0.05);
