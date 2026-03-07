@@ -213,6 +213,27 @@ function buildAchievementDefs() {
     check: () => ANIMALS.every(a => a.upgrades.every(u => !!state.upgrades[u.id]))
   });
 
+  // Balance milestones (current points)
+  const balanceMilestones = [
+    [1000, 'Spaarpotje', '🐷'],
+    [100000, 'Volle portemonnee', '👛'],
+    [10e6, 'Kluis vol', '🔐'],
+    [1e9, 'Bankier', '🏦'],
+    [100e9, 'Goudreserve', '🥇'],
+    [10e12, 'Schatkamer', '💎'],
+    [1e15, 'Fort Knox', '🏰'],
+    [100e15, 'Drakenschat', '🐲'],
+    [10e18, 'Sterrenkapitaal', '🌠'],
+    [1e21, 'Universeelrijk', '🌌']
+  ];
+  balanceMilestones.forEach(([n, name, em]) => {
+    defs.push({
+      id: 'saldo_' + n, emoji: em, name: name,
+      desc: formatNumber(n) + ' punten op je saldo!', group: 'Saldo',
+      check: () => state.currentPoints >= n
+    });
+  });
+
   // Lucky bug achievements
   defs.push({
     id: 'lucky_1', emoji: '🐞', name: 'Geluksvogel',
