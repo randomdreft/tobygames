@@ -913,6 +913,7 @@ function endGroter() {
   groterActive = false; mgSetActive('groter', false);
   state.minigames.groterLast = Date.now();
   state.stats.groterPlayed++;
+  if (groterScore >= 10) state.stats.groterPerfect++;
 
   const bonus = getTotalDps() * 60 * groterScore;
   state.currentPoints += bonus;
@@ -1265,6 +1266,7 @@ function endVoedsel() {
   voedselActive = false; mgSetActive('voedsel', false);
   state.minigames.voedselLast = Date.now();
   state.stats.voedselPlayed++;
+  if (voedselScore >= 10) state.stats.voedselPerfect++;
 
   const bonus = getTotalDps() * 60 * voedselScore;
   state.currentPoints += bonus;

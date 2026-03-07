@@ -23,8 +23,8 @@ function defaultState() {
       memoryPlayed: 0, memoryPairsFound: 0, memoryWon: 0,
       tellenPlayed: 0, tellenCorrect: 0, tellenWrong: 0,
       indringerPlayed: 0, indringerBest: 0,
-      groterPlayed: 0, groterCorrect: 0, groterWrong: 0,
-      voedselPlayed: 0, voedselCorrect: 0, voedselWrong: 0,
+      groterPlayed: 0, groterCorrect: 0, groterWrong: 0, groterPerfect: 0,
+      voedselPlayed: 0, voedselCorrect: 0, voedselWrong: 0, voedselPerfect: 0,
       racePlayed: 0, raceWon: 0,
       puzzelPlayed: 0, puzzelWon: 0, puzzelBestMoves: 0,
       luckyClicked: 0, luckyMissed: 0, luckyDouble: 0, luckyJackpot: 0
