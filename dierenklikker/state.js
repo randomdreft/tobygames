@@ -477,7 +477,21 @@ function exportSave() {
 
 function showImportModal() {
   document.getElementById('import-text').value = stateToIni();
+  document.getElementById('import-file-name').textContent = '';
+  const fileInput = document.getElementById('import-file');
+  if (fileInput) fileInput.value = '';
   showModal('import-modal');
+}
+
+function loadImportFile(input) {
+  const file = input.files[0];
+  if (!file) return;
+  document.getElementById('import-file-name').textContent = file.name;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    document.getElementById('import-text').value = e.target.result;
+  };
+  reader.readAsText(file);
 }
 
 function doImport() {

@@ -8,7 +8,7 @@
 <title>Dierenklikker - TobyGames</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐉</text></svg>">
 <script src="https://cdn.jsdelivr.net/npm/@twemoji/api@latest/dist/twemoji.min.js" crossorigin="anonymous"></script>
-<link rel="stylesheet" href="dierenklikker/style.css?v=2">
+<link rel="stylesheet" href="dierenklikker/style.css?v=3">
 </head>
 <body>
 <a href="index.html" class="back-btn">&larr; TobyGames</a>
@@ -268,7 +268,14 @@
 <div class="modal-overlay" id="import-modal">
   <div class="modal-box">
     <h2>Savegame importeren</h2>
-    <p>Plak hieronder je savegame. Je mag het ook aanpassen... als je durft! 😏</p>
+    <p>Plak hieronder je savegame, of kies een bestand. Je mag het ook aanpassen... als je durft! 😏</p>
+    <div class="import-file-row">
+      <label class="modal-btn secondary import-file-label">
+        📂 Kies bestand
+        <input type="file" id="import-file" accept=".txt,.ini" style="display:none" onchange="loadImportFile(this)">
+      </label>
+      <span id="import-file-name" style="font-size:12px;opacity:0.7"></span>
+    </div>
     <textarea id="import-text" spellcheck="false"></textarea>
     <div class="modal-buttons">
       <button class="modal-btn primary" onclick="doImport()">Laden!</button>
@@ -308,7 +315,7 @@
 
 <script src="dierenklikker/sound.js?v=2"></script>
 <script src="dierenklikker/data.js?v=3"></script>
-<script src="dierenklikker/state.js?v=2"></script>
+<script src="dierenklikker/state.js?v=3"></script>
 <script src="dierenklikker/engine.js?v=2"></script>
 <script src="dierenklikker/minigames.js?v=3"></script>
 <script src="dierenklikker/ui.js?v=3"></script>
