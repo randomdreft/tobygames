@@ -1144,7 +1144,7 @@ img.emoji {
   50% { transform: translateY(-8px) rotate(10deg); }
 }
 .zoo-poop {
-  position: absolute; font-size: 28px; cursor: pointer;
+  position: absolute; font-size: 56px; cursor: pointer;
   pointer-events: all;
   animation: zoo-poop-wobble 2s ease-in-out infinite;
   filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
