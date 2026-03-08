@@ -586,9 +586,9 @@ function buildUpgradeShop() {
   const total = allUpgrades.length;
   const pct = total ? Math.floor(bought / total * 100) : 0;
   let html = '<div class="upg-summary">' + bought + '/' + total + ' upgrades (' + pct + '%)</div>';
-  html += buildUpgradeCategory('👆 Klik-upgrades', CLICK_UPGRADES, null, 'sp_ba_click');
-  html += buildUpgradeCategory('🌍 Globale upgrades', GLOBAL_UPGRADES, null, 'sp_ba_global');
-  html += buildUpgradeCategory('🌙 Offline upgrades', OFFLINE_UPGRADES, null, 'sp_ba_offline');
+  html += buildUpgradeCategory('👆 Klik-upgrades', CLICK_UPGRADES);
+  html += buildUpgradeCategory('🌍 Globale upgrades', GLOBAL_UPGRADES);
+  html += buildUpgradeCategory('🌙 Offline upgrades', OFFLINE_UPGRADES);
   ANIMALS.forEach(a => {
     html += buildUpgradeCategory(a.emoji + ' ' + a.name + '-upgrades', a.upgrades, a, 'sp_ba_animals');
   });

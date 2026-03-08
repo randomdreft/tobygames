@@ -905,11 +905,7 @@ function buyUpgrade(upgradeId) {
 }
 
 function buyAllCategory(catKey) {
-  const catUpgrades = catKey === 'click' ? CLICK_UPGRADES
-    : catKey === 'global' ? GLOBAL_UPGRADES
-    : catKey === 'offline' ? OFFLINE_UPGRADES
-    : catKey === 'animals' ? ANIMALS.map(a => a.upgrades).flat()
-    : [];
+  const catUpgrades = ANIMALS.map(a => a.upgrades).flat();
   const available = catUpgrades.filter(u => {
     if (state.upgrades[u.id]) return false;
     if (state.currentPoints < u.cost) return false;

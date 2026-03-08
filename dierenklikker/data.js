@@ -96,9 +96,6 @@ const STAR_SHOP = [
     {id:'sp_evo2', name:'Raketstart', desc:'Begin met 10 min DPS na evolutie', cost:6},
   ]},
   {cat:'Koop alles', emoji:'🛒', perks:[
-    {id:'sp_ba_click', name:'Koop alles: Klikken', desc:'Koop-alles knop bij klik-upgrades', cost:2},
-    {id:'sp_ba_global', name:'Koop alles: Globaal', desc:'Koop-alles knop bij globale upgrades', cost:2},
-    {id:'sp_ba_offline', name:'Koop alles: Offline', desc:'Koop-alles knop bij offline upgrades', cost:2},
     {id:'sp_ba_animals', name:'Koop alles: Dieren', desc:'Koop-alles knop bij alle dier-upgrades', cost:2},
   ]},
   {cat:'Synergieën', emoji:'🤝', perks:[
