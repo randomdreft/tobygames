@@ -11,6 +11,20 @@ const PRESTIGE_KEEP_OFFLINE = 3;  // stars needed to keep offline upgrades
 const PRESTIGE_KEEP_CLICK = 7;    // stars needed to keep click upgrades
 const PRESTIGE_KEEP_GLOBAL = 12;  // stars needed to keep global upgrades
 
+// === Wolkendierentuin ===
+const ZOO_LEVELS = [
+  {name:'Wolkenweitje', emoji:'☁️', cost:0, decayPerHour:10},
+  {name:'Wolkenverblijf', emoji:'🏠', cost:1, decayPerHour:6},
+  {name:'Wolkenpaleis', emoji:'🏰', cost:2, decayPerHour:3},
+  {name:'Gouden Paleis', emoji:'✨', cost:4, decayPerHour:1}
+];
+const ZOO_MAX_STARS = 3;
+const ZOO_PET_AMOUNT = 10;
+const ZOO_PET_COOLDOWN = 5000;   // 5 sec
+const ZOO_FEED_AMOUNT = 25;
+const ZOO_FEED_COOLDOWN = 15000; // 15 sec
+const ZOO_STAR_LIFETIME = 30000; // 30 sec before uncollected star disappears
+
 const COLOR_THEMES = [
   {id:'oerwoud', name:'Oerwoud', emoji:'🌿', stars:0,
    bg1:'#0f4c2a',bg2:'#1a6b3c',bg3:'#0d3b2e',text:'#e8f5e9',textDim:'#81c784',textDark:'#2e7d32',
@@ -80,6 +94,12 @@ const STAR_SHOP = [
   {cat:'Evolutie', emoji:'🚀', perks:[
     {id:'sp_evo1', name:'Vliegende start', desc:'Begin met 1 min DPS na evolutie', cost:2},
     {id:'sp_evo2', name:'Raketstart', desc:'Begin met 10 min DPS na evolutie', cost:6},
+  ]},
+  {cat:'Koop alles', emoji:'🛒', perks:[
+    {id:'sp_ba_click', name:'Koop alles: Klikken', desc:'Koop-alles knop bij klik-upgrades', cost:2},
+    {id:'sp_ba_global', name:'Koop alles: Globaal', desc:'Koop-alles knop bij globale upgrades', cost:2},
+    {id:'sp_ba_offline', name:'Koop alles: Offline', desc:'Koop-alles knop bij offline upgrades', cost:2},
+    {id:'sp_ba_animals', name:'Koop alles: Dieren', desc:'Koop-alles knop bij alle dier-upgrades', cost:2},
   ]},
   {cat:'Synergieën', emoji:'🤝', perks:[
     {id:'sp_syn1', name:'Kruipertjes', desc:'Mier, Slak & Kikker krijgen +15% DPS', cost:2, animals:['mier','slak','kikker'], bonus:0.15},

@@ -262,7 +262,7 @@ function setBuyMax() {
   });
 }
 
-function buildUpgradeCategory(title, upgrades, animal) {
+function buildUpgradeCategory(title, upgrades, animal, buyAllPerk) {
   const bought = upgrades.filter(u => state.upgrades[u.id]).length;
   const total = upgrades.length;
   const allDone = bought === total;
@@ -273,6 +273,10 @@ function buildUpgradeCategory(title, upgrades, animal) {
   let html = '<div class="upgrade-category' + collapsed + '">';
   html += '<h3' + dimmed + ' onclick="this.parentElement.classList.toggle(\'collapsed\')"><span class="toggle-arrow">▼</span> ' + title + progress + check + '</h3>';
   html += '<div class="upg-items">';
+  if (buyAllPerk && hasPerk(buyAllPerk) && !allDone) {
+    const catKey = buyAllPerk.replace('sp_ba_', '');
+    html += '<div style="text-align:center;margin-bottom:6px"><button class="buy-all-btn" onclick="buyAllCategory(\'' + catKey + '\')">Koop alles</button></div>';
+  }
   // Always sorted in original order (small to large)
   upgrades.forEach(u => { html += upgradeItemHtml(u, animal); });
   html += '</div></div>';
@@ -286,12 +290,11 @@ function buildUpgradeShop() {
   const total = allUpgrades.length;
   const pct = total ? Math.floor(bought / total * 100) : 0;
   let html = '<div class="upg-summary">' + bought + '/' + total + ' upgrades (' + pct + '%)</div>';
-  if (bought < total) html += '<div style="text-align:center;margin-bottom:10px"><button class="buy-all-btn" onclick="buyAllUpgrades()">Koop alles</button></div>';
-  html += buildUpgradeCategory('👆 Klik-upgrades', CLICK_UPGRADES);
-  html += buildUpgradeCategory('🌍 Globale upgrades', GLOBAL_UPGRADES);
-  html += buildUpgradeCategory('🌙 Offline upgrades', OFFLINE_UPGRADES);
+  html += buildUpgradeCategory('👆 Klik-upgrades', CLICK_UPGRADES, null, 'sp_ba_click');
+  html += buildUpgradeCategory('🌍 Globale upgrades', GLOBAL_UPGRADES, null, 'sp_ba_global');
+  html += buildUpgradeCategory('🌙 Offline upgrades', OFFLINE_UPGRADES, null, 'sp_ba_offline');
   ANIMALS.forEach(a => {
-    html += buildUpgradeCategory(a.emoji + ' ' + a.name + '-upgrades', a.upgrades, a);
+    html += buildUpgradeCategory(a.emoji + ' ' + a.name + '-upgrades', a.upgrades, a, 'sp_ba_animals');
   });
   container.innerHTML = html;
 }

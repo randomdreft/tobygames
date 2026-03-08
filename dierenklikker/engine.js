@@ -4,9 +4,21 @@
 
 function hasPerk(id) { return !!(state.prestige.perks && state.prestige.perks[id]); }
 
+function getZooStarsSpent() {
+  if (!state.zoo || !state.zoo.enclosures) return 0;
+  let spent = 0;
+  Object.values(state.zoo.enclosures).forEach(enc => {
+    for (let i = 1; i < (enc.level || 1); i++) {
+      if (ZOO_LEVELS[i]) spent += ZOO_LEVELS[i].cost;
+    }
+  });
+  return spent;
+}
+
 function getAvailableStars() {
   let spent = 0;
   STAR_SHOP.forEach(cat => cat.perks.forEach(p => { if (hasPerk(p.id)) spent += p.cost; }));
+  spent += getZooStarsSpent();
   return state.prestige.stars - spent;
 }
 
@@ -209,6 +221,50 @@ function getPrestigeStars() {
   // At 0 stars: 1e10 for 1st. At 100: 1e12. At 300: 1e16. Ceiling ~400 stars.
   const threshold = 9 + state.prestige.stars * 0.02;
   return Math.max(0, Math.floor(Math.log10(state.totalEarned) - threshold));
+}
+
+/* ================================================================
+   SECTIE 5b: WOLKENDIERENTUIN
+   ================================================================ */
+
+function ensureZooEnclosures() {
+  if (!state.zoo) state.zoo = { enclosures: {} };
+  ANIMALS.forEach(a => {
+    if (!state.zoo.enclosures[a.id]) {
+      state.zoo.enclosures[a.id] = {
+        level: 1,
+        happiness: 50,
+        lastDecay: Date.now()
+      };
+    }
+  });
+}
+
+function updateZooHappiness() {
+  if (!state.zoo || !state.zoo.enclosures) return;
+  const now = Date.now();
+  Object.values(state.zoo.enclosures).forEach(enc => {
+    const elapsed = (now - (enc.lastDecay || now)) / 3600000;
+    if (elapsed <= 0) return;
+    const levelInfo = ZOO_LEVELS[(enc.level || 1) - 1];
+    enc.happiness = Math.max(0, (enc.happiness || 0) - levelInfo.decayPerHour * elapsed);
+    enc.lastDecay = now;
+  });
+}
+
+function getZooStarInterval(happiness) {
+  if (happiness >= 90) return 90;
+  if (happiness >= 60) return 180;
+  if (happiness >= 30) return 480;
+  return Infinity;
+}
+
+function getZooAvailableStars() {
+  let total = (typeof prestigeCache !== 'undefined' && prestigeCache) ? prestigeCache.totalStars : state.prestige.stars;
+  let spent = 0;
+  STAR_SHOP.forEach(cat => cat.perks.forEach(p => { if (hasPerk(p.id)) spent += p.cost; }));
+  spent += getZooStarsSpent();
+  return total - spent;
 }
 
 /* ================================================================
@@ -848,9 +904,13 @@ function buyUpgrade(upgradeId) {
   }
 }
 
-function buyAllUpgrades() {
-  const allUpgrades = [CLICK_UPGRADES, GLOBAL_UPGRADES, OFFLINE_UPGRADES, ...ANIMALS.map(a => a.upgrades)].flat();
-  const available = allUpgrades.filter(u => {
+function buyAllCategory(catKey) {
+  const catUpgrades = catKey === 'click' ? CLICK_UPGRADES
+    : catKey === 'global' ? GLOBAL_UPGRADES
+    : catKey === 'offline' ? OFFLINE_UPGRADES
+    : catKey === 'animals' ? ANIMALS.map(a => a.upgrades).flat()
+    : [];
+  const available = catUpgrades.filter(u => {
     if (state.upgrades[u.id]) return false;
     if (state.currentPoints < u.cost) return false;
     if (u.req !== undefined) {
