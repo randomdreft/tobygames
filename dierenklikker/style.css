@@ -1069,9 +1069,124 @@ img.emoji {
   text-shadow: 0 0 10px rgba(255,215,0,0.5);
   margin-bottom: 12px;
 }
+/* Wolkendierentuin */
+.zoo-enclosure { cursor: default; min-height: 220px; }
+.zoo-level-badge {
+  position: relative; z-index: 2;
+  font-size: 11px; font-weight: 700;
+  color: rgba(255,255,255,0.9);
+  background: rgba(0,0,0,0.3);
+  border-radius: 12px; padding: 2px 10px; margin-bottom: 4px;
+}
+.zoo-animal-wrap {
+  cursor: pointer; position: relative; z-index: 2;
+  transition: transform 0.1s;
+}
+.zoo-animal-wrap:active { transform: scale(0.9); }
+.zoo-hearts {
+  font-size: 16px; position: relative; z-index: 2;
+  margin: 4px 0; letter-spacing: 2px;
+}
+.zoo-actions {
+  display: flex; gap: 6px; margin-top: 4px;
+  position: relative; z-index: 2;
+}
+.zoo-btn {
+  padding: 4px 10px; border: 1px solid rgba(255,255,255,0.3);
+  border-radius: 8px; background: rgba(0,0,0,0.25);
+  color: white; font-size: 12px; cursor: pointer;
+  transition: all 0.2s; min-width: 70px;
+}
+.zoo-btn:hover:not(:disabled) { background: rgba(255,255,255,0.2); }
+.zoo-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.zoo-upgrade-btn {
+  margin-top: 4px; padding: 3px 10px;
+  border: 1px solid rgba(255,215,0,0.4); border-radius: 8px;
+  background: rgba(255,215,0,0.15); color: #ffd700;
+  font-size: 11px; cursor: pointer; transition: all 0.2s;
+  position: relative; z-index: 2;
+}
+.zoo-upgrade-btn:hover:not(:disabled) { background: rgba(255,215,0,0.3); }
+.zoo-upgrade-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.zoo-upg-max {
+  border-color: rgba(67,160,71,0.4); color: #66bb6a;
+  background: rgba(67,160,71,0.15);
+}
+.zoo-star-area {
+  position: absolute; inset: 0; pointer-events: none;
+  z-index: 5; overflow: hidden;
+}
+.zoo-star {
+  position: absolute; font-size: 24px; cursor: pointer;
+  pointer-events: all;
+  animation: zoo-star-float 3s ease-in-out infinite;
+  filter: drop-shadow(0 0 6px rgba(255,215,0,0.6));
+  transition: transform 0.1s;
+}
+.zoo-star:hover { transform: scale(1.3); }
+.zoo-star img { width: 1em; height: 1em; }
+@keyframes zoo-star-float {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-8px) rotate(10deg); }
+}
+.zoo-star-collect {
+  animation: zoo-star-pop 0.4s ease-out forwards !important;
+  pointer-events: none !important;
+}
+@keyframes zoo-star-pop {
+  0% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.8); opacity: 1; }
+  100% { transform: scale(0); opacity: 0; }
+}
+.zoo-star-fade {
+  animation: zoo-star-disappear 0.5s ease-out forwards !important;
+  pointer-events: none !important;
+}
+@keyframes zoo-star-disappear {
+  0% { opacity: 1; }
+  100% { opacity: 0; transform: translateY(-20px); }
+}
+.zoo-particle {
+  position: absolute; top: 40%; left: 50%;
+  transform: translateX(-50%); color: #ff69b4;
+  font-size: 14px; font-weight: 700;
+  text-shadow: 0 1px 4px rgba(0,0,0,0.5);
+  animation: zoo-particle-up 0.8s ease-out forwards;
+  pointer-events: none; z-index: 10; white-space: nowrap;
+}
+@keyframes zoo-particle-up {
+  0% { opacity: 1; transform: translateX(-50%) translateY(0); }
+  100% { opacity: 0; transform: translateX(-50%) translateY(-30px); }
+}
+@keyframes zoo-pet-bounce {
+  0% { transform: scale(1); }
+  30% { transform: scale(1.15) rotate(-5deg); }
+  60% { transform: scale(0.95) rotate(3deg); }
+  100% { transform: scale(1) rotate(0deg); }
+}
+@keyframes zoo-feed-bounce {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.3) rotate(-10deg); }
+  100% { transform: scale(1) rotate(0deg); }
+}
+.zoo-visit-btn {
+  background: linear-gradient(135deg, rgba(135,206,235,0.3), rgba(176,224,255,0.2)) !important;
+  border: 1px solid rgba(135,206,235,0.4) !important;
+  margin-top: 8px;
+}
+.zoo-visit-btn:hover {
+  background: linear-gradient(135deg, rgba(135,206,235,0.5), rgba(176,224,255,0.3)) !important;
+}
+.hemel-stars {
+  background: rgba(0,0,0,0.3); border-radius: 12px;
+  padding: 8px 16px; display: inline-block;
+}
 @media (max-width: 600px) {
   .hemel-farm { grid-template-columns: repeat(2, 1fr); gap: 10px; padding: 10px 12px; }
   .hemel-habitat { min-height: 150px; padding: 14px 10px; }
   .hemel-animal { font-size: 48px; }
   .hemel-food { font-size: 24px; }
+  .zoo-btn { font-size: 11px; padding: 3px 6px; min-width: 56px; }
+  .zoo-upgrade-btn { font-size: 10px; }
+  .zoo-enclosure { min-height: 180px; }
 }

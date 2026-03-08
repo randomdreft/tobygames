@@ -85,21 +85,35 @@ const HEMEL_HABITATS = [
 ];
 
 let prestigeCache = null;
+let zooIsPrestige = false;
+let zooCollectedStars = 0;
+let zooInterval = null;
+let zooRuntime = null;
 
 function doPrestige() {
   const newStars = getPrestigeStars();
   const totalStars = state.prestige.stars + newStars;
-  prestigeCache = { newStars, totalStars };
+  prestigeCache = { newStars, totalStars, zooStars: 0 };
   closeModal('prestige-modal');
   showDierenhemel(newStars);
 }
 
+function visitZoo() {
+  showDierenhemel();
+}
+
 function showDierenhemel(newStars) {
-  sfxHeaven();
+  zooIsPrestige = (newStars !== undefined);
+  zooCollectedStars = 0;
+
+  if (zooIsPrestige) sfxHeaven();
+
+  ensureZooEnclosures();
+  updateZooHappiness();
+
   const el = document.getElementById('dierenhemel');
   const farm = document.getElementById('hemel-farm');
   const clouds = document.getElementById('hemel-clouds');
-  const starsEl = document.getElementById('hemel-stars');
 
   // Build clouds
   let cloudHtml = '';
@@ -112,33 +126,312 @@ function showDierenhemel(newStars) {
   }
   clouds.innerHTML = cloudHtml;
 
-  // Build habitat cards for owned animals
+  // Update title
+  const titleEl = document.querySelector('.hemel-title h1');
+  const subtitleEl = document.querySelector('.hemel-title p');
+  if (titleEl) titleEl.textContent = 'De Wolkendierentuin';
+  if (subtitleEl) subtitleEl.textContent = zooIsPrestige
+    ? 'Je dieren zijn naar de hemel gestuurd!'
+    : 'Bezoek je dieren in de wolken';
+
+  // Build interactive enclosure cards
   let html = '';
   HEMEL_HABITATS.forEach(h => {
-    const count = state.animals[h.id] || 0;
-    if (count === 0) return;
     const animal = ANIMALS.find(a => a.id === h.id);
     if (!animal) return;
-    html += '<div class="hemel-habitat" style="background:' + h.bg + '">';
+    const enc = state.zoo.enclosures[h.id];
+    if (!enc) return;
+    const levelInfo = ZOO_LEVELS[(enc.level || 1) - 1];
+    const filled = Math.min(5, Math.floor((enc.happiness || 0) / 20));
+    let hearts = '';
+    for (let i = 0; i < 5; i++) hearts += i < filled ? '\u2764\ufe0f' : '\ud83e\udd0d';
+
+    html += '<div class="hemel-habitat zoo-enclosure" id="zoo-enc-' + h.id + '" style="background:' + h.bg + '">';
     html += '<div class="hemel-env">' + h.env + '</div>';
-    html += '<div class="hemel-halo">😇</div>';
-    html += '<div class="hemel-animal">' + animal.emoji + '</div>';
-    html += '<div class="hemel-food">' + h.food + '</div>';
-    html += '<div class="hemel-label">' + animal.name + ' <span style="opacity:.6">\u00d7' + count + '</span></div>';
-    html += '<div class="hemel-desc">' + h.desc + '</div>';
+    html += '<div class="zoo-level-badge" id="zoo-level-' + h.id + '">' + levelInfo.emoji + ' ' + levelInfo.name + '</div>';
+    html += '<div class="zoo-animal-wrap" onclick="petZooAnimal(\'' + h.id + '\')">';
+    html += '<div class="zoo-animal hemel-animal">' + animal.emoji + '</div>';
+    html += '<div class="hemel-food zoo-food">' + h.food + '</div>';
+    html += '</div>';
+    html += '<div class="zoo-hearts" id="zoo-hearts-' + h.id + '" data-state="hearts-' + filled + '">' + hearts + '</div>';
+    html += '<div class="hemel-label">' + animal.name + '</div>';
+    html += '<div class="zoo-actions">';
+    html += '<button class="zoo-btn" id="zoo-pet-' + h.id + '" onclick="event.stopPropagation();petZooAnimal(\'' + h.id + '\')">\ud83e\udd1a Aai</button>';
+    html += '<button class="zoo-btn" id="zoo-feed-' + h.id + '" onclick="event.stopPropagation();feedZooAnimal(\'' + h.id + '\')">' + h.food + ' Voer</button>';
+    html += '</div>';
+    html += '<button class="zoo-upgrade-btn" id="zoo-upg-' + h.id + '" onclick="event.stopPropagation();upgradeZooEnclosure(\'' + h.id + '\')"></button>';
+    html += '<div class="zoo-star-area" id="zoo-stars-' + h.id + '"></div>';
     html += '</div>';
   });
   farm.innerHTML = html;
 
-  starsEl.textContent = '+' + newStars + ' \u2b50 evolutiesterren verdiend!';
+  // Set initial button states
+  ANIMALS.forEach(a => {
+    const enc = state.zoo.enclosures[a.id];
+    if (enc) {
+      updateZooButtons(a.id, enc);
+      updateZooUpgradeBtn(a.id, enc);
+    }
+  });
+
+  // Update star counter
+  updateZooStarCounter();
 
   el.classList.add('show');
   parseAppleEmoji(el);
+  startZooTick();
+}
+
+function leaveZoo() {
+  stopZooTick();
+  document.querySelectorAll('.zoo-star').forEach(el => el.remove());
+
+  if (zooIsPrestige) {
+    completePrestige();
+  } else {
+    document.getElementById('dierenhemel').classList.remove('show');
+    saveGame();
+    buildShop();
+  }
+}
+
+/* --- Zoo tick & star spawning --- */
+
+function startZooTick() {
+  zooRuntime = { pendingStars: {}, lastSpawn: {}, collected: 0 };
+  ANIMALS.forEach(a => {
+    zooRuntime.pendingStars[a.id] = [];
+    zooRuntime.lastSpawn[a.id] = Date.now();
+  });
+  zooInterval = setInterval(zooTick, 1000);
+}
+
+function stopZooTick() {
+  if (zooInterval) { clearInterval(zooInterval); zooInterval = null; }
+  zooRuntime = null;
+}
+
+function zooTick() {
+  if (!zooRuntime || !state.zoo) return;
+  const now = Date.now();
+  updateZooHappiness();
+
+  ANIMALS.forEach(a => {
+    const enc = state.zoo.enclosures[a.id];
+    if (!enc) return;
+
+    updateZooHearts(a.id, enc.happiness);
+    updateZooButtons(a.id, enc);
+
+    // Star spawning
+    const interval = getZooStarInterval(enc.happiness);
+    if (interval < Infinity) {
+      const elapsed = (now - (zooRuntime.lastSpawn[a.id] || now)) / 1000;
+      if (elapsed >= interval && zooRuntime.pendingStars[a.id].length < ZOO_MAX_STARS) {
+        spawnZooStar(a.id);
+        zooRuntime.lastSpawn[a.id] = now;
+      }
+    }
+
+    // Remove expired stars
+    const stars = zooRuntime.pendingStars[a.id];
+    for (let i = stars.length - 1; i >= 0; i--) {
+      if (now - stars[i].time > ZOO_STAR_LIFETIME) {
+        if (stars[i].el && stars[i].el.parentNode) {
+          stars[i].el.classList.add('zoo-star-fade');
+          const deadEl = stars[i].el;
+          setTimeout(() => { if (deadEl.parentNode) deadEl.remove(); }, 500);
+        }
+        stars.splice(i, 1);
+      }
+    }
+  });
+
+  updateZooStarCounter();
+}
+
+function spawnZooStar(animalId) {
+  const container = document.getElementById('zoo-stars-' + animalId);
+  if (!container) return;
+  const star = document.createElement('div');
+  star.className = 'zoo-star';
+  star.textContent = '\u2b50';
+  star.style.left = (10 + Math.random() * 70) + '%';
+  star.style.top = (10 + Math.random() * 50) + '%';
+  star.onclick = function(e) { e.stopPropagation(); collectZooStar(animalId, star); };
+  container.appendChild(star);
+  parseAppleEmoji(star);
+  zooRuntime.pendingStars[animalId].push({ time: Date.now(), el: star });
+}
+
+function collectZooStar(animalId, starEl) {
+  if (zooRuntime) {
+    const stars = zooRuntime.pendingStars[animalId];
+    const idx = stars.findIndex(s => s.el === starEl);
+    if (idx >= 0) stars.splice(idx, 1);
+  }
+  starEl.classList.add('zoo-star-collect');
+  setTimeout(() => starEl.remove(), 400);
+
+  if (prestigeCache) {
+    prestigeCache.totalStars++;
+    prestigeCache.zooStars = (prestigeCache.zooStars || 0) + 1;
+  } else {
+    state.prestige.stars++;
+  }
+  zooCollectedStars++;
+  sfxLuckyClick();
+  updateZooStarCounter();
+}
+
+/* --- Zoo interaction --- */
+
+function petZooAnimal(animalId) {
+  if (!state.zoo || !state.zoo.enclosures) return;
+  const enc = state.zoo.enclosures[animalId];
+  if (!enc) return;
+  const now = Date.now();
+  if (now - (enc.lastPet || 0) < ZOO_PET_COOLDOWN) return;
+  enc.happiness = Math.min(100, (enc.happiness || 0) + ZOO_PET_AMOUNT);
+  enc.lastPet = now;
+  enc.lastDecay = now;
+  sfxClick();
+
+  const animalEl = document.querySelector('#zoo-enc-' + animalId + ' .zoo-animal');
+  if (animalEl) {
+    animalEl.style.animation = 'none';
+    animalEl.offsetHeight;
+    animalEl.style.animation = 'zoo-pet-bounce 0.3s ease-out';
+    setTimeout(() => { animalEl.style.animation = 'hemel-bob 3s ease-in-out infinite'; }, 300);
+  }
+  showZooParticle(animalId, '+' + ZOO_PET_AMOUNT + '% \u2764\ufe0f');
+  updateZooHearts(animalId, enc.happiness);
+  updateZooButtons(animalId, enc);
+}
+
+function feedZooAnimal(animalId) {
+  if (!state.zoo || !state.zoo.enclosures) return;
+  const enc = state.zoo.enclosures[animalId];
+  if (!enc) return;
+  const now = Date.now();
+  if (now - (enc.lastFed || 0) < ZOO_FEED_COOLDOWN) return;
+  enc.happiness = Math.min(100, (enc.happiness || 0) + ZOO_FEED_AMOUNT);
+  enc.lastFed = now;
+  enc.lastDecay = now;
+  sfxBuy();
+
+  const foodEl = document.querySelector('#zoo-enc-' + animalId + ' .zoo-food');
+  if (foodEl) {
+    foodEl.style.animation = 'none';
+    foodEl.offsetHeight;
+    foodEl.style.animation = 'zoo-feed-bounce 0.4s ease-out';
+    setTimeout(() => { foodEl.style.animation = 'hemel-munch 2s ease-in-out infinite'; }, 400);
+  }
+  showZooParticle(animalId, '+' + ZOO_FEED_AMOUNT + '% \u2764\ufe0f');
+  updateZooHearts(animalId, enc.happiness);
+  updateZooButtons(animalId, enc);
+}
+
+function upgradeZooEnclosure(animalId) {
+  if (!state.zoo || !state.zoo.enclosures) return;
+  const enc = state.zoo.enclosures[animalId];
+  if (!enc || enc.level >= ZOO_LEVELS.length) return;
+  const nextCost = ZOO_LEVELS[enc.level].cost;
+  if (getZooAvailableStars() < nextCost) return;
+  enc.level++;
+  sfxLevelUp();
+
+  const levelInfo = ZOO_LEVELS[enc.level - 1];
+  const levelEl = document.getElementById('zoo-level-' + animalId);
+  if (levelEl) { levelEl.textContent = levelInfo.emoji + ' ' + levelInfo.name; parseAppleEmoji(levelEl); }
+  updateZooUpgradeBtn(animalId, enc);
+  updateZooStarCounter();
+  saveGame();
+
+  const animal = ANIMALS.find(a => a.id === animalId);
+  showToast('\u2b06\ufe0f ' + (animal ? animal.name : '') + ' \u2192 ' + levelInfo.name + '!');
+}
+
+/* --- Zoo UI updates --- */
+
+function updateZooHearts(animalId, happiness) {
+  const el = document.getElementById('zoo-hearts-' + animalId);
+  if (!el) return;
+  const filled = Math.min(5, Math.floor(happiness / 20));
+  const key = 'hearts-' + filled;
+  if (el.dataset.state === key) return;
+  el.dataset.state = key;
+  let html = '';
+  for (let i = 0; i < 5; i++) html += i < filled ? '\u2764\ufe0f' : '\ud83e\udd0d';
+  el.innerHTML = html;
+  parseAppleEmoji(el);
+}
+
+function updateZooButtons(animalId, enc) {
+  const now = Date.now();
+  const petBtn = document.getElementById('zoo-pet-' + animalId);
+  const feedBtn = document.getElementById('zoo-feed-' + animalId);
+
+  if (petBtn) {
+    const cd = Math.max(0, ZOO_PET_COOLDOWN - (now - (enc.lastPet || 0)));
+    petBtn.disabled = cd > 0;
+    petBtn.textContent = cd > 0 ? '\ud83e\udd1a ' + Math.ceil(cd / 1000) + 's' : '\ud83e\udd1a Aai';
+  }
+  if (feedBtn) {
+    const cd = Math.max(0, ZOO_FEED_COOLDOWN - (now - (enc.lastFed || 0)));
+    const h = HEMEL_HABITATS.find(x => x.id === animalId);
+    const food = h ? h.food : '\ud83e\udd55';
+    feedBtn.disabled = cd > 0;
+    feedBtn.textContent = cd > 0 ? food + ' ' + Math.ceil(cd / 1000) + 's' : food + ' Voer';
+  }
+  updateZooUpgradeBtn(animalId, enc);
+}
+
+function updateZooUpgradeBtn(animalId, enc) {
+  const btn = document.getElementById('zoo-upg-' + animalId);
+  if (!btn) return;
+  if (enc.level >= ZOO_LEVELS.length) {
+    btn.textContent = '\u2728 Max';
+    btn.disabled = true;
+    btn.classList.add('zoo-upg-max');
+  } else {
+    const nextCost = ZOO_LEVELS[enc.level].cost;
+    const nextName = ZOO_LEVELS[enc.level].name;
+    btn.textContent = '\u2b06\ufe0f ' + nextName + ' (' + nextCost + '\u2b50)';
+    btn.disabled = getZooAvailableStars() < nextCost;
+  }
+}
+
+function updateZooStarCounter() {
+  const el = document.getElementById('hemel-stars');
+  if (!el) return;
+  const available = getZooAvailableStars();
+  let text = '';
+  if (zooIsPrestige && prestigeCache) {
+    text = '+' + prestigeCache.newStars + ' \u2b50 evolutiesterren';
+    if (zooCollectedStars > 0) text += ' | +' + zooCollectedStars + ' \u2b50 uit dierentuin';
+    text += ' | ' + available + ' beschikbaar';
+  } else {
+    text = '\u2b50 ' + available + ' beschikbaar';
+    if (zooCollectedStars > 0) text += ' | +' + zooCollectedStars + ' verzameld';
+  }
+  el.textContent = text;
+}
+
+function showZooParticle(animalId, text) {
+  const enc = document.getElementById('zoo-enc-' + animalId);
+  if (!enc) return;
+  const p = document.createElement('div');
+  p.className = 'zoo-particle';
+  p.textContent = text;
+  enc.appendChild(p);
+  setTimeout(() => p.remove(), 800);
 }
 
 function completePrestige() {
   if (!prestigeCache) return;
   const { newStars, totalStars } = prestigeCache;
+  const zooStarsEarned = prestigeCache.zooStars || 0;
   prestigeCache = null;
 
   sfxPrestige();
@@ -168,6 +461,7 @@ function completePrestige() {
   const keepStats = {...state.stats};
   const keepDaily = {...state.daily};
   const keepZooName = state.zooName;
+  const keepZoo = state.zoo ? JSON.parse(JSON.stringify(state.zoo)) : { enclosures: {} };
   const dpsBeforeReset = getTotalDps();
 
   state = defaultState();
@@ -178,6 +472,7 @@ function completePrestige() {
   state.stats = keepStats;
   state.daily = keepDaily;
   state.zooName = keepZooName;
+  state.zoo = keepZoo;
 
   if (!state.achievements['eerste_evolutie']) {
     state.achievements['eerste_evolutie'] = 1;
@@ -203,7 +498,8 @@ function completePrestige() {
   saveGame();
   buildShop();
   parseAppleEmoji(document.body);
-  showToast('\u2b50 Ge\u00ebvolueerd! +' + newStars + ' sterren!');
+  const totalNew = newStars + zooStarsEarned;
+  showToast('\u2b50 Ge\u00ebvolueerd! +' + totalNew + ' sterren!');
   // Auto-submit score to leaderboard after prestige
   _lastLeaderboardSubmit = 0; // reset throttle
   submitLeaderboard();
@@ -490,6 +786,10 @@ function buildEvolution() {
   html += '<span style="color:var(--text-dim);font-size:12px">Tip: na evolutie ga je veel sneller! Elke keer verdien je meer sterren.</span>';
   html += '</div>';
   html += '<button class="opt-btn prestige-btn" id="prestige-btn" onclick="showPrestigeModal()">⭐ Evolueer!</button>';
+
+  if (state.prestige.timesReset > 0) {
+    html += '<button class="opt-btn zoo-visit-btn" onclick="visitZoo()">☁️ Bezoek Wolkendierentuin</button>';
+  }
 
   // Theme picker — only show if at least one unlockable theme is available
   const unlockedThemes = COLOR_THEMES.filter(t => t.stars <= state.prestige.stars);

@@ -36,6 +36,7 @@ function defaultState() {
       uniqueMinigames: [], upgradesBought: 0, memoryLowFaults: 0,
       snapshots: {}
     },
+    zoo: { enclosures: {} },
     zooName: '',
     lastTick: Date.now()
   };
@@ -188,6 +189,16 @@ function stateToIni() {
   lines.push('voedsel_laatst=' + state.minigames.voedselLast);
   lines.push('race_laatst=' + state.minigames.raceLast);
   lines.push('puzzel_laatst=' + state.minigames.puzzelLast);
+  lines.push('');
+  lines.push('[wolkendierentuin]');
+  if (state.zoo && state.zoo.enclosures) {
+    ANIMALS.forEach(a => {
+      const enc = state.zoo.enclosures[a.id];
+      if (enc && enc.level) {
+        lines.push(a.id + '=' + enc.level + ',' + Math.round(enc.happiness || 0) + ',' + (enc.lastDecay || Date.now()));
+      }
+    });
+  }
   return lines.join('\n');
 }
 
@@ -336,6 +347,19 @@ function iniToState(text) {
   s.daily.upgradesBought = safeInt(dd.upgrades_gekocht, 0, 0);
   s.daily.memoryLowFaults = safeInt(dd.memory_low_faults, 0, 0);
   try { s.daily.snapshots = JSON.parse(dd.snapshots || '{}'); } catch(e) { s.daily.snapshots = {}; }
+
+  // Wolkendierentuin
+  const wdt = ini.wolkendierentuin || {};
+  ANIMALS.forEach(a => {
+    if (wdt[a.id]) {
+      const parts = wdt[a.id].split(',');
+      s.zoo.enclosures[a.id] = {
+        level: safeInt(parts[0], 1, 1, ZOO_LEVELS.length),
+        happiness: Math.min(100, safeFloat(parts[1], 50, 0)),
+        lastDecay: safeInt(parts[2], Date.now(), 0)
+      };
+    }
+  });
 
   // Preferences
   const pref = ini.voorkeur || {};
