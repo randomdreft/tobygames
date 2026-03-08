@@ -23,6 +23,33 @@
 - "Mythisch verbond" (walvis+draak = +25% DPS)
 - "Dierenrijk" (alle dieren = +10% DPS, vereist alle 4 synergieën)
 
+### C3a - Dierentuin naam ✅
+- Spelers geven hun dierentuin een naam (linker paneel, boven punten)
+- Inline edit met ✏️ knop, validatie: letters/cijfers/emoji, 2-20 tekens
+- Weergave: "Randal's Dierentuin" / "Thomas' Dierentuin"
+- Naam blijft behouden na prestige
+- Opgeslagen in savegame als `dierentuin_naam`
+- Vereiste voor leaderboard
+
+## In ontwikkeling
+
+### C3b - Multiplayer scorebord 🔨
+- **UI (client-side — klaar om te bouwen):**
+  - Tab "Scorebord" in middenpaneel naast Statistieken
+  - Top 10 + eigen positie als je niet in top 10 zit
+  - Vertrouwensindicator per score (groen/oranje/rood of ⚠️/💀)
+  - Filter: "toon alleen betrouwbare scores"
+- **API:**
+  - `POST /api/leaderboard` — submit score met volledige gamestate payload
+  - `GET /api/leaderboard` — top 10 + eigen ranking
+  - Payload bevat: zooName, totalEarned, stars, playTimeSeconds, totalClicks, totalAnimals, achievements count
+- **Server-side anti-cheat (TODO op server):**
+  - Speeltijd vs. score ratio check
+  - Klik-ratio check (max ~15/sec)
+  - Progressie-logica (geen draak zonder goedkopere dieren)
+  - Achievements vs. stats consistentie
+  - Scores krijgen vertrouwensscore, verdachte scores worden gefilterd (niet verwijderd)
+
 ## Gepland (volgende sessies)
 
 ### C1 - Hemel als speelbare wereld
@@ -38,11 +65,6 @@
 - Verblijven upgraden (cosmetisch + kleine DPS-bonus)
 - Vervangt uiteindelijk Dierenhemel als los scherm
 - De hemel IS je dierentuin in de wolken
-
-### C3 - Multiplayer scorebord
-- Focus op "Meeste achievements" (moeilijker te cheaten dan punten)
-- Sanity checks: speeltijd vs. score ratio
-- Overweeg: vrienden-scorebord met deelbare link i.p.v. globaal
 
 ## Geparkeerd
 

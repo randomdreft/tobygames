@@ -166,6 +166,7 @@ function completePrestige() {
   const keepAllTime = {...state.allTime};
   const keepStats = {...state.stats};
   const keepDaily = {...state.daily};
+  const keepZooName = state.zooName;
 
   state = defaultState();
   state.achievements = keepAch;
@@ -174,6 +175,7 @@ function completePrestige() {
   state.allTime = keepAllTime;
   state.stats = keepStats;
   state.daily = keepDaily;
+  state.zooName = keepZooName;
 
   if (!state.achievements['eerste_evolutie']) {
     state.achievements['eerste_evolutie'] = 1;
@@ -692,15 +694,17 @@ function render() {
   updateCooldown('race-btn', 'race-cooldown', state.minigames.raceLast, RACE_COOLDOWN * cdm, raceActive);
   updateCooldown('puzzel-btn', 'puzzel-cooldown', state.minigames.puzzelLast, PUZZEL_COOLDOWN * cdm, puzzelActive);
 
-  // Buff indicator
+  // Buff indicator (multiple buffs)
   const buffInd = document.getElementById('buff-indicator');
-  const curBuff = getActiveBuff();
-  if (curBuff && buffInd) {
-    const remaining = Math.ceil((curBuff.endsAt - Date.now()) / 1000);
+  const curBuffs = getActiveBuffs();
+  if (curBuffs.length > 0 && buffInd) {
     buffInd.style.visibility = 'visible';
-    buffInd.style.background = curBuff.color + '30';
-    buffInd.style.color = curBuff.color;
-    buffInd.innerHTML = curBuff.emoji + ' ' + curBuff.name + ' — ' + remaining + 's' + (curBuff.desc ? '<div class="buff-desc">' + curBuff.desc + '</div>' : '');
+    buffInd.style.background = curBuffs[0].color + '30';
+    buffInd.style.color = curBuffs[0].color;
+    buffInd.innerHTML = curBuffs.map(b => {
+      const remaining = Math.ceil((b.endsAt - Date.now()) / 1000);
+      return '<span style="color:' + b.color + '">' + b.emoji + ' ' + b.name + ' — ' + remaining + 's</span>';
+    }).join(' &nbsp;·&nbsp; ');
   } else if (buffInd) {
     buffInd.style.visibility = 'hidden';
     buffInd.innerHTML = '';
@@ -720,7 +724,7 @@ function render() {
   updateTabBadges();
 
   // Parse only dynamic emoji elements (buff indicator)
-  if (curBuff && buffInd) parseAppleEmoji(buffInd);
+  if (curBuffs.length > 0 && buffInd) parseAppleEmoji(buffInd);
 }
 
 const _cooldownActive = {};
@@ -1146,7 +1150,62 @@ function showToast(text) {
 }
 
 /* ================================================================
-   SECTIE 11b: GELUKSBEESTJE
+   SECTIE 11b: DIERENTUIN NAAM
+   ================================================================ */
+
+function getZooDisplayName() {
+  if (!state.zooName) return 'Mijn Dierentuin';
+  const name = state.zooName;
+  const suffix = name.endsWith('s') || name.endsWith('S') ? "' Dierentuin" : "'s Dierentuin";
+  return name + suffix;
+}
+
+function renderZooName() {
+  const el = document.getElementById('zoo-name-text');
+  if (el) el.textContent = getZooDisplayName();
+}
+
+function startEditZooName() {
+  const bar = document.getElementById('zoo-name-bar');
+  const current = state.zooName || '';
+  bar.innerHTML =
+    '<input id="zoo-name-input" type="text" maxlength="20" value="' +
+    current.replace(/"/g, '&quot;') +
+    '" placeholder="Jouw naam" autocomplete="off" spellcheck="false">' +
+    '<button id="zoo-name-save-btn" onclick="saveZooName()">✓</button>';
+  const inp = document.getElementById('zoo-name-input');
+  inp.focus();
+  inp.select();
+  inp.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') saveZooName();
+    if (e.key === 'Escape') cancelEditZooName();
+  });
+}
+
+function saveZooName() {
+  const inp = document.getElementById('zoo-name-input');
+  if (!inp) return;
+  const cleaned = sanitizeZooName(inp.value);
+  if (cleaned.length > 0 && cleaned.length < 2) {
+    inp.classList.add('shake');
+    setTimeout(() => inp.classList.remove('shake'), 400);
+    return;
+  }
+  state.zooName = cleaned;
+  cancelEditZooName();
+  saveGame();
+}
+
+function cancelEditZooName() {
+  const bar = document.getElementById('zoo-name-bar');
+  bar.innerHTML =
+    '<span id="zoo-name-text">' + getZooDisplayName() + '</span>' +
+    '<button id="zoo-name-edit-btn" onclick="startEditZooName()" title="Naam wijzigen">✏️</button>';
+  parseAppleEmoji(bar);
+}
+
+/* ================================================================
+   SECTIE 11c: GELUKSBEESTJE
    ================================================================ */
 
 const LUCKY_BASE_INTERVAL = 120000; // 120 sec average
@@ -1266,7 +1325,8 @@ function clickLucky(el) {
       state.allTime.totalEarned += bonus;
       showToast('\uD83D\uDC1E ' + buff.emoji + ' ' + buff.name + '! +' + formatNumber(bonus) + ' punten!');
     } else {
-      activeBuff = { type: buff.id, endsAt: Date.now() + getBuffDuration(), emoji: buff.emoji, name: buff.name, color: buff.color, desc: buff.desc };
+      activeBuffs = activeBuffs.filter(b => Date.now() < b.endsAt && b.type !== buff.id);
+      activeBuffs.push({ type: buff.id, endsAt: Date.now() + getBuffDuration(), emoji: buff.emoji, name: buff.name, color: buff.color, desc: buff.desc });
       showToast('\uD83D\uDC1E ' + buff.emoji + ' ' + buff.name + ' actief voor ' + (getBuffDuration()/1000) + ' seconden!');
     }
   } else {
@@ -1344,6 +1404,7 @@ function init() {
   if (!state.prestige.themeLocked) state.prestige.theme = getHighestUnlockedTheme();
   applyTheme(state.prestige.theme || 'oerwoud');
   buildShop();
+  renderZooName();
   render();
 
   // Schedule first lucky bug

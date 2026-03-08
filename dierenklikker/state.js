@@ -36,6 +36,7 @@ function defaultState() {
       uniqueMinigames: [], upgradesBought: 0, memoryLowFaults: 0,
       snapshots: {}
     },
+    zooName: '',
     lastTick: Date.now()
   };
   ANIMALS.forEach(a => s.animals[a.id] = 0);
@@ -124,6 +125,7 @@ function stateToIni() {
   lines.push('opgeslagen=' + new Date().toISOString());
   lines.push('');
   lines.push('[speler]');
+  lines.push('dierentuin_naam=' + (state.zooName || ''));
   lines.push('punten=' + Math.floor(state.currentPoints));
   lines.push('totaal_verdiend=' + Math.floor(state.totalEarned));
   lines.push('totaal_klikken=' + state.totalClicks);
@@ -168,6 +170,10 @@ function stateToIni() {
   lines.push('upgrades_gekocht=' + (state.daily.upgradesBought || 0));
   lines.push('memory_low_faults=' + (state.daily.memoryLowFaults || 0));
   lines.push('snapshots=' + JSON.stringify(state.daily.snapshots || {}));
+  lines.push('');
+  lines.push('[voorkeur]');
+  lines.push('koop_aantal=' + buyMultiplier);
+  lines.push('koop_max=' + (buyMax ? '1' : '0'));
   lines.push('');
   lines.push('[minispellen]');
   lines.push('quiz_laatst=' + state.minigames.quizLast);
@@ -229,6 +235,18 @@ function safeFloat(val, def, min) {
   return Math.max(min, n);
 }
 
+function sanitizeZooName(raw) {
+  if (!raw || typeof raw !== 'string') return '';
+  // Strip everything except letters (any script), digits, spaces, and emoji
+  const cleaned = Array.from(raw).filter(ch => {
+    if (/[\p{L}\p{N}\s]/u.test(ch)) return true;
+    // Allow emoji (surrogate pairs / emoji presentation)
+    if (/\p{Emoji}/u.test(ch) && !/\d/.test(ch)) return true;
+    return false;
+  }).join('').trim();
+  return cleaned.slice(0, 20);
+}
+
 function iniToState(text) {
   let ini;
   try { ini = parseIni(text); } catch(e) { return null; }
@@ -238,6 +256,7 @@ function iniToState(text) {
 
   // Player
   const sp = ini.speler || ini.player || {};
+  s.zooName = sanitizeZooName(sp.dierentuin_naam || '');
   s.currentPoints = safeFloat(sp.punten || sp.current_points, 0, 0);
   s.totalEarned = safeFloat(sp.totaal_verdiend || sp.total_earned, 0, 0);
   s.totalClicks = safeInt(sp.totaal_klikken || sp.total_clicks, 0, 0);
@@ -317,6 +336,14 @@ function iniToState(text) {
   s.daily.upgradesBought = safeInt(dd.upgrades_gekocht, 0, 0);
   s.daily.memoryLowFaults = safeInt(dd.memory_low_faults, 0, 0);
   try { s.daily.snapshots = JSON.parse(dd.snapshots || '{}'); } catch(e) { s.daily.snapshots = {}; }
+
+  // Preferences
+  const pref = ini.voorkeur || {};
+  if (pref.koop_aantal !== undefined) {
+    const amt = safeInt(pref.koop_aantal, 1);
+    if ([1, 10, 100].includes(amt)) buyMultiplier = amt; else buyMultiplier = 1;
+  }
+  buyMax = pref.koop_max === '1';
 
   // === Save migration ===
   const saveVersion = safeInt((ini.meta || {}).versie, 1, 1);
@@ -473,6 +500,7 @@ function doImport() {
   closeModal('import-modal');
   saveGame();
   buildShop();
+  renderZooName();
   parseAppleEmoji(document.body);
   showToast('Savegame geladen!');
 }
@@ -482,6 +510,7 @@ function resetGame() {
   state = defaultState();
   localStorage.removeItem('dierenklikker_save');
   buildShop();
+  renderZooName();
   parseAppleEmoji(document.body);
   showToast('Spel gereset!');
 }
