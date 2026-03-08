@@ -99,6 +99,13 @@ function parseAppleEmoji(el) {
     ext: '.png'
   });
 }
+// Fallback: some emoji PNGs only exist with -fe0f suffix
+document.addEventListener('error', function(e) {
+  if (e.target.tagName === 'IMG' && e.target.classList.contains('emoji') &&
+      e.target.src.indexOf('-fe0f.png') === -1 && e.target.src.indexOf('/emoji/') !== -1) {
+    e.target.src = e.target.src.replace('.png', '-fe0f.png');
+  }
+}, true);
 
 function formatTime(seconds) {
   seconds = Math.floor(seconds);
