@@ -1,5 +1,25 @@
 # Dierenklikker - Ideeën & Toekomstige Features
 
+## Server architectuur
+
+De game draait op een Node.js server in Docker (zie `/Dockerfile` en `/server.js`).
+
+- **Container**: `tobygames` via `/opt/static-sites/docker-compose.yml`
+- **Poort**: 3000 (intern), bereikbaar via nginx-proxy-manager
+- **Statische bestanden**: `/var/www/tobygames` gemount als `/static` (read-only)
+- **Rebuild**: `cd /opt/static-sites && sudo docker compose up -d --build tobygames`
+
+### Huidige API endpoints
+| Endpoint | Methode | Beschrijving |
+|---|---|---|
+| `/api/heartbeat?sid=xxx` | GET | Actieve spelers tellen. Retourneert `{ online, sid }`. Client pollt elke 30s. Sessies verlopen na 90s. |
+
+### Nog te bouwen
+| Endpoint | Methode | Beschrijving |
+|---|---|---|
+| `/api/leaderboard` | POST | Score submitten met gamestate payload |
+| `/api/leaderboard` | GET | Top 10 + eigen ranking ophalen |
+
 ## Afgerond
 
 ### B1 - Dagelijkse uitdagingen / missies ✅
