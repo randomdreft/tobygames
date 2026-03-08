@@ -192,6 +192,8 @@ function showDierenhemel(newStars) {
 function leaveZoo() {
   stopZooTick();
   document.querySelectorAll('.zoo-star').forEach(el => el.remove());
+  // Reset lastTick so the game loop doesn't process elapsed zoo time
+  state.lastTick = Date.now();
 
   if (zooIsPrestige) {
     completePrestige();
@@ -858,6 +860,7 @@ function buildOptions() {
 }
 
 function render() {
+  if (zooInterval) return; // paused while in Wolkendierentuin
   // Points
   const pts = document.getElementById('points-display');
   pts.textContent = formatNumber(Math.floor(state.currentPoints)) + ' dierenpunten';
@@ -1852,6 +1855,7 @@ function tick() {
 let lastAchCheck = 0;
 
 function gameLoop() {
+  if (zooInterval) return; // paused while in Wolkendierentuin
   tick();
 
   const now = Date.now();
