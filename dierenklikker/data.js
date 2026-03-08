@@ -18,7 +18,8 @@ const ZOO_LEVELS = [
   {name:'Wolkenpaleis', emoji:'🏰', cost:2, decayPerHour:3},
   {name:'Gouden Paleis', emoji:'✨', cost:4, decayPerHour:1}
 ];
-const ZOO_MAX_STARS = 3;
+const ZOO_MAX_SPAWNS = 3;
+const ZOO_STAR_CHANCE = 0.2; // 1 in 5 spawns is a star, rest is poop
 const ZOO_PET_AMOUNT = 10;
 const ZOO_PET_COOLDOWN = 5000;   // 5 sec
 const ZOO_FEED_AMOUNT = 25;

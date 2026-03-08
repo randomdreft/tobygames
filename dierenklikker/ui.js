@@ -214,7 +214,7 @@ function startZooTick() {
     // First star appears 30-90s after opening zoo (staggered per animal),
     // then subsequent stars follow the full interval.
     const happiness = (state.zoo && state.zoo.enclosures[a.id]) ? state.zoo.enclosures[a.id].happiness : 0;
-    const interval = getZooStarInterval(happiness);
+    const interval = getZooSpawnInterval(happiness);
     const initialDelay = (30 + Math.floor(Math.random() * 60)) * 1000;
     zooRuntime.lastSpawn[a.id] = interval < Infinity ? now - interval * 1000 + initialDelay : now;
   });
@@ -239,10 +239,10 @@ function zooTick() {
     updateZooButtons(a.id, enc);
 
     // Star spawning
-    const interval = getZooStarInterval(enc.happiness);
+    const interval = getZooSpawnInterval(enc.happiness);
     if (interval < Infinity) {
       const elapsed = (now - (zooRuntime.lastSpawn[a.id] || now)) / 1000;
-      if (elapsed >= interval && zooRuntime.pendingStars[a.id].length < ZOO_MAX_STARS) {
+      if (elapsed >= interval && zooRuntime.pendingStars[a.id].length < ZOO_MAX_SPAWNS) {
         spawnZooStar(a.id);
         zooRuntime.lastSpawn[a.id] = now;
       }
@@ -268,34 +268,44 @@ function zooTick() {
 function spawnZooStar(animalId) {
   const container = document.getElementById('zoo-stars-' + animalId);
   if (!container) return;
-  const star = document.createElement('div');
-  star.className = 'zoo-star';
-  star.textContent = '\u2b50';
-  star.style.left = (10 + Math.random() * 70) + '%';
-  star.style.top = (10 + Math.random() * 50) + '%';
-  star.onclick = function(e) { e.stopPropagation(); collectZooStar(animalId, star); };
-  container.appendChild(star);
-  parseAppleEmoji(star);
-  zooRuntime.pendingStars[animalId].push({ time: Date.now(), el: star });
+  const isStar = Math.random() < ZOO_STAR_CHANCE;
+  const el = document.createElement('div');
+  el.className = isStar ? 'zoo-star' : 'zoo-poop';
+  el.textContent = isStar ? '\u2b50' : '\ud83d\udca9';
+  el.style.left = (10 + Math.random() * 70) + '%';
+  el.style.top = (10 + Math.random() * 50) + '%';
+  el.onclick = function(e) { e.stopPropagation(); collectZooItem(animalId, el); };
+  container.appendChild(el);
+  parseAppleEmoji(el);
+  zooRuntime.pendingStars[animalId].push({ time: Date.now(), el: el, isStar: isStar });
 }
 
-function collectZooStar(animalId, starEl) {
+function collectZooItem(animalId, el) {
+  let isStar = false;
   if (zooRuntime) {
-    const stars = zooRuntime.pendingStars[animalId];
-    const idx = stars.findIndex(s => s.el === starEl);
-    if (idx >= 0) stars.splice(idx, 1);
+    const items = zooRuntime.pendingStars[animalId];
+    const idx = items.findIndex(s => s.el === el);
+    if (idx >= 0) {
+      isStar = items[idx].isStar;
+      items.splice(idx, 1);
+    }
   }
-  starEl.classList.add('zoo-star-collect');
-  setTimeout(() => starEl.remove(), 400);
+  el.classList.add(isStar ? 'zoo-star-collect' : 'zoo-poop-collect');
+  setTimeout(() => el.remove(), 400);
 
-  if (prestigeCache) {
-    prestigeCache.totalStars++;
-    prestigeCache.zooStars = (prestigeCache.zooStars || 0) + 1;
+  if (isStar) {
+    if (prestigeCache) {
+      prestigeCache.totalStars++;
+      prestigeCache.zooStars = (prestigeCache.zooStars || 0) + 1;
+    } else {
+      state.prestige.stars++;
+    }
+    zooCollectedStars++;
+    sfxLuckyClick();
   } else {
-    state.prestige.stars++;
+    sfxClick();
+    showZooParticle(animalId, 'Opgeruimd!');
   }
-  zooCollectedStars++;
-  sfxLuckyClick();
   updateZooStarCounter();
 }
 

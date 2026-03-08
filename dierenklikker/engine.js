@@ -252,10 +252,10 @@ function updateZooHappiness() {
   });
 }
 
-function getZooStarInterval(happiness) {
-  if (happiness >= 90) return 1200;  // 20 min
-  if (happiness >= 60) return 2400;  // 40 min
-  if (happiness >= 30) return 3600;  // 60 min
+function getZooSpawnInterval(happiness) {
+  if (happiness >= 90) return 90;   // 1.5 min
+  if (happiness >= 60) return 120;  // 2 min
+  if (happiness >= 30) return 180;  // 3 min
   return Infinity;
 }
 
