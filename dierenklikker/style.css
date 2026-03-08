@@ -98,7 +98,7 @@ body {
 /* Main layout */
 #game {
   display: grid; grid-template-columns: 35% 30% 35%;
-  gap: 12px; padding: 8px 12px 20px; max-width: 1400px; margin: 0 auto;
+  gap: 12px; padding: 8px 16px 20px; margin: 0;
   height: calc(100vh - 56px);
 }
 .panel {
