@@ -863,11 +863,22 @@ function buildOptions() {
 
   // Sound
   html += '<div class="opt-section"><h3>🔊 Geluid</h3>';
-  html += '<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">';
-  html += '<span id="volume-label" style="font-size:13px;min-width:35px;text-align:right">' + (soundEnabled ? Math.round(soundVolume * 100) + '%' : 'Uit') + '</span>';
-  html += '<input id="volume-slider" type="range" min="0" max="100" value="' + (soundEnabled ? Math.round(soundVolume * 100) : 0) + '" ';
-  html += 'style="flex:1;accent-color:var(--gold)" oninput="setSoundVolume(this.value)">';
-  html += '</div></div>';
+  const soundCats = [
+    { key: 'klik',   label: '🐾 Klikken' },
+    { key: 'koop',   label: '🛒 Kopen & upgrades' },
+    { key: 'lucky',  label: '🐞 Lieveheersbeestje' },
+    { key: 'overig', label: '🏆 Overig' },
+  ];
+  soundCats.forEach(({ key, label }) => {
+    const pct = Math.round(soundVol[key] * 100);
+    html += '<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">';
+    html += '<span style="font-size:13px;min-width:130px">' + label + '</span>';
+    html += '<span id="vol-label-' + key + '" style="font-size:13px;min-width:35px;text-align:right">' + (pct > 0 ? pct + '%' : 'Uit') + '</span>';
+    html += '<input type="range" min="0" max="100" value="' + pct + '" ';
+    html += 'style="flex:1;accent-color:var(--gold)" oninput="setSoundCategoryVolume(\'' + key + '\', this.value)">';
+    html += '</div>';
+  });
+  html += '</div>';
 
   // Save/load
   html += '<div class="opt-section"><h3>💾 Savegame</h3>';
