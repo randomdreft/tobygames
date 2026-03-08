@@ -208,10 +208,15 @@ function leaveZoo() {
 
 function startZooTick() {
   zooRuntime = { pendingStars: {}, lastSpawn: {}, collected: 0 };
+  const now = Date.now();
   ANIMALS.forEach(a => {
     zooRuntime.pendingStars[a.id] = [];
-    // Random offset 0-60s so animals don't all spawn stars simultaneously
-    zooRuntime.lastSpawn[a.id] = Date.now() + Math.floor(Math.random() * 60) * 1000;
+    // First star appears 30-90s after opening zoo (staggered per animal),
+    // then subsequent stars follow the full interval.
+    const happiness = (state.zoo && state.zoo.enclosures[a.id]) ? state.zoo.enclosures[a.id].happiness : 0;
+    const interval = getZooStarInterval(happiness);
+    const initialDelay = (30 + Math.floor(Math.random() * 60)) * 1000;
+    zooRuntime.lastSpawn[a.id] = interval < Infinity ? now - interval * 1000 + initialDelay : now;
   });
   zooInterval = setInterval(zooTick, 1000);
 }
