@@ -783,6 +783,7 @@ function buildEvolution() {
   html += '<span style="color:var(--gold)">10 miljard = 1⭐ · 100 miljard = 2⭐ · 1 biljoen = 3⭐</span><br>';
   html += 'Steeds ×10 meer punten = weer een ster erbij!<br><br>';
 
+  const previewStars = getPrestigeStars();
   if (state.totalEarned > 0) {
     html += '<span id="prestige-score-line"></span><br><br>';
   }
