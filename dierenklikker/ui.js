@@ -788,6 +788,12 @@ function buildStarShop() {
   el.innerHTML = html;
 }
 
+let _dcCollapsed = window.innerWidth <= 900; // collapsed by default on mobile
+function toggleDcCollapse() {
+  _dcCollapsed = !_dcCollapsed;
+  renderDailyChallenges();
+}
+
 function renderDailyChallenges() {
   const el = document.getElementById('daily-challenges');
   if (!el) return;
@@ -795,7 +801,9 @@ function renderDailyChallenges() {
     el.innerHTML = '';
     return;
   }
+  const isMobile = window.innerWidth <= 900;
   const allDone = state.daily.completed.every(v => v);
+  const doneCount = state.daily.completed.filter(v => v).length;
   let html = '';
   if (allDone) {
     html = '<div class="dc-card dc-done dc-compact">🌟 Alle uitdagingen voltooid!';
@@ -803,10 +811,13 @@ function renderDailyChallenges() {
     html += '</div>';
   } else {
     html = '<div class="dc-card">';
-    html += '<div class="dc-header">📋 Dagelijkse uitdagingen';
+    html += '<div class="dc-header"' + (isMobile ? ' onclick="toggleDcCollapse()"' : '') + '>';
+    html += '📋 Dagelijkse uitdagingen';
+    if (isMobile) html += ' <span style="font-weight:400;font-size:11px;color:var(--text-dim)">(' + doneCount + '/' + state.daily.challenges.length + ')</span>';
     if (state.daily.streak > 0) html += '<span class="dc-streak">🔥 ' + state.daily.streak + 'd</span>';
+    if (isMobile) html += '<span class="dc-toggle-arrow' + (_dcCollapsed ? '' : ' dc-open') + '">▼</span>';
     html += '</div>';
-    html += '<div class="dc-items">';
+    html += '<div class="dc-items' + (isMobile && _dcCollapsed ? ' dc-collapsed' : '') + '">';
     state.daily.challenges.forEach((cid, i) => {
       const c = DAILY_CHALLENGE_POOL.find(x => x.id === cid);
       if (!c) return;
@@ -982,22 +993,49 @@ updateOrbiters._lastKey = '';
 
 /* Tooltip system */
 const tooltipEl = document.getElementById('tooltip');
-document.addEventListener('mouseover', function(e) {
-  const item = e.target.closest('[data-tip]');
-  if (!item) return;
-  const parts = item.dataset.tip.split('|');
-  tooltipEl.innerHTML = '<div class="tip-title">' + parts[0] + '</div>' +
-    (parts[1] ? '<div class="tip-desc">' + parts[1] + '</div>' : '');
-  tooltipEl.style.display = 'block';
-  positionTooltip(e);
-});
-document.addEventListener('mousemove', function(e) {
-  if (tooltipEl.style.display === 'block') positionTooltip(e);
-});
-document.addEventListener('mouseout', function(e) {
-  const item = e.target.closest('[data-tip]');
-  if (item) tooltipEl.style.display = 'none';
-});
+const _isTouchDevice = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
+
+// Desktop: hover tooltips
+if (!_isTouchDevice) {
+  document.addEventListener('mouseover', function(e) {
+    const item = e.target.closest('[data-tip]');
+    if (!item) return;
+    const parts = item.dataset.tip.split('|');
+    tooltipEl.innerHTML = '<div class="tip-title">' + parts[0] + '</div>' +
+      (parts[1] ? '<div class="tip-desc">' + parts[1] + '</div>' : '');
+    tooltipEl.style.display = 'block';
+    positionTooltip(e);
+  });
+  document.addEventListener('mousemove', function(e) {
+    if (tooltipEl.style.display === 'block') positionTooltip(e);
+  });
+  document.addEventListener('mouseout', function(e) {
+    const item = e.target.closest('[data-tip]');
+    if (item) tooltipEl.style.display = 'none';
+  });
+}
+
+// Mobile: tap to show tooltip as toast
+if (_isTouchDevice) {
+  let _touchTipTimer = null;
+  document.addEventListener('click', function(e) {
+    const item = e.target.closest('[data-tip]');
+    if (!item) return;
+    const parts = item.dataset.tip.split('|');
+    const text = parts[0] + (parts[1] ? ' — ' + parts[1] : '');
+    // Show as toast
+    const existing = document.querySelector('.touch-tip-toast');
+    if (existing) existing.remove();
+    clearTimeout(_touchTipTimer);
+    const toast = document.createElement('div');
+    toast.className = 'toast touch-tip-toast';
+    toast.textContent = text;
+    toast.style.animation = 'toast-in 0.3s ease-out, toast-out 0.3s ease-in 2.2s forwards';
+    document.body.appendChild(toast);
+    _touchTipTimer = setTimeout(() => toast.remove(), 2500);
+  });
+}
+
 function positionTooltip(e) {
   const tw = tooltipEl.offsetWidth || 200;
   const th = tooltipEl.offsetHeight || 60;

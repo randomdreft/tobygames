@@ -669,13 +669,106 @@ img.emoji {
 
 /* Responsive */
 @media (max-width: 900px) {
-  #game { grid-template-columns: 1fr; max-width: 600px; padding-bottom: 70px; }
+  body { padding-top: max(48px, env(safe-area-inset-top, 48px)); }
+  #game {
+    grid-template-columns: 1fr; max-width: 600px;
+    padding-bottom: calc(70px + env(safe-area-inset-bottom, 0px));
+    height: auto; min-height: calc(100dvh - 56px);
+  }
   .panel { max-height: none; }
   .panel.hidden-mobile { display: none; }
-  #mobile-nav { display: flex; }
+  #mobile-nav {
+    display: flex;
+    padding: 4px 0 max(6px, env(safe-area-inset-bottom, 6px));
+  }
+  #mobile-nav .tab { font-size: 13px; padding: 10px 4px; min-height: 44px; }
   .back-btn { font-size: 12px; padding: 6px 10px; }
   #top-bar { padding: 10px 60px 4px; }
-  #click-area { max-height: 40vh; }
+  #click-area { max-height: 35dvh; }
+
+  /* Larger touch targets for buttons */
+  .mg-btn { padding: 14px; font-size: 15px; min-height: 44px; }
+  .quiz-answer { padding: 12px 14px; min-height: 44px; }
+  .sort-cat-btn { padding: 14px 8px; min-height: 44px; }
+  .tellen-ans { padding: 14px; min-height: 44px; }
+  .voedsel-opt { padding: 14px 6px; min-height: 44px; }
+  .buff-card { padding: 14px 8px; min-height: 44px; }
+  .indringer-card { padding: 14px 8px; min-height: 44px; }
+  .groter-choice { padding: 14px 8px; min-height: 44px; }
+  .race-pick-btn { padding: 14px 8px; min-height: 44px; }
+
+  /* Shop tabs: scroll horizontally if needed */
+  #shop-tabs {
+    flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch;
+    scrollbar-width: none; gap: 4px;
+  }
+  #shop-tabs::-webkit-scrollbar { display: none; }
+  .shop-tab { min-width: 64px; padding: 10px 6px; min-height: 40px; font-size: 11px; flex-shrink: 0; }
+
+  /* Mid tabs: bigger touch targets */
+  .mid-tab { padding: 10px 6px; font-size: 12px; min-height: 40px; }
+
+  /* Shop items: better touch targets */
+  .shop-item { padding: 12px; min-height: 48px; }
+
+  /* Daily challenges collapsible on mobile */
+  #daily-challenges .dc-card { cursor: pointer; }
+  #daily-challenges .dc-items.dc-collapsed { display: none; }
+  .dc-toggle-arrow {
+    font-size: 10px; transition: transform 0.2s; margin-left: 6px;
+  }
+  .dc-toggle-arrow.dc-open { transform: rotate(180deg); }
+
+  /* Modals: full-width on mobile */
+  .modal-overlay { padding: 12px; align-items: flex-end; }
+  .modal-box {
+    max-height: 85dvh; border-radius: 16px 16px 0 0;
+    padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+  }
+  .modal-btn { min-height: 44px; padding: 12px 24px; }
+
+  /* Prevent text selection and double-tap zoom on game elements */
+  .minigame-box, .shop-item, .ach-item, .shop-tab, .mid-tab,
+  #click-area, #mobile-nav, .opt-btn, .buy-amt-btn, .dc-header,
+  .buff-card, .quiz-answer, .sort-cat-btn, .tellen-ans,
+  .voedsel-opt, .indringer-card, .groter-choice, .race-pick-btn,
+  .memory-card, .puzzel-tile, .ss-buyable, .modal-btn {
+    -webkit-user-select: none;
+    touch-action: manipulation;
+  }
+
+  /* Buy amount buttons */
+  .buy-amt-btn { padding: 8px 14px; min-height: 36px; }
+
+  /* Active states for touch feedback (replaces hover) */
+  .shop-item:active { background: rgba(0,0,0,0.3); }
+  .shop-item.affordable:active { border-color: var(--green); background: rgba(67,160,71,0.15); }
+  .mg-btn:active:not(:disabled) { background: var(--green-light); transform: scale(0.97); }
+  .quiz-answer:active { border-color: var(--green); background: rgba(67,160,71,0.15); }
+  .sort-cat-btn:active { border-color: var(--green); background: rgba(67,160,71,0.15); }
+  .tellen-ans:active { border-color: var(--gold); background: rgba(255,215,0,0.1); }
+  .buff-card:active { border-color: var(--gold); background: rgba(255,215,0,0.1); transform: translateY(-1px); }
+  .indringer-card:active { border-color: var(--gold); transform: scale(1.02); }
+  .groter-choice:active { border-color: var(--gold); transform: scale(1.02); }
+  .voedsel-opt:active { border-color: var(--gold); background: rgba(255,215,0,0.1); }
+  .race-pick-btn:active { border-color: var(--gold); background: rgba(255,215,0,0.1); }
+  .opt-btn:active { background: rgba(0,0,0,0.35); }
+  .buy-amt-btn:active { border-color: var(--gold); background: rgba(255,215,0,0.15); }
+  .memory-card.face-down:active { border-color: var(--gold); transform: scale(1.05); }
+  .puzzel-tile:active { background: rgba(255,255,255,0.2); }
+  .ss-buyable:active { background: rgba(255,215,0,0.15); transform: scale(1.01); }
+
+  /* Catcher game field: smaller on mobile */
+  #catcher-field { height: 200px; }
+
+  /* Points display: more visible */
+  #points-display { font-size: clamp(20px, 5vw, 28px); }
+
+  /* Toast position: above mobile nav */
+  .toast { top: auto; bottom: calc(80px + env(safe-area-inset-bottom, 0px)); }
+
+  /* Tooltip: show on tap instead (positioned inline) */
+  #tooltip { display: none !important; }
 }
 
 /* Paardenrace */
