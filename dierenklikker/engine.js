@@ -606,7 +606,7 @@ function initDailyChallenges() {
   const today = getTodayStr();
   if (state.daily.date === today) return; // already initialized
 
-  // Check if yesterday was completed for streak
+  // Check if previous day was completed for streak
   if (state.daily.date && state.daily.completed.every(v => v)) {
     state.daily.lastCompletedDate = state.daily.date;
   }
@@ -615,9 +615,11 @@ function initDailyChallenges() {
     const last = new Date(state.daily.lastCompletedDate);
     const now = new Date(today);
     const diff = Math.round((now - last) / 86400000);
-    if (diff === 1) {
-      state.daily.streak++;
-    } else if (diff > 1) {
+    if (diff <= 1) {
+      // streak continues: same day (0) or next day (1)
+      // Only increment on actual day change (diff === 1)
+      if (diff === 1) state.daily.streak++;
+    } else {
       state.daily.streak = 0;
     }
   }
@@ -701,6 +703,10 @@ function checkDailyChallenges() {
   // All 3 done bonus
   if (anyNew && state.daily.completed.every(v => v) && !state.daily.bonusClaimed) {
     state.daily.bonusClaimed = true;
+    // Update streak: if this is a continuation from yesterday, it was already
+    // incremented in initDailyChallenges. If streak is 0, this is the first day.
+    if (state.daily.streak === 0) state.daily.streak = 1;
+    state.daily.lastCompletedDate = state.daily.date;
     const bonus = getTotalDps() * 60 * 30;
     state.currentPoints += bonus;
     state.totalEarned += bonus;
