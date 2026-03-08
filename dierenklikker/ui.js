@@ -385,17 +385,25 @@ function updateZooButtons(animalId, enc) {
 
   if (petBtn) {
     const cd = Math.max(0, ZOO_PET_COOLDOWN - (now - (enc.lastPet || 0)));
+    const petText = cd > 0 ? '\ud83e\udd1a ' + Math.ceil(cd / 1000) + 's' : '\ud83e\udd1a Aai';
     petBtn.disabled = cd > 0;
-    petBtn.textContent = cd > 0 ? '\ud83e\udd1a ' + Math.ceil(cd / 1000) + 's' : '\ud83e\udd1a Aai';
-    parseAppleEmoji(petBtn);
+    if (petBtn.dataset.state !== petText) {
+      petBtn.dataset.state = petText;
+      petBtn.textContent = petText;
+      parseAppleEmoji(petBtn);
+    }
   }
   if (feedBtn) {
     const cd = Math.max(0, ZOO_FEED_COOLDOWN - (now - (enc.lastFed || 0)));
     const h = HEMEL_HABITATS.find(x => x.id === animalId);
     const food = h ? h.food : '\ud83e\udd55';
+    const feedText = cd > 0 ? food + ' ' + Math.ceil(cd / 1000) + 's' : food + ' Voer';
     feedBtn.disabled = cd > 0;
-    feedBtn.textContent = cd > 0 ? food + ' ' + Math.ceil(cd / 1000) + 's' : food + ' Voer';
-    parseAppleEmoji(feedBtn);
+    if (feedBtn.dataset.state !== feedText) {
+      feedBtn.dataset.state = feedText;
+      feedBtn.textContent = feedText;
+      parseAppleEmoji(feedBtn);
+    }
   }
   updateZooUpgradeBtn(animalId, enc);
 }
@@ -404,18 +412,28 @@ function updateZooUpgradeBtn(animalId, enc) {
   const btn = document.getElementById('zoo-upg-' + animalId);
   if (!btn) return;
   if (enc.level >= ZOO_LEVELS.length) {
-    btn.textContent = '\u2728 Max';
+    const key = 'max';
+    if (btn.dataset.state !== key) {
+      btn.dataset.state = key;
+      btn.textContent = '\u2728 Max';
+      btn.classList.add('zoo-upg-max');
+      parseAppleEmoji(btn);
+    }
     btn.disabled = true;
-    btn.classList.add('zoo-upg-max');
     btn.dataset.tip = 'Maximaal level|Geluk-verval: ' + ZOO_LEVELS[enc.level - 1].decayPerHour + '% per uur';
   } else {
     const nextCost = ZOO_LEVELS[enc.level].cost;
     const next = ZOO_LEVELS[enc.level];
-    btn.textContent = '\u2b06\ufe0f ' + next.name + ' (' + nextCost + '\u2b50)';
-    btn.disabled = getZooAvailableStars() < nextCost;
+    const canAfford = getZooAvailableStars() >= nextCost;
+    const key = enc.level + '-' + canAfford;
+    btn.disabled = !canAfford;
+    if (btn.dataset.state !== key) {
+      btn.dataset.state = key;
+      btn.textContent = '\u2b06\ufe0f ' + next.name + ' (' + nextCost + '\u2b50)';
+      parseAppleEmoji(btn);
+    }
     btn.dataset.tip = 'Upgrade naar ' + next.name + '|Verval daalt naar ' + next.decayPerHour + '% per uur (kost ' + nextCost + ' sterren)';
   }
-  parseAppleEmoji(btn);
 }
 
 function updateZooStarCounter() {
@@ -431,7 +449,10 @@ function updateZooStarCounter() {
     text = '\u2b50 ' + available + ' beschikbaar';
     if (zooCollectedStars > 0) text += ' | +' + zooCollectedStars + ' verzameld';
   }
-  el.textContent = text;
+  if (el.dataset.state !== text) {
+    el.dataset.state = text;
+    el.textContent = text;
+  }
   el.dataset.tip = 'Sterren|Gebruik sterren voor verblijf-upgrades en perks in de sterrenwinkel';
 }
 
