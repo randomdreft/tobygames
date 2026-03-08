@@ -300,8 +300,13 @@ img.emoji {
 }
 .mid-tab {
   flex: 1; padding: 8px 4px; border: none; border-radius: 8px;
-  background: rgba(0,0,0,0.2); color: var(--text-dim); font-size: 13px;
+  background: rgba(0,0,0,0.2); color: var(--text-dim); font-size: 16px;
   cursor: pointer; transition: all 0.2s;
+}
+.mid-tab .tab-label { display: none; }
+@media (min-width: 1400px) {
+  .mid-tab { font-size: 13px; }
+  .mid-tab .tab-label { display: inline; }
 }
 .mid-tab.active { background: rgba(255,255,255,0.15); color: var(--gold); }
 .mid-content { display: none; }
@@ -496,9 +501,14 @@ img.emoji {
   display: flex; gap: 4px; margin-bottom: 12px; flex-wrap: wrap;
 }
 .shop-tab {
-  flex: 1; min-width: 55px; padding: 8px 2px; border: none; border-radius: 8px;
-  background: rgba(0,0,0,0.2); color: var(--text-dim); font-size: 12px;
+  flex: 1; min-width: 32px; padding: 8px 2px; border: none; border-radius: 8px;
+  background: rgba(0,0,0,0.2); color: var(--text-dim); font-size: 16px;
   cursor: pointer; transition: all 0.2s; white-space: nowrap; position: relative;
+}
+.shop-tab .tab-label { display: none; }
+@media (min-width: 1400px) {
+  .shop-tab { font-size: 12px; }
+  .shop-tab .tab-label { display: inline; }
 }
 .tab-badge {
   position: absolute; top: 2px; right: 2px; width: 8px; height: 8px;
