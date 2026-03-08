@@ -965,6 +965,11 @@ img.emoji {
   font-size: clamp(14px, 2.5vw, 18px); color: rgba(255,255,255,0.9);
   text-shadow: 0 1px 6px rgba(0,0,0,0.2);
 }
+.zoo-hint {
+  display: block; margin-top: 6px;
+  font-size: clamp(11px, 2vw, 13px); color: rgba(255,255,255,0.55);
+  font-style: italic;
+}
 .hemel-clouds {
   position: fixed; top: 0; left: 0; right: 0; height: 50%; z-index: 0; pointer-events: none; overflow: hidden;
 }

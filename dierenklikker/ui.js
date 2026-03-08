@@ -131,13 +131,14 @@ function showDierenhemel(newStars) {
   }
   clouds.innerHTML = cloudHtml;
 
-  // Update title
+  // Update title & intro hint
   const titleEl = document.querySelector('.hemel-title h1');
   const subtitleEl = document.querySelector('.hemel-title p');
   if (titleEl) titleEl.textContent = 'De Wolkendierentuin';
-  if (subtitleEl) subtitleEl.textContent = zooIsPrestige
+  if (subtitleEl) subtitleEl.innerHTML = (zooIsPrestige
     ? 'Je dieren zijn naar de hemel gestuurd!'
-    : 'Bezoek je dieren in de wolken';
+    : 'Bezoek je dieren in de wolken') +
+    '<span class="zoo-hint">Aai en voer je dieren om ze blij te maken \u2014 blije dieren produceren sterren! Klik op sterren om ze te verzamelen.</span>';
 
   // Build interactive enclosure cards
   let html = '';
@@ -150,19 +151,20 @@ function showDierenhemel(newStars) {
     const filled = zooHeartCount(enc.happiness || 0);
     let hearts = '';
     for (let i = 0; i < 5; i++) hearts += i < filled ? '\u2764\ufe0f' : '\ud83e\udd0d';
+    const happyPct = Math.round(enc.happiness || 0);
 
     html += '<div class="hemel-habitat zoo-enclosure" id="zoo-enc-' + h.id + '" style="background:' + h.bg + '">';
     html += '<div class="hemel-env">' + h.env + '</div>';
-    html += '<div class="zoo-level-badge" id="zoo-level-' + h.id + '">' + levelInfo.emoji + ' ' + levelInfo.name + '</div>';
-    html += '<div class="zoo-animal-wrap" onclick="petZooAnimal(\'' + h.id + '\')">';
+    html += '<div class="zoo-level-badge" id="zoo-level-' + h.id + '" data-tip="' + escHtml(levelInfo.name) + '|' + escHtml('Geluk-verval: ' + levelInfo.decayPerHour + '% per uur') + '">' + levelInfo.emoji + ' ' + levelInfo.name + '</div>';
+    html += '<div class="zoo-animal-wrap" onclick="petZooAnimal(\'' + h.id + '\')" data-tip="' + escHtml(animal.name + ' aaien') + '|' + escHtml('Klik om te aaien (+' + ZOO_PET_AMOUNT + '% geluk)') + '">';
     html += '<div class="zoo-animal hemel-animal">' + animal.emoji + '</div>';
     html += '<div class="hemel-food zoo-food">' + h.food + '</div>';
     html += '</div>';
-    html += '<div class="zoo-hearts" id="zoo-hearts-' + h.id + '" data-state="hearts-' + filled + '">' + hearts + '</div>';
+    html += '<div class="zoo-hearts" id="zoo-hearts-' + h.id + '" data-state="hearts-' + filled + '" data-tip="Geluk: ' + happyPct + '%|Blije dieren produceren sterren">' + hearts + '</div>';
     html += '<div class="hemel-label">' + animal.name + '</div>';
     html += '<div class="zoo-actions">';
-    html += '<button class="zoo-btn" id="zoo-pet-' + h.id + '" onclick="event.stopPropagation();petZooAnimal(\'' + h.id + '\')">\ud83e\udd1a Aai</button>';
-    html += '<button class="zoo-btn" id="zoo-feed-' + h.id + '" onclick="event.stopPropagation();feedZooAnimal(\'' + h.id + '\')">' + h.food + ' Voer</button>';
+    html += '<button class="zoo-btn" id="zoo-pet-' + h.id + '" onclick="event.stopPropagation();petZooAnimal(\'' + h.id + '\')" data-tip="Aai ' + escHtml(animal.name) + '|+' + ZOO_PET_AMOUNT + '% geluk (cooldown ' + (ZOO_PET_COOLDOWN/1000) + 's)">\ud83e\udd1a Aai</button>';
+    html += '<button class="zoo-btn" id="zoo-feed-' + h.id + '" onclick="event.stopPropagation();feedZooAnimal(\'' + h.id + '\')" data-tip="Voer ' + escHtml(animal.name) + '|+' + ZOO_FEED_AMOUNT + '% geluk (cooldown ' + (ZOO_FEED_COOLDOWN/1000) + 's)">' + h.food + ' Voer</button>';
     html += '</div>';
     html += '<button class="zoo-upgrade-btn" id="zoo-upg-' + h.id + '" onclick="event.stopPropagation();upgradeZooEnclosure(\'' + h.id + '\')"></button>';
     html += '<div class="zoo-star-area" id="zoo-stars-' + h.id + '"></div>';
@@ -365,6 +367,7 @@ function updateZooHearts(animalId, happiness) {
   if (!el) return;
   const filled = zooHeartCount(happiness);
   const key = 'hearts-' + filled;
+  el.dataset.tip = 'Geluk: ' + Math.round(happiness) + '%|Blije dieren produceren sterren';
   if (el.dataset.state === key) return;
   el.dataset.state = key;
   let html = '';
@@ -382,6 +385,7 @@ function updateZooButtons(animalId, enc) {
     const cd = Math.max(0, ZOO_PET_COOLDOWN - (now - (enc.lastPet || 0)));
     petBtn.disabled = cd > 0;
     petBtn.textContent = cd > 0 ? '\ud83e\udd1a ' + Math.ceil(cd / 1000) + 's' : '\ud83e\udd1a Aai';
+    parseAppleEmoji(petBtn);
   }
   if (feedBtn) {
     const cd = Math.max(0, ZOO_FEED_COOLDOWN - (now - (enc.lastFed || 0)));
@@ -389,6 +393,7 @@ function updateZooButtons(animalId, enc) {
     const food = h ? h.food : '\ud83e\udd55';
     feedBtn.disabled = cd > 0;
     feedBtn.textContent = cd > 0 ? food + ' ' + Math.ceil(cd / 1000) + 's' : food + ' Voer';
+    parseAppleEmoji(feedBtn);
   }
   updateZooUpgradeBtn(animalId, enc);
 }
@@ -400,12 +405,15 @@ function updateZooUpgradeBtn(animalId, enc) {
     btn.textContent = '\u2728 Max';
     btn.disabled = true;
     btn.classList.add('zoo-upg-max');
+    btn.dataset.tip = 'Maximaal level|Geluk-verval: ' + ZOO_LEVELS[enc.level - 1].decayPerHour + '% per uur';
   } else {
     const nextCost = ZOO_LEVELS[enc.level].cost;
-    const nextName = ZOO_LEVELS[enc.level].name;
-    btn.textContent = '\u2b06\ufe0f ' + nextName + ' (' + nextCost + '\u2b50)';
+    const next = ZOO_LEVELS[enc.level];
+    btn.textContent = '\u2b06\ufe0f ' + next.name + ' (' + nextCost + '\u2b50)';
     btn.disabled = getZooAvailableStars() < nextCost;
+    btn.dataset.tip = 'Upgrade naar ' + next.name + '|Verval daalt naar ' + next.decayPerHour + '% per uur (kost ' + nextCost + ' sterren)';
   }
+  parseAppleEmoji(btn);
 }
 
 function updateZooStarCounter() {
@@ -422,6 +430,7 @@ function updateZooStarCounter() {
     if (zooCollectedStars > 0) text += ' | +' + zooCollectedStars + ' verzameld';
   }
   el.textContent = text;
+  el.dataset.tip = 'Sterren|Gebruik sterren voor verblijf-upgrades en perks in de sterrenwinkel';
 }
 
 function showZooParticle(animalId, text) {
@@ -868,6 +877,7 @@ function render() {
     }
   } else {
     bigEl.textContent = highest.emoji;
+    parseAppleEmoji(bigEl);
   }
   document.getElementById('animal-name').textContent = highest.name;
   document.getElementById('click-info').textContent = '+' + formatNumber(Math.floor(getClickValue())) + ' per klik';
@@ -981,6 +991,7 @@ function render() {
     } else {
       pBtn.textContent = '⭐ Evolueer (nodig: alle dieren)';
     }
+    parseAppleEmoji(pBtn);
   }
 
   // Mini-game locks & cooldowns
