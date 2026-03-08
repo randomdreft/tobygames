@@ -1,0 +1,7 @@
+{
+  "name": "tobygames",
+  "private": true,
+  "scripts": {
+    "dev": "npx live-server . --port=8080"
+  }
+}
