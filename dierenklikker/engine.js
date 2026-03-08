@@ -204,10 +204,11 @@ function canPrestige() {
 
 function getPrestigeStars() {
   if (state.totalEarned < 1e10) return 0;
-  // Each star requires 10× more earnings in one run
-  // Star 1=1e10, Star 2=1e11, Star 6=1e15, Star 11=1e20...
-  // Self-limiting: +5% DPS/star can never outpace 10×/star threshold
-  return Math.max(1, Math.floor(Math.log10(state.totalEarned) - 9));
+  // Each star requires 10× more earnings, plus owned stars raise threshold
+  // Penalty: +0.02 log10 per owned star (~5% harder per star)
+  // At 0 stars: 1e10 for 1st. At 100: 1e12. At 300: 1e16. Ceiling ~400 stars.
+  const threshold = 9 + state.prestige.stars * 0.02;
+  return Math.max(0, Math.floor(Math.log10(state.totalEarned) - threshold));
 }
 
 /* ================================================================
