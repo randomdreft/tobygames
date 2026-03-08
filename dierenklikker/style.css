@@ -611,6 +611,8 @@ img.emoji {
 #tooltip .tip-title { font-weight: 700; color: var(--gold); margin-bottom: 3px; }
 #tooltip .tip-desc { color: var(--text-dim); }
 .ach-summary, .upg-summary { font-size: 13px; color: var(--text-dim); margin-bottom: 12px; text-align: center; }
+.buy-all-btn { background: var(--gold); color: #000; border: none; border-radius: 8px; padding: 6px 18px; font-size: 13px; font-weight: 700; cursor: pointer; transition: opacity 0.15s; }
+.buy-all-btn:hover { opacity: 0.85; }
 .ach-section { margin-bottom: 14px; }
 .ach-section h4 { font-size: 13px; color: var(--text-dim); margin-bottom: 6px; }
 .ach-spoiler-toggle {

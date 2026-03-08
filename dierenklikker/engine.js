@@ -848,6 +848,32 @@ function buyUpgrade(upgradeId) {
   }
 }
 
+function buyAllUpgrades() {
+  const allUpgrades = [CLICK_UPGRADES, GLOBAL_UPGRADES, OFFLINE_UPGRADES, ...ANIMALS.map(a => a.upgrades)].flat();
+  const available = allUpgrades.filter(u => {
+    if (state.upgrades[u.id]) return false;
+    if (state.currentPoints < u.cost) return false;
+    if (u.req !== undefined) {
+      const animal = ANIMALS.find(a => a.upgrades.some(au => au.id === u.id));
+      if (animal && (state.animals[animal.id] || 0) < u.req) return false;
+    }
+    return true;
+  }).sort((a, b) => a.cost - b.cost);
+  let count = 0;
+  for (const u of available) {
+    if (state.currentPoints < u.cost) continue;
+    state.currentPoints -= u.cost;
+    state.upgrades[u.id] = 1;
+    if (state.daily.date) state.daily.upgradesBought++;
+    count++;
+  }
+  if (count > 0) {
+    sfxBuy();
+    buildUpgradeShop();
+  }
+  return count;
+}
+
 function findUpgrade(id) {
   for (const a of ANIMALS) {
     const u = a.upgrades.find(u => u.id === id);

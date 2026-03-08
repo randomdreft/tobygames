@@ -286,6 +286,7 @@ function buildUpgradeShop() {
   const total = allUpgrades.length;
   const pct = total ? Math.floor(bought / total * 100) : 0;
   let html = '<div class="upg-summary">' + bought + '/' + total + ' upgrades (' + pct + '%)</div>';
+  if (bought < total) html += '<div style="text-align:center;margin-bottom:10px"><button class="buy-all-btn" onclick="buyAllUpgrades()">Koop alles</button></div>';
   html += buildUpgradeCategory('👆 Klik-upgrades', CLICK_UPGRADES);
   html += buildUpgradeCategory('🌍 Globale upgrades', GLOBAL_UPGRADES);
   html += buildUpgradeCategory('🌙 Offline upgrades', OFFLINE_UPGRADES);
