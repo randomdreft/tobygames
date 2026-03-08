@@ -1081,10 +1081,8 @@ function renderLeaderboard() {
     html += '</div>';
   }
 
-  // Submit button
-  html += '<div style="text-align:center;margin-top:12px">';
-  html += '<button class="mg-btn" onclick="submitLeaderboard(); setTimeout(fetchLeaderboard, 1000);" style="font-size:12px;padding:6px 16px">📤 Score versturen</button>';
-  html += '</div>';
+  // Info text
+  html += '<div style="text-align:center;margin-top:12px;font-size:11px;color:var(--text-dim)">Score wordt automatisch bijgewerkt</div>';
 
   el.innerHTML = html;
 }
@@ -1211,7 +1209,7 @@ function showMidTab(tabId) {
     if (el) el.classList.toggle('active', tabId === id);
   });
   if (tabId === 'starshop') buildStarShop();
-  if (tabId === 'leaderboard') fetchLeaderboard();
+  if (tabId === 'leaderboard') { submitLeaderboard(); setTimeout(fetchLeaderboard, 500); }
   try { localStorage.setItem('dk_midtab', tabId); } catch(e) {}
 }
 
