@@ -966,7 +966,7 @@ function renderStats() {
 
 // --- Leaderboard ---
 let _leaderboardData = null;
-let _leaderboardTrustedOnly = false;
+let _leaderboardTrustedOnly = true;
 let _lastLeaderboardSubmit = 0;
 
 function getPlayerPid() {
