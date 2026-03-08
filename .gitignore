@@ -1,0 +1,7 @@
+# Docker/server configuratie (specifiek voor TROGDOR hosting)
+Dockerfile
+docker-compose.yml
+server.js
+package.json
+package-lock.json
+node_modules/
