@@ -1054,14 +1054,13 @@ function renderLeaderboard() {
     html += '<div class="lb-table">';
     html += '<div class="lb-header"><span>#</span><span>Dierentuin</span><span>Score</span><span>⭐</span><span></span></div>';
     _leaderboardData.top.forEach(function(e) {
-      var trustIcon = e.trust >= 80 ? '🟢' : e.trust >= 60 ? '🟠' : '🔴';
       var isMe = _leaderboardData.me && e.rank === _leaderboardData.me.rank;
       html += '<div class="lb-row' + (isMe ? ' lb-me' : '') + '">';
       html += '<span class="lb-rank">' + e.rank + '</span>';
       html += '<span class="lb-name">' + escapeHtml(e.zooName) + '</span>';
       html += '<span class="lb-score">' + formatNumber(e.score) + '</span>';
       html += '<span class="lb-stars">' + e.stars + '</span>';
-      html += '<span class="lb-trust">' + trustIcon + '</span>';
+      html += trustBadge(e.trust);
       html += '</div>';
     });
     html += '</div>';
@@ -1071,14 +1070,13 @@ function renderLeaderboard() {
   if (_leaderboardData.me && _leaderboardData.me.rank > 10) {
     html += '<div class="stat-heading">Jouw positie</div>';
     var e = _leaderboardData.me;
-    var trustIcon = e.trust >= 80 ? '🟢' : e.trust >= 60 ? '🟠' : '🔴';
     html += '<div class="lb-table">';
     html += '<div class="lb-row lb-me">';
     html += '<span class="lb-rank">' + e.rank + '</span>';
     html += '<span class="lb-name">' + escapeHtml(e.zooName) + '</span>';
     html += '<span class="lb-score">' + formatNumber(e.score) + '</span>';
     html += '<span class="lb-stars">' + e.stars + '</span>';
-    html += '<span class="lb-trust">' + trustIcon + '</span>';
+    html += trustBadge(e.trust);
     html += '</div>';
     html += '</div>';
   }
@@ -1089,6 +1087,18 @@ function renderLeaderboard() {
   html += '</div>';
 
   el.innerHTML = html;
+}
+
+function trustBadge(trust) {
+  var icon, label, tip;
+  if (trust >= 80) {
+    icon = '🟢'; label = 'Betrouwbaar'; tip = 'Betrouwbaar|Score lijkt legitiem (' + trust + '/100)';
+  } else if (trust >= 60) {
+    icon = '🟠'; label = 'Twijfelachtig'; tip = 'Twijfelachtig|Score is mogelijk verdacht (' + trust + '/100)';
+  } else {
+    icon = '🔴'; label = 'Onbetrouwbaar'; tip = 'Onbetrouwbaar|Score lijkt vals of gemanipuleerd (' + trust + '/100)';
+  }
+  return '<span class="lb-trust" data-tip="' + tip + '">' + icon + '</span>';
 }
 
 function escapeHtml(str) {
