@@ -91,8 +91,8 @@ const STAR_SHOP = [
     {id:'sp_buff2', name:'Sterkere buffs', desc:'Buff-effecten +50% sterker', cost:6},
   ]},
   {cat:'Evolutie', emoji:'🚀', perks:[
-    {id:'sp_evo1', name:'Vliegende start', desc:'Begin met 1 min DPS na evolutie', cost:2},
-    {id:'sp_evo2', name:'Raketstart', desc:'Begin met 10 min DPS na evolutie', cost:6},
+    {id:'sp_evo1', name:'Vliegende start', desc:'Start met 5 mieren en 2 slakken cadeau na evolutie', cost:2},
+    {id:'sp_evo2', name:'Raketstart', desc:'Start met 10 mieren, 5 slakken en 1 kikker cadeau na evolutie', cost:6},
   ]},
   {cat:'Koop alles', emoji:'🛒', perks:[
     {id:'sp_ba_mier', name:'Koop alles: Mieren', desc:'Koop-alles knop bij mier-upgrades', cost:2},

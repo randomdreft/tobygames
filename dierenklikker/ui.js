@@ -522,11 +522,12 @@ function completePrestige() {
   // Only adds to currentPoints (spending power), NOT totalEarned (prestige progress)
   // to prevent instant star farming when DPS is high enough
   if (hasPerk('sp_evo2')) {
-    const bonus = dpsBeforeReset * 600; // 10 min DPS
-    state.currentPoints += bonus;
+    state.animals['mier'] = (state.animals['mier'] || 0) + 10;
+    state.animals['slak'] = (state.animals['slak'] || 0) + 5;
+    state.animals['kikker'] = (state.animals['kikker'] || 0) + 1;
   } else if (hasPerk('sp_evo1')) {
-    const bonus = dpsBeforeReset * 60; // 1 min DPS
-    state.currentPoints += bonus;
+    state.animals['mier'] = (state.animals['mier'] || 0) + 5;
+    state.animals['slak'] = (state.animals['slak'] || 0) + 2;
   }
 
   if (!state.prestige.themeLocked) {
