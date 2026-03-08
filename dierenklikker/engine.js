@@ -611,7 +611,14 @@ function takeDailySnapshots() {
 
 function initDailyChallenges() {
   const today = getTodayStr();
-  if (state.daily.date === today) return; // already initialized
+  if (state.daily.date === today) {
+    // Fix stale saves from old code: bonus was claimed but streak/lastCompletedDate weren't updated
+    if (state.daily.bonusClaimed && state.daily.lastCompletedDate !== today) {
+      state.daily.streak++;
+      state.daily.lastCompletedDate = today;
+    }
+    return;
+  }
 
   // Mark previous day as completed if all challenges were done
   if (state.daily.date && state.daily.completed.every(v => v)) {
