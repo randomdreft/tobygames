@@ -183,16 +183,14 @@ function completePrestige() {
   }
 
   // Evolution start bonus from star shop perks (use DPS from before reset)
+  // Only adds to currentPoints (spending power), NOT totalEarned (prestige progress)
+  // to prevent instant star farming when DPS is high enough
   if (hasPerk('sp_evo2')) {
     const bonus = dpsBeforeReset * 600; // 10 min DPS
     state.currentPoints += bonus;
-    state.totalEarned += bonus;
-    state.allTime.totalEarned += bonus;
   } else if (hasPerk('sp_evo1')) {
     const bonus = dpsBeforeReset * 60; // 1 min DPS
     state.currentPoints += bonus;
-    state.totalEarned += bonus;
-    state.allTime.totalEarned += bonus;
   }
 
   if (!state.prestige.themeLocked) {
