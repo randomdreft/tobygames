@@ -253,9 +253,9 @@ function updateZooHappiness() {
 }
 
 function getZooStarInterval(happiness) {
-  if (happiness >= 90) return 90;
-  if (happiness >= 60) return 180;
-  if (happiness >= 30) return 480;
+  if (happiness >= 90) return 240;   // 4 min
+  if (happiness >= 60) return 480;   // 8 min
+  if (happiness >= 30) return 900;   // 15 min
   return Infinity;
 }
 
