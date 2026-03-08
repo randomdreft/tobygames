@@ -204,10 +204,14 @@ function canPrestige() {
 
 function getPrestigeStars() {
   if (state.totalEarned < 1e10) return 0;
-  // Triangular scaling: star n requires 10^(9 + n*(n+1)/2)
-  // So star 1=1e10, 2=1e12, 3=1e15, 4=1e19, 5=1e24, 6=1e30...
-  const logVal = Math.log10(state.totalEarned) - 9;
-  return Math.max(1, Math.floor((-1 + Math.sqrt(1 + 8 * logVal)) / 2));
+  const logVal = Math.log10(state.totalEarned);
+  let newStars = 0;
+  // Each star requires 10× more; threshold shifts by total stars owned
+  // So star 1=1e10, but if you have 5 stars, next one needs 1e15
+  while (logVal >= 10 + state.prestige.stars + newStars) {
+    newStars++;
+  }
+  return newStars;
 }
 
 /* ================================================================
