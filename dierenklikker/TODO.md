@@ -9,16 +9,12 @@ De game draait op een Node.js server in Docker (zie `/Dockerfile` en `/server.js
 - **Statische bestanden**: `/var/www/tobygames` gemount als `/static` (read-only)
 - **Rebuild**: `cd /opt/static-sites && sudo docker compose up -d --build tobygames`
 
-### Huidige API endpoints
+### API endpoints
 | Endpoint | Methode | Beschrijving |
 |---|---|---|
 | `/api/heartbeat?sid=xxx` | GET | Actieve spelers tellen. Retourneert `{ online, sid }`. Client pollt elke 30s. Sessies verlopen na 90s. |
-
-### Nog te bouwen
-| Endpoint | Methode | Beschrijving |
-|---|---|---|
-| `/api/leaderboard` | POST | Score submitten met gamestate payload |
-| `/api/leaderboard` | GET | Top 10 + eigen ranking ophalen |
+| `/api/leaderboard` | POST | Score submitten met gamestate payload (pid, zooName, score, animals, etc). Anti-cheat trust score wordt berekend. |
+| `/api/leaderboard?pid=X&trusted=0\|1` | GET | Top 10 + eigen ranking. `trusted=1` filtert op trust >= 60. |
 
 ## Afgerond
 
@@ -51,24 +47,16 @@ De game draait op een Node.js server in Docker (zie `/Dockerfile` en `/server.js
 - Opgeslagen in savegame als `dierentuin_naam`
 - Vereiste voor leaderboard
 
-## In ontwikkeling
-
-### C3b - Multiplayer scorebord 🔨
-- **UI (client-side — klaar om te bouwen):**
-  - Tab "Scorebord" in middenpaneel naast Statistieken
-  - Top 10 + eigen positie als je niet in top 10 zit
-  - Vertrouwensindicator per score (groen/oranje/rood of ⚠️/💀)
-  - Filter: "toon alleen betrouwbare scores"
-- **API:**
-  - `POST /api/leaderboard` — submit score met volledige gamestate payload
-  - `GET /api/leaderboard` — top 10 + eigen ranking
-  - Payload bevat: zooName, totalEarned, stars, playTimeSeconds, totalClicks, totalAnimals, achievements count
-- **Server-side anti-cheat (TODO op server):**
-  - Speeltijd vs. score ratio check
-  - Klik-ratio check (max ~15/sec)
-  - Progressie-logica (geen draak zonder goedkopere dieren)
-  - Achievements vs. stats consistentie
-  - Scores krijgen vertrouwensscore, verdachte scores worden gefilterd (niet verwijderd)
+### C3b - Multiplayer scorebord ✅
+- Tab "Scorebord" in middenpaneel met top 10 + eigen positie
+- Vertrouwensindicator per score (🟢/🟠/🔴)
+- Filter: "toon alleen betrouwbare scores" (trust >= 60)
+- `POST /api/leaderboard` — submit score met gamestate payload
+- `GET /api/leaderboard?pid=X&trusted=0|1` — top 10 + eigen ranking
+- Spelers geïdentificeerd via persistent `pid` in localStorage (uniek, onafhankelijk van naam)
+- Auto-submit bij prestige en elke 5 minuten
+- Server-side anti-cheat: speeltijd/score ratio, kliksnelheid (max 15/s), progressielogica, scorecontroles
+- Opslag: JSON-bestand in Docker named volume (`tobygames-data:/data`)
 
 ## Gepland (volgende sessies)
 
