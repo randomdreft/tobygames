@@ -102,6 +102,11 @@ function visitZoo() {
   showDierenhemel();
 }
 
+function zooHeartCount(happiness) {
+  // Wider thresholds so hearts don't flicker from tiny decay
+  return happiness >= 90 ? 5 : happiness >= 70 ? 4 : happiness >= 50 ? 3 : happiness >= 30 ? 2 : happiness >= 10 ? 1 : 0;
+}
+
 function showDierenhemel(newStars) {
   zooIsPrestige = (newStars !== undefined);
   zooCollectedStars = 0;
@@ -142,7 +147,7 @@ function showDierenhemel(newStars) {
     const enc = state.zoo.enclosures[h.id];
     if (!enc) return;
     const levelInfo = ZOO_LEVELS[(enc.level || 1) - 1];
-    const filled = Math.min(5, Math.floor((enc.happiness || 0) / 20));
+    const filled = zooHeartCount(enc.happiness || 0);
     let hearts = '';
     for (let i = 0; i < 5; i++) hearts += i < filled ? '\u2764\ufe0f' : '\ud83e\udd0d';
 
@@ -358,7 +363,7 @@ function upgradeZooEnclosure(animalId) {
 function updateZooHearts(animalId, happiness) {
   const el = document.getElementById('zoo-hearts-' + animalId);
   if (!el) return;
-  const filled = Math.min(5, Math.floor(happiness / 20));
+  const filled = zooHeartCount(happiness);
   const key = 'hearts-' + filled;
   if (el.dataset.state === key) return;
   el.dataset.state = key;
