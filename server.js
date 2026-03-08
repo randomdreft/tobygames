@@ -154,7 +154,8 @@ function handleLeaderboardPost(req, res) {
       pid,
       zooName,
       score: Math.floor(data.score || 0),
-      stars: data.stars || 0,
+      stars: Math.floor(data.stars || 0),
+      timesReset: Math.floor(data.timesReset || 0),
       playTimeSeconds: Math.floor(data.playTimeSeconds || 0),
       totalClicks: Math.floor(data.totalClicks || 0),
       totalAnimals: Math.floor(data.totalAnimals || 0),
@@ -172,17 +173,16 @@ function handleLeaderboardPost(req, res) {
       if (entry.score >= leaderboard[idx].score) {
         leaderboard[idx] = entry;
       } else {
-        // Still update name and trust, keep high score
-        leaderboard[idx].zooName = entry.zooName;
-        leaderboard[idx].trust = entry.trust;
-        leaderboard[idx].trustReasons = entry.trustReasons;
-        leaderboard[idx].updatedAt = entry.updatedAt;
+        // Keep high score, update everything else
+        const highScore = leaderboard[idx].score;
+        leaderboard[idx] = entry;
+        leaderboard[idx].score = highScore;
       }
     } else {
       leaderboard.push(entry);
     }
 
-    // Sort by score descending
+    // Sort by stars descending, then score as tiebreaker
     leaderboard.sort((a, b) => b.stars - a.stars || b.score - a.score);
 
     // Cap at 500 entries
