@@ -73,16 +73,14 @@ function getAnimalPrice(animalId) {
   const a = ANIMALS.find(x => x.id === animalId);
   const count = state.animals[animalId] || 0;
   let price = Math.ceil(a.basePrice * Math.pow(COST_MULTIPLIER, count));
-  const buff = getActiveBuff();
-  if (buff && buff.type === 'sale') price = Math.ceil(price * (1 - 0.5 * getBuffStrength()));
+  if (getActiveBuff('sale')) price = Math.ceil(price * (1 - 0.5 * getBuffStrength()));
   return price;
 }
 
 function getBulkPrice(animalId, qty) {
   const a = ANIMALS.find(x => x.id === animalId);
   const count = state.animals[animalId] || 0;
-  const buff = getActiveBuff();
-  const saleMult = (buff && buff.type === 'sale') ? (1 - 0.5 * getBuffStrength()) : 1;
+  const saleMult = getActiveBuff('sale') ? (1 - 0.5 * getBuffStrength()) : 1;
   let total = 0;
   for (let i = 0; i < qty; i++) {
     total += Math.ceil(a.basePrice * Math.pow(COST_MULTIPLIER, count + i) * saleMult);
@@ -124,8 +122,7 @@ function getTotalDps() {
   // Prestige bonus (all stars count)
   total *= (1 + state.prestige.stars * PRESTIGE_BONUS);
   // Active buff: DPS ×2 (or ×3 with stronger buffs)
-  const buff = getActiveBuff();
-  if (buff && buff.type === 'dps2x') total *= (1 + 1 * getBuffStrength());
+  if (getActiveBuff('dps2x')) total *= (1 + 1 * getBuffStrength());
   return total;
 }
 
@@ -141,8 +138,7 @@ function getClickValue() {
   // Prestige bonus on clicks too (all stars count)
   base *= (1 + state.prestige.stars * PRESTIGE_BONUS);
   // Active buff effects on clicks
-  const buff = getActiveBuff();
-  if (buff && buff.type === 'clickdps') dpsPct += 5 * getBuffStrength();
+  if (getActiveBuff('clickdps')) dpsPct += 5 * getBuffStrength();
   return base + getTotalDps() * (dpsPct / 100);
 }
 
@@ -170,16 +166,14 @@ function getDpsBreakdown() {
   const achCount = Object.keys(state.achievements).filter(k => state.achievements[k]).length;
   const achPct = achCount * ACHIEVEMENT_BONUS * 100;
   const starPct = state.prestige.stars * PRESTIGE_BONUS * 100;
-  const buff = getActiveBuff();
-  const buffActive = buff && buff.type === 'dps2x';
+  const buffActive = !!getActiveBuff('dps2x');
   return {animals: breakdown, rawTotal: rawAnimalTotal, total: total, achPct: achPct, starPct: starPct, buffActive: buffActive};
 }
 
 function getMaxAffordable(animalId) {
   const a = ANIMALS.find(x => x.id === animalId);
   const count = state.animals[animalId] || 0;
-  const buff = getActiveBuff();
-  const saleMult = (buff && buff.type === 'sale') ? (1 - 0.5 * getBuffStrength()) : 1;
+  const saleMult = getActiveBuff('sale') ? (1 - 0.5 * getBuffStrength()) : 1;
   let remaining = state.currentPoints;
   let qty = 0;
   while (qty < 10000) {
