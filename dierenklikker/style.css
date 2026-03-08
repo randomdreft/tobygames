@@ -304,10 +304,6 @@ img.emoji {
   cursor: pointer; transition: all 0.2s;
 }
 .mid-tab .tab-label { display: none; }
-@media (min-width: 1400px) {
-  .mid-tab { font-size: 13px; }
-  .mid-tab .tab-label { display: inline; }
-}
 .mid-tab.active { background: rgba(255,255,255,0.15); color: var(--gold); }
 .mid-content { display: none; }
 .mid-content.active { display: block; }
@@ -506,10 +502,6 @@ img.emoji {
   cursor: pointer; transition: all 0.2s; white-space: nowrap; position: relative;
 }
 .shop-tab .tab-label { display: none; }
-@media (min-width: 1400px) {
-  .shop-tab { font-size: 12px; }
-  .shop-tab .tab-label { display: inline; }
-}
 .tab-badge {
   position: absolute; top: 2px; right: 2px; width: 8px; height: 8px;
   border-radius: 50%; background: var(--green-light);
