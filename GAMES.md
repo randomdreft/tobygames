@@ -24,13 +24,13 @@ Het meest uitgebreide spel. Cookie Clicker-achtig incrementeel spel met veel sub
 
 | Bestand | Regels | Inhoud |
 |---------|--------|--------|
-| `style.css` | ~1070 | CSS variabelen (`:root`), layout, component-styling, achievement-viering animatie, milestone-bars, tab-badges, mobiele aanpassingen |
+| `style.css` | ~1200 | CSS variabelen (`:root`), layout, component-styling, achievement-viering animatie, milestone-bars, tab-badges, wolkendierentuin, mobiele aanpassingen |
 | `sound.js` | ~180 | Web Audio API geluidssynthese, volume-beheer (localStorage) |
-| `data.js` | ~400 | Constanten, dierdata (12 soorten + upgrades), quiz-vragen, minigame-data, dagelijkse uitdagingen |
-| `state.js` | ~530 | `defaultState()`, INI save/load (`stateToIni`/`iniToState`), import/export |
-| `engine.js` | ~860 | Prijsberekening, DPS, click value, achievements, buy-functies, `getDpsBreakdown()`, `getMaxAffordable()`, dagelijkse uitdagingen, anti-cheat |
-| `minigames.js` | ~1290 | Alle 12 mini-games, cancel-systeem (`cancelMinigame`/`cancelAllMinigames`), `buyMax` variabele |
-| `ui.js` | ~1620 | Prestige, Dierenhemel, thema's, shop-rendering, game loop, `render()`, `init()`, tab-badges, DPS-uitsplitsing, keyboard shortcuts, scorebord, online spelers |
+| `data.js` | ~430 | Constanten, dierdata (12 soorten + upgrades), quiz-vragen, minigame-data, dagelijkse uitdagingen, wolkendierentuin levels, sterrenshop perks |
+| `state.js` | ~560 | `defaultState()`, INI save/load (`stateToIni`/`iniToState`), import/export, Apple-emoji rendering (`parseAppleEmoji`) |
+| `engine.js` | ~950 | Prijsberekening, DPS, click value, achievements, buy-functies, `getDpsBreakdown()`, `getMaxAffordable()`, dagelijkse uitdagingen, anti-cheat |
+| `minigames.js` | ~1300 | Alle 12 mini-games, cancel-systeem (`cancelMinigame`/`cancelAllMinigames`), `buyMax` variabele |
+| `ui.js` | ~1970 | Prestige, Dierenhemel, wolkendierentuin, thema's, shop-rendering, game loop, `render()`, `init()`, tab-badges, DPS-uitsplitsing, keyboard shortcuts, scorebord, online spelers |
 
 ### Kernsystemen
 
@@ -65,11 +65,12 @@ Het meest uitgebreide spel. Cookie Clicker-achtig incrementeel spel met veel sub
 
 ### Buff-systeem
 
-Vier buffs (30 seconden actief, 60s met sterrenshop-perk):
-- **Vuurkracht** (🔥): DPS x2
+Vijf buffs (30 seconden actief, 60s met sterrenshop-perk):
+- **Vuurkracht** (🔥): DPS x4
 - **Uitverkoop** (🏷️): alle dieren halve prijs
-- **Gouden Regen** (⭐): +5% van DPS per klik
+- **Gouden Regen** (⭐): +20% van DPS per klik
 - **Jackpot** (💰): direct 30 sec DPS als bonus
+- **Geluksregen** (🍀): 3× meer lieveheersbeestjes gedurende de buff
 
 ### Evolutiesysteem (prestige)
 
@@ -128,6 +129,24 @@ Vier buffs (30 seconden actief, 60s met sterrenshop-perk):
 - Offline-verdiensten berekend bij terugkomst (max 14 dagen)
 - Export/import als tekstbestand
 - Bij laden: obsolete achievement-IDs worden opgeruimd
+
+### Sterrenshop
+
+Na eerste evolutie beschikbaar. Perks kosten sterren en bieden permanente voordelen:
+- **Geluk**: hogere kans op lieveheersbeestjes, hogere beloning
+- **Evolutie**: behoud upgrades bij evolutie (offline, klik, globaal)
+- **Koop alles**: per diersoort (12×) en per upgradecategorie (4×) een "Koop alles"-knop, elk 2⭐
+- **Synergieën**: bonussen voor combinaties van dieren
+
+### Wolkendierentuin (Dierenhemel)
+
+Bij evolutie gaan bezeten dieren naar de "wolkendierentuin" — een apart tabblad met enclosures per dier:
+- **4 niveaus**: Wolkenweitje (gratis) → Wolkenverblijf (3⭐) → Wolkenpaleis (6⭐) → Gouden Paleis (10⭐)
+- **Gelukssysteem**: dieren hebben geluk (happiness) dat langzaam daalt; aaien en voeren verhoogt het
+- **Sterrenproductie**: elke enclosure genereert periodiek ⭐ op basis van niveau en geluk (1-5 sterren rating)
+- **Verval**: geluk daalt per uur, hogere niveaus hebben minder verval
+- **Naamgeving**: spelers geven hun dierentuin een eigen naam
+- Staat wordt opgeslagen in INI-formaat onder `[wolkendierentuin]`
 
 ### Bulk-kopen
 
@@ -429,9 +448,11 @@ Pulserende richtingspijl aan de schermrand die naar de dichtstbijzijnde jerrycan
 
 ## Emojis
 
-- Apple-emojis lokaal gehost in `emoji/` (~3800 PNG bestanden)
+- Apple-emojis lokaal gehost in `emoji/` (~3800 PNG bestanden), hoge resolutie dieren in `emoji-hires/`
 - Bron: `emoji-datasource-apple@16.0.0` (npm)
 - Twemoji-library (CDN) als parser: vervangt emoji-tekens door `<img>` tags
+- `parseAppleEmoji(element)` in `state.js` roept `twemoji.parse()` aan met custom callback naar lokale `/emoji/`-map
+- **FE0F-fallback**: sommige emoji-codepoints worden door twemoji zonder variation selector (FE0F) opgevraagd, maar de PNG-bestanden bestaan alleen met `-fe0f` suffix. Een globale `error`-handler op `<img class="emoji">` probeert automatisch het pad met `-fe0f.png` als fallback.
 - Geen runtime-afhankelijkheid van externe CDN voor afbeeldingen
 
 ## Conventies

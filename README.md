@@ -75,7 +75,7 @@ Stadachtervolging vanuit vogelperspectief. Vlucht voor de politie door een proce
 - **Nul build tools** — geen npm, geen webpack, geen node_modules
 - **Nul tracking** — geen analytics, geen cookies, geen ads
 - **Mobile-friendly** — touch controls waar nodig
-- **Apple emojis** — Dierenklikker gebruikt lokaal gehoste Apple-emojis (`emoji/`) voor consistente weergave. Twemoji-library als parser (CDN).
+- **Apple emojis** — Dierenklikker gebruikt lokaal gehoste Apple-emojis (`emoji/` + `emoji-hires/`) voor consistente weergave op alle platforms. Twemoji-library als parser (CDN), met automatische FE0F-fallback.
 - **Offline** — download de bestanden, speel zonder internet
 
 ## Projectstructuur
