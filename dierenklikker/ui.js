@@ -619,7 +619,7 @@ function buildUpgradeCategory(title, upgrades, animal, buyAllPerk) {
       }
       return true;
     });
-    buyAllBtn = '<button class="buy-all-btn"' + (hasAffordable ? '' : ' disabled') + ' onclick="buyAllCategory(\'' + catKey + '\')">Koop alles</button>';
+    buyAllBtn = '<button class="buy-all-btn" id="buy-all-btn-' + catKey + '"' + (hasAffordable ? '' : ' disabled') + ' onclick="buyAllCategory(\'' + catKey + '\')">Koop alles</button>';
   }
   let html = '<div class="upgrade-category' + collapsed + '">';
   html += '<div class="upg-cat-header">';
@@ -1002,6 +1002,19 @@ function render() {
     const priceEl = document.getElementById('upgprice-' + u.id);
     if (priceEl) priceEl.textContent = bought ? 'Gekocht!' : formatNumber(u.cost);
   });
+  // Buy-all button disabled state
+  ANIMALS.forEach(a => {
+    const btn = document.getElementById('buy-all-btn-' + a.id);
+    if (!btn) return;
+    const hasAffordable = a.upgrades.some(u => {
+      if (state.upgrades[u.id]) return false;
+      if (state.currentPoints < u.cost) return false;
+      if (u.req !== undefined && (state.animals[a.id] || 0) < u.req) return false;
+      return true;
+    });
+    btn.disabled = !hasAffordable;
+  });
+
   const upgSummary = document.querySelector('.upg-summary');
   if (upgSummary) {
     const allUpgrades = allUpgradeSets.flat();
