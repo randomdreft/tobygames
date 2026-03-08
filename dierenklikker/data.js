@@ -19,12 +19,10 @@ const ZOO_LEVELS = [
   {name:'Gouden Paleis', emoji:'✨', cost:4, decayPerHour:1}
 ];
 const ZOO_MAX_SPAWNS = 3;
-const ZOO_STAR_CHANCE = 0.2; // 1 in 5 spawns is a star, rest is poop
 const ZOO_PET_AMOUNT = 10;
 const ZOO_PET_COOLDOWN = 5000;   // 5 sec
 const ZOO_FEED_AMOUNT = 25;
 const ZOO_FEED_COOLDOWN = 15000; // 15 sec
-const ZOO_STAR_LIFETIME = 30000; // 30 sec before uncollected star disappears
 
 const COLOR_THEMES = [
   {id:'oerwoud', name:'Oerwoud', emoji:'🌿', stars:0,

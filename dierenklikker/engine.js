@@ -259,6 +259,13 @@ function getZooSpawnInterval(happiness) {
   return Infinity;
 }
 
+function getZooStarChance(happiness) {
+  if (happiness >= 90) return 0.20;  // 1 in 5
+  if (happiness >= 60) return 0.15;
+  if (happiness >= 30) return 0.10;  // 1 in 10
+  return 0.10;
+}
+
 function getZooAvailableStars() {
   let total = (typeof prestigeCache !== 'undefined' && prestigeCache) ? prestigeCache.totalStars : state.prestige.stars;
   let spent = 0;

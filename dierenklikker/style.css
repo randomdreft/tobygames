@@ -1174,14 +1174,6 @@ img.emoji {
   50% { transform: scale(1.4); opacity: 0.6; }
   100% { transform: scale(0); opacity: 0; }
 }
-.zoo-star-fade {
-  animation: zoo-star-disappear 0.5s ease-out forwards !important;
-  pointer-events: none !important;
-}
-@keyframes zoo-star-disappear {
-  0% { opacity: 1; }
-  100% { opacity: 0; transform: translateY(-20px); }
-}
 .zoo-particle {
   position: absolute; top: 40%; left: 50%;
   transform: translateX(-50%); color: #ff69b4;

@@ -238,26 +238,13 @@ function zooTick() {
     updateZooHearts(a.id, enc.happiness);
     updateZooButtons(a.id, enc);
 
-    // Star spawning
+    // Spawn poop or stars
     const interval = getZooSpawnInterval(enc.happiness);
     if (interval < Infinity) {
       const elapsed = (now - (zooRuntime.lastSpawn[a.id] || now)) / 1000;
       if (elapsed >= interval && zooRuntime.pendingStars[a.id].length < ZOO_MAX_SPAWNS) {
-        spawnZooStar(a.id);
+        spawnZooStar(a.id, enc.happiness);
         zooRuntime.lastSpawn[a.id] = now;
-      }
-    }
-
-    // Remove expired stars
-    const stars = zooRuntime.pendingStars[a.id];
-    for (let i = stars.length - 1; i >= 0; i--) {
-      if (now - stars[i].time > ZOO_STAR_LIFETIME) {
-        if (stars[i].el && stars[i].el.parentNode) {
-          stars[i].el.classList.add('zoo-star-fade');
-          const deadEl = stars[i].el;
-          setTimeout(() => { if (deadEl.parentNode) deadEl.remove(); }, 500);
-        }
-        stars.splice(i, 1);
       }
     }
   });
@@ -265,10 +252,10 @@ function zooTick() {
   updateZooStarCounter();
 }
 
-function spawnZooStar(animalId) {
+function spawnZooStar(animalId, happiness) {
   const container = document.getElementById('zoo-stars-' + animalId);
   if (!container) return;
-  const isStar = Math.random() < ZOO_STAR_CHANCE;
+  const isStar = Math.random() < getZooStarChance(happiness);
   const el = document.createElement('div');
   el.className = isStar ? 'zoo-star' : 'zoo-poop';
   el.textContent = isStar ? '\u2b50' : '\ud83d\udca9';
@@ -277,7 +264,7 @@ function spawnZooStar(animalId) {
   el.onclick = function(e) { e.stopPropagation(); collectZooItem(animalId, el); };
   container.appendChild(el);
   parseAppleEmoji(el);
-  zooRuntime.pendingStars[animalId].push({ time: Date.now(), el: el, isStar: isStar });
+  zooRuntime.pendingStars[animalId].push({ el: el, isStar: isStar });
 }
 
 function collectZooItem(animalId, el) {
