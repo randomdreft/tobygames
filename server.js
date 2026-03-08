@@ -52,11 +52,16 @@ function calculateTrust(data) {
   const clicks = data.totalClicks || 0;
   const animals = data.animals || {};
 
-  // 1. Play time vs score ratio: earning more than 1e8/sec sustained is suspicious
+  // 1. Play time vs score ratio (scaled by prestige stars)
+  // Each star gives +5% DPS, and prestige enables exponential growth
+  // Base threshold: 1e12/sec, doubled per 10 stars
   if (playTime > 0) {
+    const stars = data.stars || 0;
+    const starScale = Math.pow(2, Math.floor(stars / 10));
+    const threshold = 1e12 * starScale;
     const earningsPerSec = score / playTime;
-    if (earningsPerSec > 1e9) { trust -= 40; reasons.push('score/tijd'); }
-    else if (earningsPerSec > 1e8) { trust -= 20; reasons.push('score/tijd'); }
+    if (earningsPerSec > threshold * 100) { trust -= 40; reasons.push('score/tijd'); }
+    else if (earningsPerSec > threshold * 10) { trust -= 20; reasons.push('score/tijd'); }
   }
 
   // 2. Click ratio: max ~15 clicks per second
