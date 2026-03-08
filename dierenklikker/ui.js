@@ -205,6 +205,9 @@ function completePrestige() {
   buildShop();
   parseAppleEmoji(document.body);
   showToast('\u2b50 Ge\u00ebvolueerd! +' + newStars + ' sterren!');
+  // Auto-submit score to leaderboard after prestige
+  _lastLeaderboardSubmit = 0; // reset throttle
+  submitLeaderboard();
 }
 
 /* ================================================================
@@ -962,6 +965,141 @@ function renderStats() {
   list.innerHTML = html;
 }
 
+// --- Leaderboard ---
+let _leaderboardData = null;
+let _leaderboardTrustedOnly = false;
+let _lastLeaderboardSubmit = 0;
+
+function getPlayerPid() {
+  // Persistent player ID (survives session, unlike heartbeat sid)
+  let pid = localStorage.getItem('dk_pid');
+  if (!pid) {
+    pid = Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+    localStorage.setItem('dk_pid', pid);
+  }
+  return pid;
+}
+
+function submitLeaderboard() {
+  if (!state.dierentuin_naam) return;
+  // Throttle: max once per 60s
+  const now = Date.now();
+  if (now - _lastLeaderboardSubmit < 60000) return;
+  _lastLeaderboardSubmit = now;
+
+  const totalAnimals = ANIMALS.reduce((s, a) => s + (state.animals[a.id]||0), 0);
+  const achCount = Object.keys(state.achievements).filter(k => state.achievements[k]).length;
+  const animalCounts = {};
+  ANIMALS.forEach(a => { animalCounts[a.id] = state.animals[a.id] || 0; });
+
+  fetch('/api/leaderboard', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      pid: getPlayerPid(),
+      zooName: state.dierentuin_naam,
+      score: Math.floor(state.allTime.totalEarned),
+      stars: state.prestige.stars,
+      playTimeSeconds: Math.floor(state.allTime.playTimeSeconds),
+      totalClicks: state.allTime.totalClicks,
+      totalAnimals: state.allTime.totalAnimals,
+      achievements: achCount,
+      animals: animalCounts,
+    }),
+  }).catch(() => {});
+}
+
+function fetchLeaderboard() {
+  const pid = getPlayerPid();
+  const trusted = _leaderboardTrustedOnly ? '1' : '0';
+  fetch('/api/leaderboard?pid=' + pid + '&trusted=' + trusted)
+    .then(r => r.json())
+    .then(data => { _leaderboardData = data; renderLeaderboard(); })
+    .catch(() => {});
+}
+
+function renderLeaderboard() {
+  const el = document.getElementById('leaderboard-list');
+  if (!el) return;
+
+  let html = '';
+
+  // Zoo name requirement
+  if (!state.dierentuin_naam) {
+    html += '<div style="text-align:center;padding:20px;color:var(--text-dim)">';
+    html += '<p>Geef je dierentuin een naam om mee te doen!</p>';
+    html += '<p style="font-size:12px">Klik op de ✏️ knop linksboven.</p>';
+    html += '</div>';
+    el.innerHTML = html;
+    return;
+  }
+
+  // Filter toggle
+  html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">';
+  html += '<span style="font-size:12px;color:var(--text-dim)">' + (_leaderboardData ? _leaderboardData.total + ' spelers' : '') + '</span>';
+  html += '<label style="font-size:12px;color:var(--text-dim);cursor:pointer"><input type="checkbox" id="lb-trusted" ' + (_leaderboardTrustedOnly ? 'checked' : '') + ' onchange="toggleLeaderboardFilter()" style="margin-right:4px">Alleen betrouwbaar</label>';
+  html += '</div>';
+
+  if (!_leaderboardData) {
+    html += '<div style="text-align:center;padding:20px;color:var(--text-dim)">Laden...</div>';
+    el.innerHTML = html;
+    return;
+  }
+
+  // Top 10
+  html += '<div class="stat-heading">🏆 Top 10</div>';
+  if (_leaderboardData.top.length === 0) {
+    html += '<div style="text-align:center;padding:12px;color:var(--text-dim)">Nog geen scores!</div>';
+  } else {
+    html += '<div class="lb-table">';
+    html += '<div class="lb-header"><span>#</span><span>Dierentuin</span><span>Score</span><span>⭐</span><span></span></div>';
+    _leaderboardData.top.forEach(function(e) {
+      var trustIcon = e.trust >= 80 ? '🟢' : e.trust >= 60 ? '🟠' : '🔴';
+      var isMe = _leaderboardData.me && e.rank === _leaderboardData.me.rank;
+      html += '<div class="lb-row' + (isMe ? ' lb-me' : '') + '">';
+      html += '<span class="lb-rank">' + e.rank + '</span>';
+      html += '<span class="lb-name">' + escapeHtml(e.zooName) + '</span>';
+      html += '<span class="lb-score">' + formatNumber(e.score) + '</span>';
+      html += '<span class="lb-stars">' + e.stars + '</span>';
+      html += '<span class="lb-trust">' + trustIcon + '</span>';
+      html += '</div>';
+    });
+    html += '</div>';
+  }
+
+  // My position (if not in top 10)
+  if (_leaderboardData.me && _leaderboardData.me.rank > 10) {
+    html += '<div class="stat-heading">Jouw positie</div>';
+    var e = _leaderboardData.me;
+    var trustIcon = e.trust >= 80 ? '🟢' : e.trust >= 60 ? '🟠' : '🔴';
+    html += '<div class="lb-table">';
+    html += '<div class="lb-row lb-me">';
+    html += '<span class="lb-rank">' + e.rank + '</span>';
+    html += '<span class="lb-name">' + escapeHtml(e.zooName) + '</span>';
+    html += '<span class="lb-score">' + formatNumber(e.score) + '</span>';
+    html += '<span class="lb-stars">' + e.stars + '</span>';
+    html += '<span class="lb-trust">' + trustIcon + '</span>';
+    html += '</div>';
+    html += '</div>';
+  }
+
+  // Submit button
+  html += '<div style="text-align:center;margin-top:12px">';
+  html += '<button class="mg-btn" onclick="submitLeaderboard(); setTimeout(fetchLeaderboard, 1000);" style="font-size:12px;padding:6px 16px">📤 Score versturen</button>';
+  html += '</div>';
+
+  el.innerHTML = html;
+}
+
+function escapeHtml(str) {
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function toggleLeaderboardFilter() {
+  _leaderboardTrustedOnly = !_leaderboardTrustedOnly;
+  fetchLeaderboard();
+}
+
 let orbiters = [];
 function updateOrbiters() {
   const area = document.getElementById('click-area');
@@ -1423,6 +1561,10 @@ function init() {
 
   // Autosave (30s)
   setInterval(saveGame, AUTOSAVE_INTERVAL);
+
+  // Leaderboard auto-submit (every 5 min)
+  setInterval(submitLeaderboard, 300000);
+  setTimeout(submitLeaderboard, 10000); // first submit after 10s
 
   // Save on close
   window.addEventListener('beforeunload', saveGame);

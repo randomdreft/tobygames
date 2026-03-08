@@ -3,7 +3,9 @@ const fs = require('fs');
 const path = require('path');
 const PORT = 3000;
 const STATIC_DIR = '/static';
+const DATA_DIR = '/data';
 const TIMEOUT = 90000; // 90s (client polls every 30s, so 3 missed polls = offline)
+const LEADERBOARD_FILE = path.join(DATA_DIR, 'leaderboard.json');
 
 // --- Heartbeat (active players) ---
 const sessions = new Map();
@@ -12,6 +14,196 @@ function cleanupSessions() {
   for (const [id, ts] of sessions) {
     if (now - ts > TIMEOUT) sessions.delete(id);
   }
+}
+
+// --- Leaderboard ---
+let leaderboard = []; // Array of { pid, zooName, score, stars, playTimeSeconds, totalClicks, totalAnimals, achievements, animals, trust, updatedAt }
+
+function loadLeaderboard() {
+  try {
+    if (fs.existsSync(LEADERBOARD_FILE)) {
+      leaderboard = JSON.parse(fs.readFileSync(LEADERBOARD_FILE, 'utf8'));
+    }
+  } catch (e) {
+    console.error('Failed to load leaderboard:', e.message);
+    leaderboard = [];
+  }
+}
+
+function saveLeaderboard() {
+  try {
+    fs.mkdirSync(DATA_DIR, { recursive: true });
+    fs.writeFileSync(LEADERBOARD_FILE, JSON.stringify(leaderboard, null, 2));
+  } catch (e) {
+    console.error('Failed to save leaderboard:', e.message);
+  }
+}
+
+// Anti-cheat: calculate trust score (0-100)
+// 12 animals in order of cost: mier, slak, kikker, kip, kat, hond, lama, paard, panda, olifant, walvis, draak
+const ANIMAL_ORDER = ['mier','slak','kikker','kip','kat','hond','lama','paard','panda','olifant','walvis','draak'];
+
+function calculateTrust(data) {
+  let trust = 100;
+  const reasons = [];
+
+  const score = data.score || 0;
+  const playTime = data.playTimeSeconds || 0;
+  const clicks = data.totalClicks || 0;
+  const animals = data.animals || {};
+
+  // 1. Play time vs score ratio: earning more than 1e8/sec sustained is suspicious
+  if (playTime > 0) {
+    const earningsPerSec = score / playTime;
+    if (earningsPerSec > 1e9) { trust -= 40; reasons.push('score/tijd'); }
+    else if (earningsPerSec > 1e8) { trust -= 20; reasons.push('score/tijd'); }
+  }
+
+  // 2. Click ratio: max ~15 clicks per second
+  if (playTime > 60) { // only check after 1 min
+    const cps = clicks / playTime;
+    if (cps > 20) { trust -= 30; reasons.push('kliksnelheid'); }
+    else if (cps > 15) { trust -= 15; reasons.push('kliksnelheid'); }
+  }
+
+  // 3. Progression logic: can't have expensive animals without cheaper ones
+  let prevOwned = true;
+  for (const id of ANIMAL_ORDER) {
+    const count = animals[id] || 0;
+    if (count > 0 && !prevOwned) {
+      trust -= 25;
+      reasons.push('progressie');
+      break;
+    }
+    if (count === 0) prevOwned = false;
+  }
+
+  // 4. Minimum play time for high scores
+  if (score > 1e10 && playTime < 600) { trust -= 30; reasons.push('te snel'); }
+  if (score > 1e15 && playTime < 3600) { trust -= 30; reasons.push('te snel'); }
+
+  // 5. Reasonable animal counts (no single animal > 10000)
+  for (const id of ANIMAL_ORDER) {
+    if ((animals[id] || 0) > 10000) {
+      trust -= 20;
+      reasons.push('dieraantal');
+      break;
+    }
+  }
+
+  return { score: Math.max(0, Math.min(100, trust)), reasons };
+}
+
+function readBody(req) {
+  return new Promise((resolve, reject) => {
+    const chunks = [];
+    let size = 0;
+    req.on('data', chunk => {
+      size += chunk.length;
+      if (size > 1e6) { reject(new Error('Too large')); req.destroy(); return; }
+      chunks.push(chunk);
+    });
+    req.on('end', () => {
+      try { resolve(JSON.parse(Buffer.concat(chunks).toString())); }
+      catch (e) { reject(e); }
+    });
+    req.on('error', reject);
+  });
+}
+
+function handleLeaderboardPost(req, res) {
+  readBody(req).then(data => {
+    const pid = data.pid;
+    const zooName = (data.zooName || '').toString().slice(0, 20).trim();
+    if (!pid || !zooName) {
+      res.writeHead(400);
+      return res.end(JSON.stringify({ error: 'pid en zooName vereist' }));
+    }
+
+    const trustResult = calculateTrust(data);
+    const entry = {
+      pid,
+      zooName,
+      score: Math.floor(data.score || 0),
+      stars: data.stars || 0,
+      playTimeSeconds: Math.floor(data.playTimeSeconds || 0),
+      totalClicks: Math.floor(data.totalClicks || 0),
+      totalAnimals: Math.floor(data.totalAnimals || 0),
+      achievements: Math.floor(data.achievements || 0),
+      animals: data.animals || {},
+      trust: trustResult.score,
+      trustReasons: trustResult.reasons,
+      updatedAt: Date.now(),
+    };
+
+    // Update existing or add new
+    const idx = leaderboard.findIndex(e => e.pid === pid);
+    if (idx >= 0) {
+      // Only update if new score is higher
+      if (entry.score >= leaderboard[idx].score) {
+        leaderboard[idx] = entry;
+      } else {
+        // Still update name and trust, keep high score
+        leaderboard[idx].zooName = entry.zooName;
+        leaderboard[idx].trust = entry.trust;
+        leaderboard[idx].trustReasons = entry.trustReasons;
+        leaderboard[idx].updatedAt = entry.updatedAt;
+      }
+    } else {
+      leaderboard.push(entry);
+    }
+
+    // Sort by score descending
+    leaderboard.sort((a, b) => b.score - a.score);
+
+    // Cap at 500 entries
+    if (leaderboard.length > 500) leaderboard.length = 500;
+
+    saveLeaderboard();
+
+    // Return rank
+    const rank = leaderboard.findIndex(e => e.pid === pid) + 1;
+    res.writeHead(200);
+    res.end(JSON.stringify({ ok: true, rank }));
+  }).catch(err => {
+    res.writeHead(400);
+    res.end(JSON.stringify({ error: 'Ongeldige data' }));
+  });
+}
+
+function handleLeaderboardGet(req, res) {
+  const url = new URL(req.url, 'http://localhost');
+  const pid = url.searchParams.get('pid');
+  const trustedOnly = url.searchParams.get('trusted') === '1';
+
+  let filtered = trustedOnly ? leaderboard.filter(e => e.trust >= 60) : leaderboard;
+  const top10 = filtered.slice(0, 10).map((e, i) => ({
+    rank: i + 1,
+    zooName: e.zooName,
+    score: e.score,
+    stars: e.stars,
+    trust: e.trust,
+    playTimeSeconds: e.playTimeSeconds,
+  }));
+
+  let me = null;
+  if (pid) {
+    const myIdx = filtered.findIndex(e => e.pid === pid);
+    if (myIdx >= 0) {
+      const e = filtered[myIdx];
+      me = {
+        rank: myIdx + 1,
+        zooName: e.zooName,
+        score: e.score,
+        stars: e.stars,
+        trust: e.trust,
+        playTimeSeconds: e.playTimeSeconds,
+      };
+    }
+  }
+
+  res.writeHead(200);
+  res.end(JSON.stringify({ top: top10, me, total: filtered.length }));
 }
 
 // --- MIME types ---
@@ -25,10 +217,10 @@ const MIME = {
 
 const server = http.createServer((req, res) => {
   const url = new URL(req.url, 'http://localhost');
+  res.setHeader('Content-Type', 'application/json');
 
   // --- API routes ---
   if (url.pathname === '/api/heartbeat') {
-    res.setHeader('Content-Type', 'application/json');
     let sid = url.searchParams.get('sid');
     if (!sid) sid = Math.random().toString(36).slice(2);
     sessions.set(sid, Date.now());
@@ -38,7 +230,15 @@ const server = http.createServer((req, res) => {
     return;
   }
 
+  if (url.pathname === '/api/leaderboard') {
+    if (req.method === 'POST') return handleLeaderboardPost(req, res);
+    if (req.method === 'GET') return handleLeaderboardGet(req, res);
+    res.writeHead(405);
+    return res.end(JSON.stringify({ error: 'Method not allowed' }));
+  }
+
   // --- Static files ---
+  res.removeHeader('Content-Type');
   let filePath = path.join(STATIC_DIR, url.pathname);
   if (filePath.endsWith('/')) filePath += 'index.html';
   // Security: prevent path traversal
@@ -76,6 +276,9 @@ function serveFile(filePath, res) {
   stream.pipe(res);
   stream.on('error', () => { res.writeHead(500); res.end('Error'); });
 }
+
+// Load leaderboard data on startup
+loadLeaderboard();
 
 server.listen(PORT, '0.0.0.0', () => {
   console.log('TobyGames server running on port ' + PORT);
