@@ -1003,6 +1003,7 @@ function render() {
     box.classList.toggle('locked', !unlocked);
     lock.textContent = unlocked ? '' : '🔒 ' + mg.label + ' om te spelen!';
     lock.style.display = unlocked ? 'none' : 'block';
+    if (!unlocked) parseAppleEmoji(lock);
   });
   const cdm = getCooldownMultiplier();
   updateCooldown('quiz-btn', 'quiz-cooldown', state.minigames.quizLast, QUIZ_COOLDOWN * cdm, quizActive);
@@ -1615,6 +1616,7 @@ function showToast(text) {
   t.className = 'toast';
   t.textContent = text;
   document.body.appendChild(t);
+  parseAppleEmoji(t);
   setTimeout(() => t.remove(), 3000);
 }
 

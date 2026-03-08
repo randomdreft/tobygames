@@ -979,6 +979,7 @@ function startRace() {
     btn.onclick = () => pickHorse(i);
     picks.appendChild(btn);
   });
+  parseAppleEmoji(picks);
 }
 
 function pickHorse(idx) {
