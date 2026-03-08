@@ -682,7 +682,7 @@ img.emoji {
     padding: 4px 0 max(6px, env(safe-area-inset-bottom, 6px));
   }
   #mobile-nav .tab { font-size: 13px; padding: 10px 4px; min-height: 44px; }
-  .back-btn { font-size: 12px; padding: 6px 10px; }
+  .back-btn { display: none; }
   #top-bar { padding: 10px 60px 4px; }
   #click-area { max-height: 35dvh; }
 

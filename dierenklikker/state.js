@@ -64,12 +64,17 @@ function formatNumber(n) {
   for (const {val, name} of NUM_NAMES) {
     if (n >= val) {
       const d = n / val;
-      return (d < 100 ? d.toFixed(1).replace('.', ',') : Math.floor(d).toLocaleString('nl-NL')) + ' ' + name;
+      if (d < 100) return d.toFixed(1).replace('.', ',') + ' ' + name;
+      if (d < 1e6) return Math.floor(d).toLocaleString('nl-NL') + ' ' + name;
+      break; // getal te groot voor naamnotatie, val door naar wetenschappelijk
     }
   }
   // thousands
-  if (n >= 10000) return Math.floor(n).toLocaleString('nl-NL');
-  return n.toString();
+  if (n >= 10000 && n < 1e6) return Math.floor(n).toLocaleString('nl-NL');
+  // wetenschappelijke notatie als fallback voor astronomisch grote getallen
+  const exp = Math.floor(Math.log10(n));
+  const mantissa = (n / Math.pow(10, exp)).toFixed(1).replace('.', ',');
+  return mantissa + '\u00d710^' + exp;
 }
 
 function formatDps(n) {

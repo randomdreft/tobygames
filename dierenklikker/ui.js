@@ -1029,7 +1029,7 @@ if (_isTouchDevice) {
     clearTimeout(_touchTipTimer);
     const toast = document.createElement('div');
     toast.className = 'toast touch-tip-toast';
-    toast.textContent = text;
+    toast.innerHTML = text;
     toast.style.animation = 'toast-in 0.3s ease-out, toast-out 0.3s ease-in 2.2s forwards';
     document.body.appendChild(toast);
     _touchTipTimer = setTimeout(() => toast.remove(), 2500);
