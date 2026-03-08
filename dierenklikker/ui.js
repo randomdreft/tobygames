@@ -1459,14 +1459,14 @@ function clickLucky(el) {
     // Buff (20% total)
     const buff = BUFF_TYPES[Math.floor(Math.random() * BUFF_TYPES.length)];
     if (buff.id === 'jackpot') {
-      const bonus = dps * 30 * luckyMult;
+      const bonus = dps * (getBuffDuration() / 1000) * luckyMult;
       state.currentPoints += bonus;
       state.totalEarned += bonus;
       state.allTime.totalEarned += bonus;
       showToast('\uD83D\uDC1E ' + buff.emoji + ' ' + buff.name + '! +' + formatNumber(bonus) + ' punten!');
     } else {
       activeBuffs = activeBuffs.filter(b => Date.now() < b.endsAt && b.type !== buff.id);
-      activeBuffs.push({ type: buff.id, endsAt: Date.now() + getBuffDuration(), emoji: buff.emoji, name: buff.name, color: buff.color, desc: buff.desc });
+      activeBuffs.push({ type: buff.id, endsAt: Date.now() + getBuffDuration(), emoji: buff.emoji, name: buff.name, color: buff.color, desc: typeof buff.desc === 'function' ? buff.desc() : buff.desc });
       showToast('\uD83D\uDC1E ' + buff.emoji + ' ' + buff.name + ' actief voor ' + (getBuffDuration()/1000) + ' seconden!');
     }
   } else {

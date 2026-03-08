@@ -338,7 +338,7 @@ function startBuff() {
     html += '<div class="buff-card" onclick="chooseBuff(\'' + buff.id + '\')" style="border-color:' + buff.color + '30">';
     html += '<div class="buff-card-emoji">' + shuffled[i].emoji + '</div>';
     html += '<div class="buff-card-name" style="color:' + buff.color + '">' + buff.emoji + ' ' + buff.name + '</div>';
-    html += '<div class="buff-card-desc">' + buff.desc + '</div>';
+    html += '<div class="buff-card-desc">' + (typeof buff.desc === 'function' ? buff.desc() : buff.desc) + '</div>';
     html += '</div>';
   });
   html += '</div>';
@@ -356,7 +356,7 @@ function chooseBuff(buffId) {
 
   // Apply jackpot immediately
   if (buff.id === 'jackpot') {
-    const bonus = getTotalDps() * 30; // 30 seconds DPS
+    const bonus = getTotalDps() * (getBuffDuration() / 1000);
     state.currentPoints += bonus;
     state.totalEarned += bonus;
     state.allTime.totalEarned += bonus;
@@ -365,7 +365,7 @@ function chooseBuff(buffId) {
     // Set timed buff
     // Replace existing buff of same type, or add new one
     activeBuffs = activeBuffs.filter(b => Date.now() < b.endsAt && b.type !== buff.id);
-    activeBuffs.push({ type: buff.id, endsAt: Date.now() + getBuffDuration(), emoji: buff.emoji, name: buff.name, color: buff.color, desc: buff.desc });
+    activeBuffs.push({ type: buff.id, endsAt: Date.now() + getBuffDuration(), emoji: buff.emoji, name: buff.name, color: buff.color, desc: typeof buff.desc === 'function' ? buff.desc() : buff.desc });
     showToast(buff.emoji + ' ' + buff.name + ' actief voor ' + (getBuffDuration()/1000) + ' seconden!');
   }
 
