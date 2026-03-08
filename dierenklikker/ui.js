@@ -1004,6 +1004,7 @@ function submitLeaderboard() {
       totalClicks: state.allTime.totalClicks,
       totalAnimals: state.allTime.totalAnimals,
       achievements: achCount,
+      timesReset: state.prestige.timesReset,
       animals: animalCounts,
     }),
   }).catch(() => {});

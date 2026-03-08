@@ -96,6 +96,30 @@ function calculateTrust(data) {
     }
   }
 
+  // 6. Stars vs play time
+  // Real players average 5-13 min per star. Under 2 min/star is suspicious.
+  const stars = data.stars || 0;
+  if (stars > 0) {
+    const minsPerStar = playTime > 0 ? (playTime / 60) / stars : 0;
+    if (minsPerStar < 1) { trust -= 40; reasons.push('sterren/tijd'); }
+    else if (minsPerStar < 3) { trust -= 20; reasons.push('sterren/tijd'); }
+  }
+
+  // 7. Stars vs total prestiges: each prestige gives 1-~8 stars
+  const prestiges = data.timesReset || 0;
+  if (prestiges > 0 && stars > prestiges * 10) {
+    trust -= 30;
+    reasons.push('sterren/evoluties');
+  }
+
+  // 8. Stars require owning all 12 animals to prestige
+  // After prestige, animals reset to 0, so only flag if no prestiges recorded
+  const totalAnimals = ANIMAL_ORDER.reduce((s, id) => s + (animals[id] || 0), 0);
+  if (stars > 0 && totalAnimals < 12 && !prestiges) {
+    trust -= 40;
+    reasons.push('sterren zonder dieren');
+  }
+
   return { score: Math.max(0, Math.min(100, trust)), reasons };
 }
 
