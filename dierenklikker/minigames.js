@@ -104,7 +104,7 @@ function cancelAllMinigames() {
 function startQuiz() {
   if (quizActive || !isMinigameUnlocked('quiz')) return;
   const now = Date.now();
-  if (now - state.minigames.quizLast < QUIZ_COOLDOWN) return;
+  if (now - state.minigames.quizLast < QUIZ_COOLDOWN * getCooldownMultiplier()) return;
   quizActive = true; sfxGameStart(); mgSetActive('quiz', true);
   document.getElementById('quiz-btn').disabled = true;
 
@@ -164,7 +164,7 @@ function answerQuiz(chosen, correct) {
 function startCatcher() {
   if (catcherActive || !isMinigameUnlocked('catcher')) return;
   const now = Date.now();
-  if (now - state.minigames.catcherLast < CATCHER_COOLDOWN) return;
+  if (now - state.minigames.catcherLast < CATCHER_COOLDOWN * getCooldownMultiplier()) return;
   catcherActive = true; sfxGameStart(); mgSetActive('catcher', true);
   catcherScore = 0;
   document.getElementById('catcher-btn').disabled = true;
@@ -246,7 +246,7 @@ let mathActive = false;
 
 function startMath() {
   if (mathActive || !isMinigameUnlocked('math')) return;
-  if (Date.now() - state.minigames.mathLast < MATH_COOLDOWN) return;
+  if (Date.now() - state.minigames.mathLast < MATH_COOLDOWN * getCooldownMultiplier()) return;
   mathActive = true; sfxGameStart(); mgSetActive('math', true);
   document.getElementById('math-btn').disabled = true;
 
@@ -319,16 +319,13 @@ function answerMath(chosen, correct) {
 }
 
 /* Buff Kiezer */
-let activeBuff = null; // {type, endsAt}
+let activeBuffs = []; // [{type, endsAt, emoji, name, color, desc}, ...]
 let buyMultiplier = 1; // 1, 10 or 100
 let buyMax = false;
 
 function startBuff() {
   if (!isMinigameUnlocked('buff')) return;
-  if (Date.now() - state.minigames.buffLast < BUFF_COOLDOWN) return;
-  // Don't allow if buff already active
-  if (activeBuff && Date.now() < activeBuff.endsAt) return;
-
+  if (Date.now() - state.minigames.buffLast < BUFF_COOLDOWN * getCooldownMultiplier()) return;
   document.getElementById('buff-btn').disabled = true;
 
   // Pick 4 random animals for flavor
@@ -366,8 +363,10 @@ function chooseBuff(buffId) {
     showToast(buff.emoji + ' Jackpot! +' + formatNumber(bonus) + ' punten!');
   } else {
     // Set timed buff
-    activeBuff = { type: buff.id, endsAt: Date.now() + getBuffDuration(), emoji: buff.emoji, name: buff.name, color: buff.color, desc: buff.desc };
-    showToast(buff.emoji + ' ' + buff.name + ' actief voor 30 seconden!');
+    // Replace existing buff of same type, or add new one
+    activeBuffs = activeBuffs.filter(b => Date.now() < b.endsAt && b.type !== buff.id);
+    activeBuffs.push({ type: buff.id, endsAt: Date.now() + getBuffDuration(), emoji: buff.emoji, name: buff.name, color: buff.color, desc: buff.desc });
+    showToast(buff.emoji + ' ' + buff.name + ' actief voor ' + (getBuffDuration()/1000) + ' seconden!');
   }
 
   mgSetActive('buff', false);
@@ -375,10 +374,17 @@ function chooseBuff(buffId) {
   document.getElementById('buff-btn').disabled = false;
 }
 
-function getActiveBuff() {
-  if (!activeBuff) return null;
-  if (Date.now() >= activeBuff.endsAt) { activeBuff = null; return null; }
-  return activeBuff;
+function getActiveBuff(type) {
+  // Clean up expired buffs
+  activeBuffs = activeBuffs.filter(b => Date.now() < b.endsAt);
+  if (type) return activeBuffs.find(b => b.type === type) || null;
+  // Return first active buff for backwards compat (used by indicator)
+  return activeBuffs.length > 0 ? activeBuffs[0] : null;
+}
+
+function getActiveBuffs() {
+  activeBuffs = activeBuffs.filter(b => Date.now() < b.endsAt);
+  return activeBuffs;
 }
 
 /* Dieren Sorteren */
@@ -390,7 +396,7 @@ let sortBag = [];
 
 function startSort() {
   if (sortActive || !isMinigameUnlocked('sort')) return;
-  if (Date.now() - state.minigames.sortLast < SORT_COOLDOWN) return;
+  if (Date.now() - state.minigames.sortLast < SORT_COOLDOWN * getCooldownMultiplier()) return;
   sortActive = true; sfxGameStart(); mgSetActive('sort', true);
   sortScore = 0;
   sortBag = [];
@@ -489,7 +495,7 @@ let memoryMistakes = 0;
 
 function startMemory() {
   if (memoryActive || !isMinigameUnlocked('memory')) return;
-  if (Date.now() - state.minigames.memoryLast < MEMORY_COOLDOWN) return;
+  if (Date.now() - state.minigames.memoryLast < MEMORY_COOLDOWN * getCooldownMultiplier()) return;
   memoryActive = true; sfxGameStart(); mgSetActive('memory', true);
   memoryPairs = 0;
   memoryMistakes = 0;
@@ -629,7 +635,7 @@ let tellenCount = 0;
 
 function startTellen() {
   if (tellenActive || !isMinigameUnlocked('tellen')) return;
-  if (Date.now() - state.minigames.tellenLast < TELLEN_COOLDOWN) return;
+  if (Date.now() - state.minigames.tellenLast < TELLEN_COOLDOWN * getCooldownMultiplier()) return;
   tellenActive = true; sfxGameStart(); mgSetActive('tellen', true);
   document.getElementById('tellen-btn').disabled = true;
   const game = document.getElementById('tellen-game');
@@ -735,7 +741,7 @@ let indringerCorrectIdx = -1;
 
 function startIndringer() {
   if (indringerActive || !isMinigameUnlocked('indringer')) return;
-  if (Date.now() - state.minigames.indringerLast < INDRINGER_COOLDOWN) return;
+  if (Date.now() - state.minigames.indringerLast < INDRINGER_COOLDOWN * getCooldownMultiplier()) return;
   indringerActive = true; sfxGameStart(); mgSetActive('indringer', true);
   indringerScore = 0;
   document.getElementById('indringer-btn').disabled = true;
@@ -832,7 +838,7 @@ let groterTimeout = null;
 
 function startGroter() {
   if (groterActive || !isMinigameUnlocked('groter')) return;
-  if (Date.now() - state.minigames.groterLast < GROTER_COOLDOWN) return;
+  if (Date.now() - state.minigames.groterLast < GROTER_COOLDOWN * getCooldownMultiplier()) return;
   groterActive = true; sfxGameStart(); mgSetActive('groter', true);
   groterScore = 0;
   groterMistakes = 0;
@@ -947,7 +953,7 @@ const RACE_NAMES = [
 
 function startRace() {
   if (raceActive || !isMinigameUnlocked('race')) return;
-  if (Date.now() - state.minigames.raceLast < RACE_COOLDOWN) return;
+  if (Date.now() - state.minigames.raceLast < RACE_COOLDOWN * getCooldownMultiplier()) return;
   raceActive = true; sfxGameStart(); mgSetActive('race', true);
   raceChoice = -1;
   document.getElementById('race-btn').disabled = true;
@@ -1079,7 +1085,7 @@ const PUZZEL_EMOJIS = ['🐶','🐱','🐭','🐹','🐰','🦊','🐻','🐼','
 
 function startPuzzel() {
   if (puzzelActive || !isMinigameUnlocked('puzzel')) return;
-  if (Date.now() - state.minigames.puzzelLast < PUZZEL_COOLDOWN) return;
+  if (Date.now() - state.minigames.puzzelLast < PUZZEL_COOLDOWN * getCooldownMultiplier()) return;
   puzzelActive = true; sfxGameStart(); mgSetActive('puzzel', true);
   puzzelMoves = 0;
   document.getElementById('puzzel-btn').disabled = true;
@@ -1193,7 +1199,7 @@ let voedselTimeout = null;
 
 function startVoedsel() {
   if (voedselActive || !isMinigameUnlocked('voedsel')) return;
-  if (Date.now() - state.minigames.voedselLast < VOEDSEL_COOLDOWN) return;
+  if (Date.now() - state.minigames.voedselLast < VOEDSEL_COOLDOWN * getCooldownMultiplier()) return;
   voedselActive = true; sfxGameStart(); mgSetActive('voedsel', true);
   voedselScore = 0;
   voedselMistakes = 0;
