@@ -201,7 +201,8 @@ function startZooTick() {
   zooRuntime = { pendingStars: {}, lastSpawn: {}, collected: 0 };
   ANIMALS.forEach(a => {
     zooRuntime.pendingStars[a.id] = [];
-    zooRuntime.lastSpawn[a.id] = Date.now();
+    // Random offset 0-60s so animals don't all spawn stars simultaneously
+    zooRuntime.lastSpawn[a.id] = Date.now() + Math.floor(Math.random() * 60) * 1000;
   });
   zooInterval = setInterval(zooTick, 1000);
 }
