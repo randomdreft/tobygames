@@ -253,9 +253,9 @@ function updateZooHappiness() {
 }
 
 function getZooStarInterval(happiness) {
-  if (happiness >= 90) return 240;   // 4 min
-  if (happiness >= 60) return 480;   // 8 min
-  if (happiness >= 30) return 900;   // 15 min
+  if (happiness >= 90) return 1200;  // 20 min
+  if (happiness >= 60) return 2400;  // 40 min
+  if (happiness >= 30) return 3600;  // 60 min
   return Infinity;
 }
 
@@ -896,6 +896,8 @@ function buyUpgrade(upgradeId) {
           h3.innerHTML = arrow + titleText + progress + ' ✓';
           h3.style.opacity = '0.5';
           cat.classList.add('collapsed');
+          const btn = cat.querySelector('.buy-all-btn');
+          if (btn) btn.remove();
         } else {
           h3.innerHTML = arrow + titleText + progress;
         }

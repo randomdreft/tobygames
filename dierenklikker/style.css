@@ -569,9 +569,14 @@ img.emoji {
 
 /* Upgrade categories */
 .upgrade-category { margin-bottom: 12px; }
+.upg-cat-header {
+  display: flex; align-items: center;
+  border-bottom: 1px solid rgba(255,215,0,0.2); padding-right: 4px;
+}
 .upgrade-category h3 {
+  flex: 1;
   font-size: 14px; color: var(--gold); margin-bottom: 0; padding: 6px 8px;
-  border-bottom: 1px solid rgba(255,215,0,0.2); cursor: pointer; user-select: none;
+  cursor: pointer; user-select: none;
   display: flex; align-items: center; gap: 6px; border-radius: 6px;
   transition: background 0.15s;
 }
@@ -611,8 +616,9 @@ img.emoji {
 #tooltip .tip-title { font-weight: 700; color: var(--gold); margin-bottom: 3px; }
 #tooltip .tip-desc { color: var(--text-dim); }
 .ach-summary, .upg-summary { font-size: 13px; color: var(--text-dim); margin-bottom: 12px; text-align: center; }
-.buy-all-btn { background: var(--gold); color: #000; border: none; border-radius: 8px; padding: 6px 18px; font-size: 13px; font-weight: 700; cursor: pointer; transition: opacity 0.15s; }
-.buy-all-btn:hover { opacity: 0.85; }
+.buy-all-btn { background: var(--gold); color: #000; border: none; border-radius: 8px; padding: 4px 12px; font-size: 12px; font-weight: 700; cursor: pointer; transition: opacity 0.15s; white-space: nowrap; }
+.buy-all-btn:hover:not(:disabled) { opacity: 0.85; }
+.buy-all-btn:disabled { opacity: 0.25; cursor: not-allowed; }
 .ach-section { margin-bottom: 14px; }
 .ach-section h4 { font-size: 13px; color: var(--text-dim); margin-bottom: 6px; }
 .ach-spoiler-toggle {

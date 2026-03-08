@@ -609,13 +609,26 @@ function buildUpgradeCategory(title, upgrades, animal, buyAllPerk) {
   const collapsed = allDone ? ' collapsed' : '';
   const dimmed = allDone ? ' style="opacity:0.5"' : '';
   const check = allDone ? ' ✓' : '';
-  let html = '<div class="upgrade-category' + collapsed + '">';
-  html += '<h3' + dimmed + ' onclick="this.parentElement.classList.toggle(\'collapsed\')"><span class="toggle-arrow">▼</span> ' + title + progress + check + '</h3>';
-  html += '<div class="upg-items">';
+  let buyAllBtn = '';
   if (buyAllPerk && hasPerk(buyAllPerk) && !allDone) {
     const catKey = buyAllPerk.replace('sp_ba_', '');
-    html += '<div style="text-align:center;margin-bottom:6px"><button class="buy-all-btn" onclick="buyAllCategory(\'' + catKey + '\')">Koop alles</button></div>';
+    const hasAffordable = upgrades.some(u => {
+      if (state.upgrades[u.id]) return false;
+      if (state.currentPoints < u.cost) return false;
+      if (u.req !== undefined) {
+        const a = ANIMALS.find(a => a.upgrades.some(au => au.id === u.id));
+        if (a && (state.animals[a.id] || 0) < u.req) return false;
+      }
+      return true;
+    });
+    buyAllBtn = '<button class="buy-all-btn"' + (hasAffordable ? '' : ' disabled') + ' onclick="buyAllCategory(\'' + catKey + '\')">Koop alles</button>';
   }
+  let html = '<div class="upgrade-category' + collapsed + '">';
+  html += '<div class="upg-cat-header">';
+  html += '<h3' + dimmed + ' onclick="this.closest(\'.upgrade-category\').classList.toggle(\'collapsed\')"><span class="toggle-arrow">▼</span> ' + title + progress + check + '</h3>';
+  if (buyAllBtn) html += buyAllBtn;
+  html += '</div>';
+  html += '<div class="upg-items">';
   // Always sorted in original order (small to large)
   upgrades.forEach(u => { html += upgradeItemHtml(u, animal); });
   html += '</div></div>';
