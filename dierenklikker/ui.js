@@ -590,7 +590,7 @@ function buildUpgradeShop() {
   html += buildUpgradeCategory('🌍 Globale upgrades', GLOBAL_UPGRADES);
   html += buildUpgradeCategory('🌙 Offline upgrades', OFFLINE_UPGRADES);
   ANIMALS.forEach(a => {
-    html += buildUpgradeCategory(a.emoji + ' ' + a.name + '-upgrades', a.upgrades, a, 'sp_ba_animals');
+    html += buildUpgradeCategory(a.emoji + ' ' + a.name + '-upgrades', a.upgrades, a, 'sp_ba_' + a.id);
   });
   container.innerHTML = html;
 }

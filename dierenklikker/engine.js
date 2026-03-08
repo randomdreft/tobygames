@@ -905,7 +905,9 @@ function buyUpgrade(upgradeId) {
 }
 
 function buyAllCategory(catKey) {
-  const catUpgrades = ANIMALS.map(a => a.upgrades).flat();
+  const animal = ANIMALS.find(a => a.id === catKey);
+  if (!animal) return 0;
+  const catUpgrades = animal.upgrades;
   const available = catUpgrades.filter(u => {
     if (state.upgrades[u.id]) return false;
     if (state.currentPoints < u.cost) return false;
