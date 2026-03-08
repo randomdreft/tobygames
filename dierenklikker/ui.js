@@ -39,6 +39,7 @@ function applyTheme(themeId) {
   r.setProperty('--orange', theme.orange);
   r.setProperty('--blue', theme.blue);
   r.setProperty('--purple', theme.purple);
+  document.body.classList.toggle('rainbow-bg', themeId === 'regenboog');
 }
 
 function getHighestUnlockedTheme() {

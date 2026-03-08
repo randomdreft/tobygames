@@ -24,6 +24,14 @@ body {
   overflow-x: hidden;
   user-select: none;
   padding-top: 48px;
+  background-attachment: fixed;
+}
+body.rainbow-bg {
+  background: linear-gradient(135deg,
+    #ff0000 0%, #ff8800 14%, #ffff00 28%, #00cc00 42%,
+    #0066ff 57%, #4400cc 71%, #8800aa 85%, #ff0000 100%);
+  background-size: 400% 400%;
+  animation: rainbowShift 12s ease infinite;
 }
 .back-btn {
   position: fixed; top: 12px; left: 12px; z-index: 100;
@@ -63,6 +71,11 @@ body {
 }
 #zoo-name-input.shake {
   animation: shake 0.4s ease;
+}
+@keyframes rainbowShift {
+  0% { background-position: 0% 0%; }
+  50% { background-position: 100% 100%; }
+  100% { background-position: 0% 0%; }
 }
 @keyframes shake {
   0%, 100% { transform: translateX(0); }
