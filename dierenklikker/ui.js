@@ -981,7 +981,7 @@ function getPlayerPid() {
 }
 
 function submitLeaderboard() {
-  if (!state.dierentuin_naam) return;
+  if (!state.zooName) return;
   // Throttle: max once per 60s
   const now = Date.now();
   if (now - _lastLeaderboardSubmit < 60000) return;
@@ -997,7 +997,7 @@ function submitLeaderboard() {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       pid: getPlayerPid(),
-      zooName: state.dierentuin_naam,
+      zooName: state.zooName,
       score: Math.floor(state.allTime.totalEarned),
       stars: state.prestige.stars,
       playTimeSeconds: Math.floor(state.allTime.playTimeSeconds),
@@ -1025,7 +1025,7 @@ function renderLeaderboard() {
   let html = '';
 
   // Zoo name requirement
-  if (!state.dierentuin_naam) {
+  if (!state.zooName) {
     html += '<div style="text-align:center;padding:20px;color:var(--text-dim)">';
     html += '<p>Geef je dierentuin een naam om mee te doen!</p>';
     html += '<p style="font-size:12px">Klik op de ✏️ knop linksboven.</p>';
