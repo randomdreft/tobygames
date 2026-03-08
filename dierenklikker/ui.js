@@ -770,13 +770,8 @@ function buildEvolution() {
   html += '<span style="color:var(--gold)">10 miljard = 1⭐ · 100 miljard = 2⭐ · 1 biljoen = 3⭐</span><br>';
   html += 'Steeds ×10 meer punten = weer een ster erbij!<br><br>';
 
-  const previewStars = getPrestigeStars();
   if (state.totalEarned > 0) {
-    html += '<b>Jouw score:</b> ' + formatNumber(Math.floor(state.totalEarned)) + ' verdiend';
-    if (previewStars > 0) {
-      html += ' → <span style="color:var(--gold)">' + previewStars + ' nieuwe ⭐</span>';
-    }
-    html += '<br><br>';
+    html += '<span id="prestige-score-line"></span><br><br>';
   }
 
   html += '<div style="display:flex;gap:8px;margin-bottom:12px">';
@@ -1022,16 +1017,23 @@ function render() {
     achSummary.textContent = earned + '/' + achievementDefs.length + ' prestaties (' + pct + '%) — elke prestatie geeft +2% DPS!';
   }
 
-  // Prestige button
+  // Prestige button + score preview (kept in sync)
   const pBtn = document.getElementById('prestige-btn');
-  if (pBtn) {
-    pBtn.disabled = !canPrestige();
-    if (canPrestige()) {
-      pBtn.textContent = '⭐ Evolueer! (+' + getPrestigeStars() + ' sterren)';
-    } else {
-      pBtn.textContent = '⭐ Evolueer (nodig: alle dieren)';
+  const pScoreLine = document.getElementById('prestige-score-line');
+  if (pBtn || pScoreLine) {
+    const ps = getPrestigeStars();
+    if (pBtn) {
+      pBtn.disabled = !canPrestige();
+      pBtn.textContent = canPrestige()
+        ? '⭐ Evolueer! (+' + ps + ' sterren)'
+        : '⭐ Evolueer (nodig: alle dieren)';
+      parseAppleEmoji(pBtn);
     }
-    parseAppleEmoji(pBtn);
+    if (pScoreLine && state.totalEarned > 0) {
+      let line = '<b>Jouw score:</b> ' + formatNumber(Math.floor(state.totalEarned)) + ' verdiend';
+      if (ps > 0) line += ' → <span style="color:var(--gold)">' + ps + ' nieuwe ⭐</span>';
+      pScoreLine.innerHTML = line;
+    }
   }
 
   // Mini-game locks & cooldowns
