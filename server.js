@@ -159,7 +159,7 @@ function handleLeaderboardPost(req, res) {
     }
 
     // Sort by score descending
-    leaderboard.sort((a, b) => b.score - a.score);
+    leaderboard.sort((a, b) => b.stars - a.stars || b.score - a.score);
 
     // Cap at 500 entries
     if (leaderboard.length > 500) leaderboard.length = 500;
