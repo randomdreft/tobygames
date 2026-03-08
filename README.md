@@ -62,12 +62,12 @@ Bestuur je slang, eet appels, word langer. Met aanpasbare kleuren, snelheidsinst
 
 ---
 
-### 🚔 Politie Jacht
+### 🚔 Politiejacht
 *Ontsnap aan de politie!*
 
-Race-game waarbij je moet ontsnappen aan de politie. Verzamel sterretjes voor bonuspunten en probeer zo lang mogelijk te overleven.
+Stadachtervolging vanuit vogelperspectief. Vlucht voor de politie door een procedureel gegenereerde stad, verzamel brandstof (of batterijen in EV-modus) en probeer zo lang mogelijk te overleven.
 
-**[Speel Politie Jacht](https://tobygames.nl/politie.html)**
+**[Speel Politiejacht](https://tobygames.nl/politiejacht.html)**
 
 ## Technisch
 
@@ -98,11 +98,18 @@ tobygames/
 │   ├── audio.js            # Geluidseffecten
 │   ├── engine.js           # Game engine
 │   └── lessons.js          # 28 lessen met woordlijsten
+├── server.js               # Node.js API server (heartbeat, leaderboard)
+├── Dockerfile              # Container build configuratie
 ├── snake.html              # Snake (single file)
 ├── worms.html              # Neuswormen (single file)
 ├── winkeltje.html          # Winkeltje (single file)
 ├── boter-kaas-eieren-xl.html # BKE XL (single file)
-├── politie.html            # Politie Jacht (single file)
+├── politiejacht.html       # Politiejacht (HTML shell)
+├── politiejacht/            # Politiejacht modules
+│   ├── style.css           # CSS
+│   ├── sound.js            # Web Audio geluidseffecten
+│   ├── renderer.js         # Canvas rendering
+│   └── game.js             # Game engine en AI
 ├── emoji/                  # Apple emoji PNGs (lokaal gehost)
 ├── GAMES.md                # Gedetailleerde technische docs per spel
 └── README.md               # Dit bestand

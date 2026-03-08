@@ -24,13 +24,13 @@ Het meest uitgebreide spel. Cookie Clicker-achtig incrementeel spel met veel sub
 
 | Bestand | Regels | Inhoud |
 |---------|--------|--------|
-| `style.css` | ~620 | CSS variabelen (`:root`), layout, component-styling, achievement-viering animatie, milestone-bars, tab-badges |
-| `sound.js` | ~150 | Web Audio API geluidssynthese, volume-beheer (localStorage) |
-| `data.js` | ~375 | Constanten, dierdata (12 soorten + upgrades), quiz-vragen, minigame-data |
-| `state.js` | ~440 | `defaultState()`, INI save/load (`stateToIni`/`iniToState`), import/export |
-| `engine.js` | ~360 | Prijsberekening, DPS, click value, achievements, buy-functies, `getDpsBreakdown()`, `getMaxAffordable()` |
+| `style.css` | ~1070 | CSS variabelen (`:root`), layout, component-styling, achievement-viering animatie, milestone-bars, tab-badges, mobiele aanpassingen |
+| `sound.js` | ~180 | Web Audio API geluidssynthese, volume-beheer (localStorage) |
+| `data.js` | ~400 | Constanten, dierdata (12 soorten + upgrades), quiz-vragen, minigame-data, dagelijkse uitdagingen |
+| `state.js` | ~530 | `defaultState()`, INI save/load (`stateToIni`/`iniToState`), import/export |
+| `engine.js` | ~860 | Prijsberekening, DPS, click value, achievements, buy-functies, `getDpsBreakdown()`, `getMaxAffordable()`, dagelijkse uitdagingen, anti-cheat |
 | `minigames.js` | ~1290 | Alle 12 mini-games, cancel-systeem (`cancelMinigame`/`cancelAllMinigames`), `buyMax` variabele |
-| `ui.js` | ~990 | Prestige, Dierenhemel, thema's, shop-rendering, game loop, `render()`, `init()`, tab-badges, DPS-uitsplitsing, keyboard shortcuts |
+| `ui.js` | ~1620 | Prestige, Dierenhemel, thema's, shop-rendering, game loop, `render()`, `init()`, tab-badges, DPS-uitsplitsing, keyboard shortcuts, scorebord, online spelers |
 
 ### Kernsystemen
 
@@ -65,7 +65,7 @@ Het meest uitgebreide spel. Cookie Clicker-achtig incrementeel spel met veel sub
 
 ### Buff-systeem
 
-Vier buffs (elk 30 seconden actief):
+Vier buffs (30 seconden actief, 60s met sterrenshop-perk):
 - **Vuurkracht** (🔥): DPS x2
 - **Uitverkoop** (🏷️): alle dieren halve prijs
 - **Gouden Regen** (⭐): +5% van DPS per klik
@@ -75,10 +75,36 @@ Vier buffs (elk 30 seconden actief):
 
 - Beschikbaar wanneer je alle 12 diersoorten bezit
 - Reset dieren en punten, behoud sterren (+5% DPS per ster)
-- Sterren gebaseerd op totaal verdiende punten (log10 - 9)
+- Sterren gebaseerd op verdiende punten per run: `floor(log10(verdiend) - 9 - sterren×0.02)`. Graduele strafschaling voorkomt oneindig farmen; plafond rond ~400 sterren
 - Bij 3⭐: behoud offline upgrades. Bij 7⭐: klik-upgrades. Bij 12⭐: globale upgrades.
 - **Dierenhemel**: bij evolutie verschijnt een schermvullend paradijs met alle bezeten dieren in hun natuurlijke habitat, etend van hun favoriete voer (wolken, animaties, etherisch geluid). "Terug naar de Aarde"-knop voert de eigenlijke reset uit.
 - Alle actieve minigames worden automatisch gestopt bij evolutie
+
+### Dagelijkse uitdagingen
+
+- 3 willekeurige missies per dag (geseed op datum)
+- Beloning: 10 min DPS per missie, 30 min DPS bonus bij alle 3
+- Streak-systeem: telt aaneengesloten dagen met alle 3 voltooid
+- Achievements bij 3, 7 en 30 dagen streak
+- Uitdagingen: klikken, minigames spelen, dieren kopen, unieke minigames, etc.
+- Voortgang gebaseerd op delta-snapshots (verschil met start van de dag)
+- Inklapbaar op mobiel
+
+### Multiplayer scorebord
+
+- Tab "Scorebord" in middenpaneel
+- Top 10 + eigen positie als je lager staat
+- Sorteerorde: sterren (primair), score (tiebreaker)
+- Vertrouwensindicator per score (🟢 ≥80, 🟠 ≥60, 🔴 <60)
+- Filter: "alleen betrouwbaar" (standaard aan, trust ≥ 60)
+- Auto-submit bij prestige en elke 5 minuten
+- Spelers geïdentificeerd via persistent `pid` in localStorage
+
+### Online spelers
+
+- Hartslag-API pollt elke 30s met sessie-ID
+- Sessies verlopen na 90s inactiviteit
+- Speleraantal getoond in statistieken-tab
 
 ### Kleurthema's
 
