@@ -1372,6 +1372,7 @@ function getLuckyInterval() {
   const speedBonus = Math.min(0.4, Math.floor(state.prestige.stars / 5) * 0.1);
   let base = LUCKY_BASE_INTERVAL * (1 - speedBonus);
   if (hasPerk('sp_lucky1')) base *= 0.667; // 50% more frequent = 2/3 interval
+  if (getActiveBuff('lucky')) base *= 0.2; // Geluksregen: 5× more frequent
   return base + (Math.random() * 2 - 1) * LUCKY_VARIANCE;
 }
 
@@ -1463,11 +1464,11 @@ function clickLucky(el) {
       parseAppleEmoji(c);
       setTimeout(() => c.remove(), 1200);
     }
-  } else if (roll < LUCKY_JACKPOT_CHANCE + LUCKY_BUFF_CHANCE * 4) {
-    // Buff (20% total)
+  } else if (roll < LUCKY_JACKPOT_CHANCE + LUCKY_BUFF_CHANCE * BUFF_TYPES.length) {
+    // Buff (5% per buff type)
     const buff = BUFF_TYPES[Math.floor(Math.random() * BUFF_TYPES.length)];
     if (buff.id === 'jackpot') {
-      const bonus = dps * (getBuffDuration() / 1000) * luckyMult;
+      const bonus = dps * (getBuffDuration() / 1000) * 3 * luckyMult;
       state.currentPoints += bonus;
       state.totalEarned += bonus;
       state.allTime.totalEarned += bonus;

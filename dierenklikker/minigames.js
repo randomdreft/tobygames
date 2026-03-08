@@ -354,9 +354,9 @@ function chooseBuff(buffId) {
   state.minigames.buffLast = Date.now();
   state.stats.buffPlayed++; dailyTrackMinigame('buff');
 
-  // Apply jackpot immediately
+  // Apply jackpot immediately (3× buff duration worth of DPS)
   if (buff.id === 'jackpot') {
-    const bonus = getTotalDps() * (getBuffDuration() / 1000);
+    const bonus = getTotalDps() * (getBuffDuration() / 1000) * 3;
     state.currentPoints += bonus;
     state.totalEarned += bonus;
     state.allTime.totalEarned += bonus;

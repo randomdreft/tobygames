@@ -106,10 +106,11 @@ const MINIGAME_UNLOCKS = [
 ];
 
 const BUFF_TYPES = [
-  {id:'dps2x', emoji:'🔥', name:'Vuurkracht', desc:() => 'DPS ×2 voor ' + (getBuffDuration()/1000) + ' seconden', color:'#ff6b35'},
+  {id:'dps2x', emoji:'🔥', name:'Vuurkracht', desc:() => 'DPS ×4 voor ' + (getBuffDuration()/1000) + ' seconden', color:'#ff6b35'},
   {id:'sale', emoji:'🏷️', name:'Uitverkoop', desc:() => 'Alle dieren halve prijs voor ' + (getBuffDuration()/1000) + ' sec', color:'#e91e63'},
-  {id:'clickdps', emoji:'⭐', name:'Gouden Regen', desc:() => '+5% van DPS per klik voor ' + (getBuffDuration()/1000) + ' sec', color:'#ffd700'},
-  {id:'jackpot', emoji:'💰', name:'Jackpot', desc:() => 'Direct ' + (getBuffDuration()/1000) + ' seconden DPS als bonus!', color:'#66bb6a'}
+  {id:'clickdps', emoji:'⭐', name:'Gouden Regen', desc:() => '+20% van DPS per klik voor ' + (getBuffDuration()/1000) + ' sec', color:'#ffd700'},
+  {id:'jackpot', emoji:'💰', name:'Jackpot', desc:() => 'Direct ' + (getBuffDuration()/1000 * 3) + ' seconden DPS als bonus!', color:'#66bb6a'},
+  {id:'lucky', emoji:'🍀', name:'Geluksregen', desc:() => 'Lieveheersbeestjes ×5 vaker voor ' + (getBuffDuration()/1000) + ' sec', color:'#4caf50'}
 ];
 
 const SORT_ANIMALS = [

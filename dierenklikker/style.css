@@ -331,7 +331,8 @@ img.emoji {
 .minigame-box.locked h3 { opacity: 0.5; }
 
 /* Buff kiezer */
-.buff-choices { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+.buff-choices { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; justify-items: center; }
+.buff-card:last-child:nth-child(odd) { grid-column: 1 / -1; max-width: calc(50% - 4px); }
 .buff-card {
   padding: 12px 8px; border-radius: 10px; text-align: center;
   border: 2px solid var(--panel-border); background: rgba(0,0,0,0.15);

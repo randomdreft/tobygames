@@ -121,8 +121,8 @@ function getTotalDps() {
   total *= (1 + achCount * ACHIEVEMENT_BONUS);
   // Prestige bonus (all stars count)
   total *= (1 + state.prestige.stars * PRESTIGE_BONUS);
-  // Active buff: DPS ×2 (or ×3 with stronger buffs)
-  if (getActiveBuff('dps2x')) total *= (1 + 1 * getBuffStrength());
+  // Active buff: DPS ×4 (or ×5.5 with stronger buffs)
+  if (getActiveBuff('dps2x')) total *= (1 + 3 * getBuffStrength());
   return total;
 }
 
@@ -138,7 +138,7 @@ function getClickValue() {
   // Prestige bonus on clicks too (all stars count)
   base *= (1 + state.prestige.stars * PRESTIGE_BONUS);
   // Active buff effects on clicks
-  if (getActiveBuff('clickdps')) dpsPct += 5 * getBuffStrength();
+  if (getActiveBuff('clickdps')) dpsPct += 20 * getBuffStrength();
   return base + getTotalDps() * (dpsPct / 100);
 }
 
