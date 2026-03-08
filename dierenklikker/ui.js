@@ -1054,15 +1054,16 @@ function positionTooltip(e) {
 }
 
 function showMidTab(tabId) {
+  const tabIds = ['games', 'stats', 'starshop', 'leaderboard'];
   document.querySelectorAll('.mid-tab').forEach((t, i) =>
-    t.classList.toggle('active',
-      (tabId === 'games' && i === 0) || (tabId === 'stats' && i === 1) || (tabId === 'starshop' && i === 2))
+    t.classList.toggle('active', tabId === tabIds[i])
   );
-  document.getElementById('mid-games').classList.toggle('active', tabId === 'games');
-  document.getElementById('mid-stats').classList.toggle('active', tabId === 'stats');
-  const ssEl = document.getElementById('mid-starshop');
-  if (ssEl) ssEl.classList.toggle('active', tabId === 'starshop');
+  tabIds.forEach(id => {
+    const el = document.getElementById('mid-' + id);
+    if (el) el.classList.toggle('active', tabId === id);
+  });
   if (tabId === 'starshop') buildStarShop();
+  if (tabId === 'leaderboard') fetchLeaderboard();
   try { localStorage.setItem('dk_midtab', tabId); } catch(e) {}
 }
 
@@ -1290,7 +1291,7 @@ function clickLucky(el) {
   // Double catch: clicked 2 bugs within 10 seconds (only count once per pair)
   if (luckyRecentCatch === 1) state.stats.luckyDouble++;
   luckyRecentCatch++;
-  setTimeout(() => luckyRecentCatch--, 10000);
+  setTimeout(() => { if (luckyRecentCatch > 0) luckyRecentCatch--; }, 10000);
 
   // Determine reward
   const roll = Math.random();
