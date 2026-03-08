@@ -167,6 +167,7 @@ function completePrestige() {
   const keepStats = {...state.stats};
   const keepDaily = {...state.daily};
   const keepZooName = state.zooName;
+  const dpsBeforeReset = getTotalDps();
 
   state = defaultState();
   state.achievements = keepAch;
@@ -181,14 +182,14 @@ function completePrestige() {
     state.achievements['eerste_evolutie'] = 1;
   }
 
-  // Evolution start bonus from star shop perks
+  // Evolution start bonus from star shop perks (use DPS from before reset)
   if (hasPerk('sp_evo2')) {
-    const bonus = getTotalDps() * 600; // 10 min DPS
+    const bonus = dpsBeforeReset * 600; // 10 min DPS
     state.currentPoints += bonus;
     state.totalEarned += bonus;
     state.allTime.totalEarned += bonus;
   } else if (hasPerk('sp_evo1')) {
-    const bonus = getTotalDps() * 60; // 1 min DPS
+    const bonus = dpsBeforeReset * 60; // 1 min DPS
     state.currentPoints += bonus;
     state.totalEarned += bonus;
     state.allTime.totalEarned += bonus;
