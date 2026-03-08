@@ -143,8 +143,8 @@ Na eerste evolutie beschikbaar. Perks kosten sterren en bieden permanente voorde
 Bij evolutie gaan bezeten dieren naar de "wolkendierentuin" — een apart tabblad met enclosures per dier:
 - **4 niveaus**: Wolkenweitje (gratis) → Wolkenverblijf (3⭐) → Wolkenpaleis (6⭐) → Gouden Paleis (10⭐)
 - **Gelukssysteem**: dieren hebben geluk (happiness) dat langzaam daalt; aaien en voeren verhoogt het
-- **Sterrenproductie**: elke enclosure genereert periodiek ⭐ op basis van niveau en geluk (1-5 sterren rating)
-- **Verval**: geluk daalt per uur, hogere niveaus hebben minder verval
+- **Poep & sterren**: dieren produceren periodiek 💩 (elke 1,5–3 min afhankelijk van geluk). Er is een kans dat het een ⭐ is in plaats van poep: 20% bij geluk ≥90, 15% bij ≥60, 10% bij ≥30. Items blijven liggen tot de speler ze opruimt/verzamelt, max 3 per verblijf. Als alle 3 plekken vol zitten (bijv. 3x poep) komt er niks nieuws bij tot je opruimt.
+- **Verval**: geluk daalt per uur, hogere niveaus hebben minder verval (10/6/3/1 per uur)
 - **Naamgeving**: spelers geven hun dierentuin een eigen naam
 - Staat wordt opgeslagen in INI-formaat onder `[wolkendierentuin]`
 

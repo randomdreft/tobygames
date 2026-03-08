@@ -138,7 +138,7 @@ function showDierenhemel(newStars) {
   if (subtitleEl) subtitleEl.innerHTML = (zooIsPrestige
     ? 'Je dieren zijn naar de hemel gestuurd!'
     : 'Bezoek je dieren in de wolken') +
-    '<span class="zoo-hint">Aai en voer je dieren om ze blij te maken \u2014 blije dieren produceren sterren! Klik op sterren om ze te verzamelen.</span>';
+    '<span class="zoo-hint">Aai en voer je dieren om ze blij te maken! Dieren poepen regelmatig \ud83d\udca9 \u2014 ruim het op door erop te tikken. Hoe blijer het dier, hoe groter de kans dat er een \u2b50 verschijnt in plaats van poep!</span>';
 
   // Build interactive enclosure cards
   let html = '';
@@ -160,7 +160,7 @@ function showDierenhemel(newStars) {
     html += '<div class="zoo-animal hemel-animal">' + animal.emoji + '</div>';
     html += '<div class="hemel-food zoo-food">' + h.food + '</div>';
     html += '</div>';
-    html += '<div class="zoo-hearts" id="zoo-hearts-' + h.id + '" data-state="hearts-' + filled + '" data-tip="Geluk: ' + happyPct + '%|Blije dieren produceren sterren">' + hearts + '</div>';
+    html += '<div class="zoo-hearts" id="zoo-hearts-' + h.id + '" data-state="hearts-' + filled + '" data-tip="Geluk: ' + happyPct + '%|Blije dieren poepen vaker sterren (max ' + Math.round(getZooStarChance(enc.happiness || 0) * 100) + '% kans)">' + hearts + '</div>';
     html += '<div class="hemel-label">' + animal.name + '</div>';
     html += '<div class="zoo-actions">';
     html += '<button class="zoo-btn" id="zoo-pet-' + h.id + '" onclick="event.stopPropagation();petZooAnimal(\'' + h.id + '\')" data-tip="Aai ' + escHtml(animal.name) + '|+' + ZOO_PET_AMOUNT + '% geluk (cooldown ' + (ZOO_PET_COOLDOWN/1000) + 's)">\ud83e\udd1a Aai</button>';
@@ -371,7 +371,7 @@ function updateZooHearts(animalId, happiness) {
   if (!el) return;
   const filled = zooHeartCount(happiness);
   const key = 'hearts-' + filled;
-  el.dataset.tip = 'Geluk: ' + Math.round(happiness) + '%|Blije dieren produceren sterren';
+  el.dataset.tip = 'Geluk: ' + Math.round(happiness) + '%|Blije dieren poepen vaker sterren (' + Math.round(getZooStarChance(happiness) * 100) + '% kans)';
   if (el.dataset.state === key) return;
   el.dataset.state = key;
   let html = '';
