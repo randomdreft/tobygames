@@ -1128,11 +1128,14 @@ img.emoji {
   z-index: 5; overflow: hidden;
 }
 .zoo-star {
-  position: absolute; font-size: 24px; cursor: pointer;
+  position: absolute; font-size: 36px; cursor: pointer;
   pointer-events: all;
-  animation: zoo-star-float 3s ease-in-out infinite;
-  filter: drop-shadow(0 0 6px rgba(255,215,0,0.6));
+  animation: zoo-star-float 3s ease-in-out infinite, zoo-star-glow 2s ease-in-out infinite;
   transition: transform 0.1s;
+}
+@keyframes zoo-star-glow {
+  0%, 100% { filter: drop-shadow(0 0 10px rgba(255,215,0,0.6)); }
+  50% { filter: drop-shadow(0 0 24px rgba(255,215,0,0.9)); }
 }
 .zoo-star:hover { transform: scale(1.3); }
 .zoo-star img { width: 1em; height: 1em; }
