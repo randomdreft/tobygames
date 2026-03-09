@@ -102,12 +102,13 @@ function calculateTrust(data) {
   if (stars > 0) {
     const minsPerStar = playTime > 0 ? (playTime / 60) / stars : 0;
     if (minsPerStar < 1) { trust -= 40; reasons.push('sterren/tijd'); }
-    else if (minsPerStar < 3) { trust -= 20; reasons.push('sterren/tijd'); }
+    else if (minsPerStar < 2) { trust -= 20; reasons.push('sterren/tijd'); }
   }
 
-  // 7. Stars vs total prestiges: each prestige gives 1-~8 stars
+  // 7. Stars vs total prestiges: each prestige gives 1-~10 stars (avg ~8)
+  // Experienced players with high scores can hit 10+ per prestige, allow up to 12 average
   const prestiges = data.timesReset || 0;
-  if (prestiges > 0 && stars > prestiges * 10) {
+  if (prestiges > 0 && stars > prestiges * 12) {
     trust -= 30;
     reasons.push('sterren/evoluties');
   }
