@@ -972,9 +972,10 @@ img.emoji {
   text-shadow: 0 1px 6px rgba(0,0,0,0.2);
 }
 .zoo-hint {
-  display: block; margin-top: 6px;
-  font-size: clamp(11px, 2vw, 13px); color: rgba(255,255,255,0.55);
-  font-style: italic;
+  display: inline-block; margin-top: 8px;
+  font-size: clamp(12px, 2vw, 14px); color: rgba(255,255,255,0.95);
+  background: rgba(0,0,0,0.28); padding: 5px 14px;
+  border-radius: 20px; line-height: 1.5;
 }
 .hemel-clouds {
   position: fixed; top: 0; left: 0; right: 0; height: 50%; z-index: 0; pointer-events: none; overflow: hidden;
@@ -1041,6 +1042,17 @@ img.emoji {
   25% { transform: scale(1.1) rotate(-5deg); }
   75% { transform: scale(0.95) rotate(5deg); }
 }
+.zoo-food-meter {
+  display: flex; gap: 3px; justify-content: center; align-items: center;
+  margin: 4px 0; position: relative; z-index: 1; cursor: help;
+}
+.zoo-food-pip {
+  font-size: clamp(18px, 3vw, 24px); line-height: 1;
+  animation: hemel-munch 2s ease-in-out infinite;
+  animation-delay: calc(var(--i, 0) * 0.3s);
+}
+.zoo-food-pip.zoo-food-empty { opacity: 0.2; filter: grayscale(1); animation: none; }
+.zoo-food-pip img { width: 1em; height: 1em; }
 .hemel-label {
   font-size: 14px; font-weight: 700; margin-top: 8px;
   color: rgba(255,255,255,0.95); text-shadow: 0 1px 4px rgba(0,0,0,0.4);

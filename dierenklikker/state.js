@@ -202,7 +202,8 @@ function stateToIni() {
     ANIMALS.forEach(a => {
       const enc = state.zoo.enclosures[a.id];
       if (enc && enc.level) {
-        lines.push(a.id + '=' + enc.level + ',' + Math.round(enc.happiness || 0) + ',' + (enc.lastDecay || Date.now()));
+        const food = Math.min(ZOO_MAX_FOOD, Math.max(0, Math.round(enc.food !== undefined ? enc.food : ZOO_MAX_FOOD)));
+        lines.push(a.id + '=' + enc.level + ',' + Math.round(enc.happiness || 0) + ',' + (enc.lastDecay || Date.now()) + ',' + food);
       }
     });
   }
@@ -363,7 +364,8 @@ function iniToState(text) {
       s.zoo.enclosures[a.id] = {
         level: safeInt(parts[0], 1, 1, ZOO_LEVELS.length),
         happiness: Math.min(100, safeFloat(parts[1], 50, 0)),
-        lastDecay: safeInt(parts[2], Date.now(), 0)
+        lastDecay: safeInt(parts[2], Date.now(), 0),
+        food: Math.min(ZOO_MAX_FOOD, safeInt(parts[3], ZOO_MAX_FOOD, 0))
       };
     }
   });

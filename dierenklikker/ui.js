@@ -138,7 +138,7 @@ function showDierenhemel(newStars) {
   if (subtitleEl) subtitleEl.innerHTML = (zooIsPrestige
     ? 'Je dieren zijn naar de hemel gestuurd!'
     : 'Bezoek je dieren in de wolken') +
-    '<span class="zoo-hint">Aai en voer je dieren om ze blij te maken! Dieren poepen regelmatig \ud83d\udca9 \u2014 ruim het op door erop te tikken. Hoe blijer het dier, hoe groter de kans dat er een \u2b50 verschijnt in plaats van poep!</span>';
+    '<span class="zoo-hint">\ud83e\udd1a Aai = ❤️ geluk &nbsp;·&nbsp; ' + HEMEL_HABITATS[0].food + ' Voer = eten (max ' + ZOO_MAX_FOOD + ', nodig om te 💩) &nbsp;·&nbsp; Tik op 💩 → kans op ⭐</span>';
 
   // Build interactive enclosure cards
   let html = '';
@@ -155,16 +155,19 @@ function showDierenhemel(newStars) {
 
     html += '<div class="hemel-habitat zoo-enclosure" id="zoo-enc-' + h.id + '" style="background:' + h.bg + '">';
     html += '<div class="hemel-env">' + h.env + '</div>';
+    const foodCount = Math.min(ZOO_MAX_FOOD, Math.max(0, Math.round(enc.food !== undefined ? enc.food : ZOO_MAX_FOOD)));
+    let foodPips = '';
+    for (let i = 0; i < ZOO_MAX_FOOD; i++) foodPips += '<span class="zoo-food-pip' + (i < foodCount ? '' : ' zoo-food-empty') + '">' + h.food + '</span>';
     html += '<div class="zoo-level-badge" id="zoo-level-' + h.id + '" data-tip="' + escHtml(levelInfo.name) + '|' + escHtml('Geluk-verval: ' + levelInfo.decayPerHour + '% per uur') + '">' + levelInfo.emoji + ' ' + levelInfo.name + '</div>';
     html += '<div class="zoo-animal-wrap" onclick="petZooAnimal(\'' + h.id + '\')" data-tip="' + escHtml(animal.name + ' aaien') + '|' + escHtml('Klik om te aaien (+' + ZOO_PET_AMOUNT + '% geluk)') + '">';
     html += '<div class="zoo-animal hemel-animal">' + animal.emoji + '</div>';
-    html += '<div class="hemel-food zoo-food">' + h.food + '</div>';
     html += '</div>';
-    html += '<div class="zoo-hearts" id="zoo-hearts-' + h.id + '" data-state="hearts-' + filled + '" data-tip="Geluk: ' + happyPct + '%|Blije dieren poepen vaker sterren (max ' + Math.round(getZooStarChance(enc.happiness || 0) * 100) + '% kans)">' + hearts + '</div>';
+    html += '<div class="zoo-hearts" id="zoo-hearts-' + h.id + '" data-state="hearts-' + filled + '" data-tip="Geluk: ' + happyPct + '%|Geluk bepaalt hoe snel 💩 verschijnt en de kans op ⭐ (' + Math.round(getZooStarChance(enc.happiness || 0) * 100) + '% kans)">' + hearts + '</div>';
+    html += '<div class="zoo-food-meter" id="zoo-food-meter-' + h.id + '" data-state="food-' + foodCount + '" data-tip="Voedsel: ' + foodCount + '/' + ZOO_MAX_FOOD + '|Elke 💩 kost 1 voedsel. Voer je dier om de voorraad aan te vullen.">' + foodPips + '</div>';
     html += '<div class="hemel-label">' + animal.name + '</div>';
     html += '<div class="zoo-actions">';
     html += '<button class="zoo-btn" id="zoo-pet-' + h.id + '" onclick="event.stopPropagation();petZooAnimal(\'' + h.id + '\')" data-tip="Aai ' + escHtml(animal.name) + '|+' + ZOO_PET_AMOUNT + '% geluk (cooldown ' + (ZOO_PET_COOLDOWN/1000) + 's)">\ud83e\udd1a Aai</button>';
-    html += '<button class="zoo-btn" id="zoo-feed-' + h.id + '" onclick="event.stopPropagation();feedZooAnimal(\'' + h.id + '\')" data-tip="Voer ' + escHtml(animal.name) + '|+' + ZOO_FEED_AMOUNT + '% geluk (cooldown ' + (ZOO_FEED_COOLDOWN/1000) + 's)">' + h.food + ' Voer</button>';
+    html += '<button class="zoo-btn" id="zoo-feed-' + h.id + '" onclick="event.stopPropagation();feedZooAnimal(\'' + h.id + '\')" data-tip="Voer ' + escHtml(animal.name) + '|+1 voedsel (max ' + ZOO_MAX_FOOD + ')">' + h.food + ' Voer</button>';
     html += '</div>';
     html += '<button class="zoo-upgrade-btn" id="zoo-upg-' + h.id + '" onclick="event.stopPropagation();upgradeZooEnclosure(\'' + h.id + '\')"></button>';
     html += '<div class="zoo-star-area" id="zoo-stars-' + h.id + '"></div>';
@@ -178,6 +181,7 @@ function showDierenhemel(newStars) {
     if (enc) {
       updateZooButtons(a.id, enc);
       updateZooUpgradeBtn(a.id, enc);
+      updateZooFoodMeter(a.id, enc.food !== undefined ? enc.food : ZOO_MAX_FOOD);
     }
   });
 
@@ -241,10 +245,15 @@ function zooTick() {
     // Spawn poop or stars
     const interval = getZooSpawnInterval(enc.happiness);
     if (interval < Infinity) {
-      const elapsed = (now - (zooRuntime.lastSpawn[a.id] || now)) / 1000;
-      if (elapsed >= interval && zooRuntime.pendingStars[a.id].length < ZOO_MAX_SPAWNS) {
-        spawnZooStar(a.id, enc.happiness);
+      if (zooRuntime.pendingStars[a.id].length >= ZOO_MAX_SPAWNS) {
+        // At max spawns: freeze timer so it starts fresh after clearing
         zooRuntime.lastSpawn[a.id] = now;
+      } else {
+        const elapsed = (now - (zooRuntime.lastSpawn[a.id] || now)) / 1000;
+        if (elapsed >= interval) {
+          spawnZooStar(a.id, enc.happiness);
+          zooRuntime.lastSpawn[a.id] = now;
+        }
       }
     }
   });
@@ -253,8 +262,13 @@ function zooTick() {
 }
 
 function spawnZooStar(animalId, happiness) {
+  const enc = state.zoo && state.zoo.enclosures && state.zoo.enclosures[animalId];
+  if (!enc || (enc.food !== undefined ? enc.food : ZOO_MAX_FOOD) <= 0) return; // geen eten = geen poep
   const container = document.getElementById('zoo-stars-' + animalId);
   if (!container) return;
+  // Consume 1 food
+  enc.food = Math.max(0, (enc.food !== undefined ? enc.food : ZOO_MAX_FOOD) - 1);
+  updateZooFoodMeter(animalId, enc.food);
   const isStar = Math.random() < getZooStarChance(happiness);
   const el = document.createElement('div');
   el.className = isStar ? 'zoo-star' : 'zoo-poop';
@@ -275,6 +289,10 @@ function collectZooItem(animalId, el) {
     if (idx >= 0) {
       isStar = items[idx].isStar;
       items.splice(idx, 1);
+      // Als alle items opgeruimd zijn: timer resetten zodat volgende poep pas na vol interval komt
+      if (items.length === 0) {
+        zooRuntime.lastSpawn[animalId] = Date.now();
+      }
     }
   }
   el.classList.add(isStar ? 'zoo-star-collect' : 'zoo-poop-collect');
@@ -327,20 +345,16 @@ function feedZooAnimal(animalId) {
   if (!enc) return;
   const now = Date.now();
   if (now - (enc.lastFed || 0) < ZOO_FEED_COOLDOWN) return;
-  enc.happiness = Math.min(100, (enc.happiness || 0) + ZOO_FEED_AMOUNT);
+  const currentFood = enc.food !== undefined ? enc.food : ZOO_MAX_FOOD;
+  if (currentFood >= ZOO_MAX_FOOD) return; // al vol
+  enc.food = Math.min(ZOO_MAX_FOOD, currentFood + ZOO_FEED_AMOUNT);
   enc.lastFed = now;
-  enc.lastDecay = now;
   sfxBuy();
 
-  const foodEl = document.querySelector('#zoo-enc-' + animalId + ' .zoo-food');
-  if (foodEl) {
-    foodEl.style.animation = 'none';
-    foodEl.offsetHeight;
-    foodEl.style.animation = 'zoo-feed-bounce 0.4s ease-out';
-    setTimeout(() => { foodEl.style.animation = 'hemel-munch 2s ease-in-out infinite'; }, 400);
-  }
-  showZooParticle(animalId, '+' + ZOO_FEED_AMOUNT + '% \u2764\ufe0f');
-  updateZooHearts(animalId, enc.happiness);
+  const h = HEMEL_HABITATS.find(x => x.id === animalId);
+  const foodEmoji = h ? h.food : '\ud83c\udf4e';
+  showZooParticle(animalId, foodEmoji + ' +1');
+  updateZooFoodMeter(animalId, enc.food);
   updateZooButtons(animalId, enc);
 }
 
@@ -371,13 +385,31 @@ function updateZooHearts(animalId, happiness) {
   if (!el) return;
   const filled = zooHeartCount(happiness);
   const key = 'hearts-' + filled;
-  el.dataset.tip = 'Geluk: ' + Math.round(happiness) + '%|Blije dieren poepen vaker sterren (' + Math.round(getZooStarChance(happiness) * 100) + '% kans)';
+  el.dataset.tip = 'Geluk: ' + Math.round(happiness) + '%|Bepaalt hoe snel 💩 verschijnt én de kans op ⭐ (' + Math.round(getZooStarChance(happiness) * 100) + '% kans)';
   if (el.dataset.state === key) return;
   el.dataset.state = key;
   let html = '';
   for (let i = 0; i < 5; i++) html += i < filled ? '\u2764\ufe0f' : '\ud83e\udd0d';
   el.innerHTML = html;
   parseAppleEmoji(el);
+}
+
+function updateZooFoodMeter(animalId, food) {
+  const el = document.getElementById('zoo-food-meter-' + animalId);
+  if (!el) return;
+  const foodCount = Math.min(ZOO_MAX_FOOD, Math.max(0, Math.round(food !== undefined ? food : ZOO_MAX_FOOD)));
+  const key = 'food-' + foodCount;
+  if (el.dataset.state === key) return;
+  el.dataset.state = key;
+  const h = HEMEL_HABITATS.find(x => x.id === animalId);
+  const emoji = h ? h.food : '\ud83c\udf4e';
+  let html = '';
+  for (let i = 0; i < ZOO_MAX_FOOD; i++) {
+    html += '<span class="zoo-food-pip' + (i < foodCount ? '' : ' zoo-food-empty') + '">' + emoji + '</span>';
+  }
+  el.innerHTML = html;
+  parseAppleEmoji(el);
+  el.dataset.tip = 'Voedsel: ' + foodCount + '/' + ZOO_MAX_FOOD + '|Elke \ud83d\udca9 kost 1 voedsel. Voer je dier om de voorraad aan te vullen.';
 }
 
 function updateZooButtons(animalId, enc) {
@@ -398,15 +430,18 @@ function updateZooButtons(animalId, enc) {
   if (feedBtn) {
     const cd = Math.max(0, ZOO_FEED_COOLDOWN - (now - (enc.lastFed || 0)));
     const h = HEMEL_HABITATS.find(x => x.id === animalId);
-    const food = h ? h.food : '\ud83e\udd55';
-    const feedText = cd > 0 ? food + ' ' + Math.ceil(cd / 1000) + 's' : food + ' Voer';
-    feedBtn.disabled = cd > 0;
+    const foodEmoji = h ? h.food : '\ud83e\udd55';
+    const foodFull = (enc.food !== undefined ? enc.food : ZOO_MAX_FOOD) >= ZOO_MAX_FOOD;
+    const feedDisabled = cd > 0 || foodFull;
+    const feedText = foodFull ? foodEmoji + ' Vol!' : (cd > 0 ? foodEmoji + ' ' + Math.ceil(cd / 1000) + 's' : foodEmoji + ' Voer');
+    feedBtn.disabled = feedDisabled;
     if (feedBtn.dataset.state !== feedText) {
       feedBtn.dataset.state = feedText;
       feedBtn.textContent = feedText;
       parseAppleEmoji(feedBtn);
     }
   }
+  updateZooFoodMeter(animalId, enc.food !== undefined ? enc.food : ZOO_MAX_FOOD);
   updateZooUpgradeBtn(animalId, enc);
 }
 
@@ -836,10 +871,6 @@ function buildEvolution() {
   html += '<span style="color:var(--text-dim);font-size:12px">Tip: na evolutie ga je veel sneller! Elke keer verdien je meer sterren.</span>';
   html += '</div>';
   html += '<button class="opt-btn prestige-btn" id="prestige-btn" onclick="showPrestigeModal()">⭐ Evolueer!</button>';
-
-  if (state.prestige.timesReset > 0) {
-    html += '<button class="opt-btn zoo-visit-btn" onclick="visitZoo()">☁️ Bezoek Wolkendierentuin</button>';
-  }
 
   // Theme picker — only show if at least one unlockable theme is available
   const unlockedThemes = COLOR_THEMES.filter(t => t.stars <= state.prestige.stars);

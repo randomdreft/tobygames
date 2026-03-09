@@ -234,6 +234,7 @@ function ensureZooEnclosures() {
       state.zoo.enclosures[a.id] = {
         level: 1,
         happiness: 50,
+        food: ZOO_MAX_FOOD,
         lastDecay: Date.now()
       };
     }
@@ -260,10 +261,10 @@ function getZooSpawnInterval(happiness) {
 }
 
 function getZooStarChance(happiness) {
-  if (happiness >= 90) return 0.20;  // 1 in 5
-  if (happiness >= 60) return 0.15;
-  if (happiness >= 30) return 0.10;  // 1 in 10
-  return 0.10;
+  if (happiness >= 90) return 0.10;  // 1 in 10
+  if (happiness >= 60) return 0.075;
+  if (happiness >= 30) return 0.05;  // 1 in 20
+  return 0.05;
 }
 
 function getZooAvailableStars() {
