@@ -105,7 +105,13 @@
             color: var(--accent);
         }
         
-        .settings-button {
+        .header-buttons {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .settings-button, .pause-button {
             background: rgba(255, 255, 255, 0.2);
             color: var(--text);
             border: none;
@@ -115,8 +121,8 @@
             font-size: 12px;
             transition: all 0.3s ease;
         }
-        
-        .settings-button:hover {
+
+        .settings-button:hover, .pause-button:hover {
             background: rgba(255, 255, 255, 0.3);
         }
         
@@ -457,7 +463,10 @@
                 <div class="score-value" id="highScore">0</div>
             </div>
         </div>
-        <button class="settings-button" id="settingsButton">⚙️</button>
+        <div class="header-buttons">
+            <button class="pause-button" id="pauseButton">⏸️</button>
+            <button class="settings-button" id="settingsButton">⚙️</button>
+        </div>
     </div>
     
     <!-- Game container -->
@@ -480,6 +489,15 @@
         </div>
     </div>
     
+    <!-- Pause overlay -->
+    <div class="overlay" id="pauseOverlay">
+        <div class="overlay-content">
+            <div class="countdown">⏸️</div>
+            <div style="font-size: 24px; margin: 20px 0;">Pauze</div>
+            <button class="button" id="resumeButton">Doorgaan</button>
+        </div>
+    </div>
+
     <!-- Game over overlay -->
     <div class="overlay" id="gameOverOverlay">
         <div class="overlay-content">
@@ -656,6 +674,11 @@
                         e.preventDefault();
                         this.handleInput(normalizedKey);
                     }
+
+                    if (['p', ' ', 'escape'].includes(normalizedKey)) {
+                        e.preventDefault();
+                        this.togglePause();
+                    }
                 });
                 
                 // Back button
@@ -665,6 +688,16 @@
                     window.location.href = '/';
                 });
                 
+                // Pause button
+                document.getElementById('pauseButton').addEventListener('click', () => {
+                    this.togglePause();
+                });
+
+                // Resume button
+                document.getElementById('resumeButton').addEventListener('click', () => {
+                    this.resumeGame();
+                });
+
                 // Settings
                 document.getElementById('settingsButton').addEventListener('click', () => {
                     this.showSettings();
@@ -709,11 +742,8 @@
                 });
                 
                 window.addEventListener('visibilitychange', () => {
-                    if (document.hidden && this.gameRunning) {
-                        this.gamePaused = true;
-                    } else if (!document.hidden && this.gamePaused) {
-                        this.gamePaused = false;
-                        this.startCountdown();
+                    if (document.hidden && this.gameRunning && !this.gamePaused) {
+                        this.togglePause();
                     }
                 });
             }
@@ -852,21 +882,27 @@
                 this.inputBuffer.push(newDirection);
             }
             
-            startCountdown() {
+            startCountdown(resumeOnly = false) {
                 const overlay = document.getElementById('countdownOverlay');
                 const text = document.getElementById('countdownText');
                 let count = 3;
-                
+
                 overlay.classList.add('show');
-                
+
                 const countdown = setInterval(() => {
                     text.textContent = count;
-                    
+
                     if (count === 0) {
                         text.textContent = 'START!';
                         setTimeout(() => {
                             overlay.classList.remove('show');
-                            this.startGame();
+                            if (resumeOnly) {
+                                this.gamePaused = false;
+                                this.lastTime = performance.now();
+                                this.accumulator = 0;
+                            } else {
+                                this.startGame();
+                            }
                         }, 1000);
                         clearInterval(countdown);
                     }
@@ -1108,6 +1144,22 @@
             restartGame() {
                 document.getElementById('gameOverOverlay').classList.remove('show');
                 this.startCountdown();
+            }
+
+            togglePause() {
+                if (this.gameOver || !this.gameRunning) return;
+                if (this.gamePaused) {
+                    this.resumeGame();
+                } else {
+                    this.gamePaused = true;
+                    document.getElementById('pauseOverlay').classList.add('show');
+                }
+            }
+
+            resumeGame() {
+                if (!this.gamePaused) return;
+                document.getElementById('pauseOverlay').classList.remove('show');
+                this.startCountdown(true);
             }
             
             updateScore() {
