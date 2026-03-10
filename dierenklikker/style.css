@@ -1255,31 +1255,35 @@ img.emoji {
     rgba(238,130,238,0.08), rgba(255,0,0,0.08));
   opacity: 0.6;
 }
-.zoo-glitter-container { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
-.zoo-glitter {
-  position: absolute; top: -10px; width: 4px; height: 4px;
-  background: radial-gradient(circle, #ffd700, transparent);
-  border-radius: 50%;
-  animation: glitter-fall linear infinite;
-  opacity: 0.6;
+.zoo-rain-container { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+.zoo-rain-particle {
+  position: absolute; top: -40px;
+  animation: star-rain linear infinite;
+  opacity: 0;
 }
-@keyframes glitter-fall {
-  0% { transform: translateY(-10px) rotate(0deg); opacity: 0; }
-  10% { opacity: 0.7; }
-  90% { opacity: 0.7; }
-  100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+@keyframes star-rain {
+  0% { transform: translateY(-40px) rotate(0deg) scale(0.6); opacity: 0; }
+  8% { opacity: 0.8; }
+  85% { opacity: 0.6; }
+  100% { transform: translateY(105vh) rotate(360deg) scale(1); opacity: 0; }
 }
 .zoo-flying-unicorn {
-  position: absolute; bottom: 15%; font-size: 48px;
-  animation: unicorn-fly 12s ease-in-out infinite;
-  filter: drop-shadow(0 2px 8px rgba(255,215,0,0.4));
+  position: absolute; font-size: 52px;
+  animation: unicorn-fly 14s ease-in-out infinite;
+  filter: drop-shadow(0 4px 12px rgba(255,215,0,0.5));
   z-index: 0;
 }
 @keyframes unicorn-fly {
-  0%, 100% { left: -60px; transform: scaleX(1); }
-  48% { left: calc(100% + 60px); transform: scaleX(1); }
-  50% { left: calc(100% + 60px); transform: scaleX(-1); }
-  98% { left: -60px; transform: scaleX(-1); }
+  0%   { left: -70px; top: 55%; transform: scaleX(1) rotate(0deg); }
+  15%  { left: 30%;    top: 25%; transform: scaleX(1) rotate(-8deg); }
+  30%  { left: 65%;    top: 50%; transform: scaleX(1) rotate(5deg); }
+  45%  { left: calc(100% + 70px); top: 20%; transform: scaleX(1) rotate(-5deg); }
+  46%  { left: calc(100% + 70px); top: 20%; transform: scaleX(-1) rotate(5deg); }
+  60%  { left: 60%;    top: 60%; transform: scaleX(-1) rotate(-5deg); }
+  75%  { left: 25%;    top: 30%; transform: scaleX(-1) rotate(8deg); }
+  95%  { left: -70px;  top: 55%; transform: scaleX(-1) rotate(0deg); }
+  96%  { left: -70px;  top: 55%; transform: scaleX(1) rotate(0deg); }
+  100% { left: -70px;  top: 55%; transform: scaleX(1) rotate(0deg); }
 }
 
 /* Voerbeurs */

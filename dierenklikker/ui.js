@@ -92,8 +92,7 @@ const HEMEL_HABITATS = [
   {id:'panda', bg:'linear-gradient(180deg,#2d7a3f,#1a5a2a)', env:'🎋🎋🎋🎋🎋🎋🎋🎋🎋🎋', food:'🎋', desc:'Smult van bamboe'},
   {id:'olifant', bg:'linear-gradient(180deg,#c4a35a,#a08040)', env:'🌴🌅🦒🌴🌅🦒🌴🌅🦒🌴', food:'🍃', desc:'Plukt bladeren op de savanne'},
   {id:'walvis', bg:'linear-gradient(180deg,#1a5a8a,#0d3a5a)', env:'🌊🐚🪸🫧🌊🐚🪸🫧🌊🐚', food:'🦐', desc:'Zwemt door de hemelse oceaan'},
-  {id:'draak', bg:'linear-gradient(180deg,#5a2a6a,#3a1a4a)', env:'🌋✨🔮⭐🌋✨🔮⭐🌋✨', food:'🔥', desc:'Spuwt vuur op de bergtop'},
-  {id:'eenhoorn', bg:'linear-gradient(180deg,#9b59b6,#6c3483)', env:'🌈✨⭐💫🌈✨⭐💫🌈✨', food:'🌟', desc:'Schittert tussen de sterren'}
+  {id:'draak', bg:'linear-gradient(180deg,#5a2a6a,#3a1a4a)', env:'🌋✨🔮⭐🌋✨🔮⭐🌋✨', food:'🔥', desc:'Spuwt vuur op de bergtop'}
 ];
 
 let prestigeCache = null;
@@ -187,18 +186,24 @@ function showDierenhemel(newStars) {
   });
   farm.innerHTML = html;
 
-  // Unicorn visual effects
+  // Unicorn visual effects: stars & rainbows rain, flying unicorn
   const oldFx = document.getElementById('zoo-unicorn-effects');
   if (oldFx) oldFx.remove();
   if ((state.animals.eenhoorn || 0) > 0) {
     const fx = document.createElement('div');
     fx.id = 'zoo-unicorn-effects';
-    let glitters = '';
-    for (let i = 0; i < 30; i++) {
-      glitters += '<div class="zoo-glitter" style="left:' + (Math.random()*100) + '%;animation-delay:' + (Math.random()*5).toFixed(1) + 's;animation-duration:' + (3+Math.random()*4).toFixed(1) + 's"></div>';
+    const particles = ['⭐','🌈','✨','💫','⭐','🌈','✨','⭐','🌈','💫'];
+    let rain = '';
+    for (let i = 0; i < 35; i++) {
+      const p = particles[i % particles.length];
+      const left = (Math.random() * 100).toFixed(1);
+      const delay = (Math.random() * 8).toFixed(1);
+      const dur = (4 + Math.random() * 5).toFixed(1);
+      const size = (14 + Math.random() * 14).toFixed(0);
+      rain += '<div class="zoo-rain-particle" style="left:' + left + '%;animation-delay:' + delay + 's;animation-duration:' + dur + 's;font-size:' + size + 'px">' + p + '</div>';
     }
     fx.innerHTML = '<div class="zoo-rainbow-arc"></div>' +
-      '<div class="zoo-glitter-container">' + glitters + '</div>' +
+      '<div class="zoo-rain-container">' + rain + '</div>' +
       '<div class="zoo-flying-unicorn">🦄</div>';
     el.insertBefore(fx, farm);
     parseAppleEmoji(fx);
