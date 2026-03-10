@@ -390,7 +390,7 @@ img.emoji {
   cursor: pointer; transition: all 0.2s; user-select: none;
   border: 2px solid var(--panel-border); background: rgba(0,0,0,0.3);
 }
-.memory-card.face-down { background: linear-gradient(135deg, #3a5a8c, #2d4a6f); }
+.memory-card.face-down { background: linear-gradient(135deg, var(--bg2), var(--bg3)); }
 .memory-card.face-down:hover { border-color: var(--gold); transform: scale(1.05); }
 .memory-card.face-up { background: rgba(0,0,0,0.15); border-color: var(--green); }
 .memory-card.matched { background: rgba(67,160,71,0.2); border-color: var(--green); opacity: 0.6; }
