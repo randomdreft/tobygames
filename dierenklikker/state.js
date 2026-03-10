@@ -27,7 +27,8 @@ function defaultState() {
       voedselPlayed: 0, voedselCorrect: 0, voedselWrong: 0, voedselPerfect: 0,
       racePlayed: 0, raceWon: 0,
       puzzelPlayed: 0, puzzelWon: 0, puzzelBestMoves: 0,
-      luckyClicked: 0, luckyMissed: 0, luckyDouble: 0, luckyJackpot: 0
+      luckyClicked: 0, luckyMissed: 0, luckyDouble: 0, luckyJackpot: 0,
+      voerbeursSells: 0, voerbeursEarned: 0
     },
     minigames: { quizLast: 0, catcherLast: 0, mathLast: 0, buffLast: 0, sortLast: 0, memoryLast: 0, tellenLast: 0, indringerLast: 0, groterLast: 0, voedselLast: 0, raceLast: 0, puzzelLast: 0 },
     daily: {
