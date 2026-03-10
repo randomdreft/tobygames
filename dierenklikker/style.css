@@ -121,7 +121,7 @@ body.drakenuur-bg {
 
 /* Main layout */
 #game {
-  display: grid; grid-template-columns: 35% 30% 35%;
+  display: grid; grid-template-columns: 35fr 30fr 35fr;
   gap: 12px; padding: 8px 16px 20px; margin: 0;
   height: calc(100vh - 56px);
 }
