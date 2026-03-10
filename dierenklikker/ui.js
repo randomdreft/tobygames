@@ -1613,43 +1613,44 @@ updateOrbiters._lastKey = '';
 
 /* Tooltip system */
 const tooltipEl = document.getElementById('tooltip');
-let _tipHover = false;
+let _tipHoverItem = null; // element currently hovered
 let _tapTipTimer = null;
 
-function showTip(parts, e) {
+function hideTip() {
+  tooltipEl.style.display = 'none';
+  _tipHoverItem = null;
+  clearTimeout(_tapTipTimer);
+}
+
+// Hover detection via mousemove (more reliable than mouseover across browsers)
+document.addEventListener('mousemove', function(e) {
+  const item = e.target.closest('[data-tip]');
+  if (item && item !== _tipHoverItem) {
+    // Entered a new [data-tip] element
+    const parts = item.dataset.tip.split('|');
+    tooltipEl.innerHTML = '<div class="tip-title">' + parts[0] + '</div>' +
+      (parts[1] ? '<div class="tip-desc">' + parts[1] + '</div>' : '');
+    tooltipEl.style.display = 'block';
+    _tipHoverItem = item;
+    clearTimeout(_tapTipTimer);
+  } else if (!item && _tipHoverItem) {
+    // Left all [data-tip] elements
+    hideTip();
+  }
+  if (tooltipEl.style.display === 'block') positionTooltip(e);
+});
+
+// Click/tap: for touch devices where mousemove doesn't fire
+document.addEventListener('click', function(e) {
+  if (_tipHoverItem) return; // mouse hover is handling it
+  clearTimeout(_tapTipTimer);
+  const item = e.target.closest('[data-tip]');
+  if (!item) { hideTip(); return; }
+  const parts = item.dataset.tip.split('|');
   tooltipEl.innerHTML = '<div class="tip-title">' + parts[0] + '</div>' +
     (parts[1] ? '<div class="tip-desc">' + parts[1] + '</div>' : '');
   tooltipEl.style.display = 'block';
   positionTooltip(e);
-}
-
-function hideTip() {
-  tooltipEl.style.display = 'none';
-  _tipHover = false;
-  clearTimeout(_tapTipTimer);
-}
-
-// Hover tooltips (desktop) — click does NOT interfere
-document.addEventListener('mouseover', function(e) {
-  const item = e.target.closest('[data-tip]');
-  if (!item) return;
-  showTip(item.dataset.tip.split('|'), e);
-  _tipHover = true;
-});
-document.addEventListener('mousemove', function(e) {
-  if (tooltipEl.style.display === 'block') positionTooltip(e);
-});
-document.addEventListener('mouseout', function(e) {
-  if (_tipHover && e.target.closest('[data-tip]')) hideTip();
-});
-
-// Click/tap tooltips (touch fallback) — only when hover isn't active
-document.addEventListener('click', function(e) {
-  if (_tipHover) return; // hover is handling it, don't interfere
-  clearTimeout(_tapTipTimer);
-  const item = e.target.closest('[data-tip]');
-  if (!item) { hideTip(); return; }
-  showTip(item.dataset.tip.split('|'), e);
   _tapTipTimer = setTimeout(hideTip, 2500);
 });
 
