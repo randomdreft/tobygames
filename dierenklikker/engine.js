@@ -311,7 +311,8 @@ function buildAchievementDefs() {
   // Click milestones
   const clickMilestones = [
     [100, 'Klik klik klik'], [1000, 'Doordrukker'], [5000, 'Klikkampioen'],
-    [15000, 'Supersnelle vinger'], [35000, 'Kliklegende']
+    [15000, 'Supersnelle vinger'], [35000, 'Kliklegende'],
+    [50000, 'Klikmachine'], [100000, 'Klikgod']
   ];
   clickMilestones.forEach(([n, name]) => {
     defs.push({
