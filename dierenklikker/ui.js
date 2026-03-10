@@ -1963,7 +1963,7 @@ function clickLucky(el) {
    ================================================================ */
 
 let _voerbeursVisible = false;
-const VB_COLORS = ['#ff6b6b','#ffd93d','#6bcb77'];
+const VB_COLORS = ['#ff6b6b','#ffd93d','#4da6ff'];
 
 function toggleVoerbeurs() {
   const box = document.getElementById('mg-voerbeurs');
