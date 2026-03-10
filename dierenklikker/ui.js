@@ -1640,16 +1640,17 @@ document.addEventListener('mousemove', function(e) {
   if (tooltipEl.style.display === 'block') positionTooltip(e);
 });
 
-// Click/tap: for touch devices where mousemove doesn't fire
+// Click/tap: fallback for touch devices AND browsers that delay mouse events (Arc)
 document.addEventListener('click', function(e) {
-  if (_tipHoverItem) return; // mouse hover is handling it
   clearTimeout(_tapTipTimer);
   const item = e.target.closest('[data-tip]');
   if (!item) { hideTip(); return; }
+  if (_tipHoverItem === item) return; // hover already showing this exact tooltip
   const parts = item.dataset.tip.split('|');
   tooltipEl.innerHTML = '<div class="tip-title">' + parts[0] + '</div>' +
     (parts[1] ? '<div class="tip-desc">' + parts[1] + '</div>' : '');
   tooltipEl.style.display = 'block';
+  _tipHoverItem = item;
   positionTooltip(e);
   _tapTipTimer = setTimeout(hideTip, 2500);
 });
