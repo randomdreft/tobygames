@@ -216,6 +216,7 @@ function stateToIni() {
     VOERBEURS_ASSETS.forEach(a => {
       lines.push(a.id + '_prijs=' + (state.voerbeurs.prices[a.id] || 5));
       lines.push(a.id + '_voorraad=' + (state.voerbeurs.inventory[a.id] || 0));
+      lines.push(a.id + '_koopprijs=' + ((state.voerbeurs.costBasis || {})[a.id] || 0));
       lines.push(a.id + '_historie=' + (state.voerbeurs.history[a.id] || []).join(','));
     });
     lines.push('laatste_tick=' + (state.voerbeurs.lastTick || Date.now()));
@@ -391,10 +392,11 @@ function iniToState(text) {
   // Voerbeurs
   const vb = ini.voerbeurs || {};
   if (Object.keys(vb).length > 0) {
-    s.voerbeurs = { prices: {}, inventory: {}, history: {}, lastTick: safeInt(vb.laatste_tick, Date.now(), 0) };
+    s.voerbeurs = { prices: {}, inventory: {}, costBasis: {}, history: {}, lastTick: safeInt(vb.laatste_tick, Date.now(), 0) };
     VOERBEURS_ASSETS.forEach(a => {
       s.voerbeurs.prices[a.id] = safeInt(vb[a.id + '_prijs'], 5, 1, 10);
       s.voerbeurs.inventory[a.id] = safeInt(vb[a.id + '_voorraad'], 0, 0, VOERBEURS_MAX_INVENTORY);
+      s.voerbeurs.costBasis[a.id] = parseFloat(vb[a.id + '_koopprijs']) || 0;
       const hist = (vb[a.id + '_historie'] || '').split(',').filter(x => x).map(x => safeInt(x, 5, 1, 10));
       s.voerbeurs.history[a.id] = hist.length > 0 ? hist.slice(-VOERBEURS_HISTORY_LENGTH) : [s.voerbeurs.prices[a.id]];
     });

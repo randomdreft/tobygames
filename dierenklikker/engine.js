@@ -1053,13 +1053,22 @@ function ensureVoerbeurs() {
     state.voerbeurs = {
       prices: {},
       inventory: {},
+      costBasis: {},
       history: {},
       lastTick: Date.now()
     };
     VOERBEURS_ASSETS.forEach(a => {
       state.voerbeurs.prices[a.id] = Math.floor(Math.random() * 5) + 3; // start 3-7
       state.voerbeurs.inventory[a.id] = 0;
+      state.voerbeurs.costBasis[a.id] = 0;
       state.voerbeurs.history[a.id] = [state.voerbeurs.prices[a.id]];
+    });
+  }
+  // Migration: add costBasis for existing saves
+  if (!state.voerbeurs.costBasis) {
+    state.voerbeurs.costBasis = {};
+    VOERBEURS_ASSETS.forEach(a => {
+      state.voerbeurs.costBasis[a.id] = (state.voerbeurs.inventory[a.id] || 0) > 0 ? state.voerbeurs.prices[a.id] : 0;
     });
   }
 }
@@ -1102,6 +1111,9 @@ function voerbeursBuy(assetId) {
   const cost = price * dps * 60; // 1 min DPS per price point
   if (state.currentPoints < cost) return;
   state.currentPoints -= cost;
+  if (!state.voerbeurs.costBasis) state.voerbeurs.costBasis = {};
+  const oldBasis = state.voerbeurs.costBasis[assetId] || 0;
+  state.voerbeurs.costBasis[assetId] = (oldBasis * inv + price) / (inv + 1);
   state.voerbeurs.inventory[assetId] = inv + 1;
   sfxBuy();
 }
@@ -1118,6 +1130,7 @@ function voerbeursSell(assetId) {
   state.totalEarned += revenue;
   state.allTime.totalEarned += revenue;
   state.voerbeurs.inventory[assetId] = inv - 1;
+  if (inv - 1 <= 0 && state.voerbeurs.costBasis) state.voerbeurs.costBasis[assetId] = 0;
   if (!state.stats.voerbeursSells) state.stats.voerbeursSells = 0;
   if (!state.stats.voerbeursEarned) state.stats.voerbeursEarned = 0;
   state.stats.voerbeursSells++;

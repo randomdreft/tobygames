@@ -2001,6 +2001,14 @@ function renderVoerbeurs() {
     const inv = state.voerbeurs.inventory[a.id] || 0;
     const cost = price * minuteDps;
     const revenue = price * minuteDps;
+    const basis = (state.voerbeurs.costBasis || {})[a.id] || 0;
+    let deltaHtml = '';
+    if (inv > 0 && basis > 0) {
+      const pct = ((price - basis) / basis * 100).toFixed(0);
+      const sign = pct >= 0 ? '+' : '';
+      const clr = pct >= 0 ? '#43a047' : '#ef5350';
+      deltaHtml = ' <span style="color:' + clr + '">' + sign + pct + '%</span>';
+    }
 
     html += '<div class="vb-card" style="border-left:3px solid ' + VB_COLORS[ai] + '">';
     html += '<div class="vb-card-header">';
@@ -2014,20 +2022,29 @@ function renderVoerbeurs() {
       '>Koop ' + formatNumber(Math.floor(cost)) + '</button>';
     html += '<button class="vb-btn vb-sell" onclick="doVoerbeursSell(\'' + a.id + '\', this)"' +
       (inv <= 0 || dps <= 0 ? ' disabled' : '') +
-      '>Verkoop ' + formatNumber(Math.floor(revenue)) + '</button>';
+      '>Verkoop ' + formatNumber(Math.floor(revenue)) + deltaHtml + '</button>';
     html += '</div>';
     html += '</div>';
   });
 
   // Totale portefeuille
-  let totalInv = 0, totalValue = 0;
+  let totalInv = 0, totalValue = 0, totalCost = 0;
   VOERBEURS_ASSETS.forEach(a => {
     const inv = state.voerbeurs.inventory[a.id] || 0;
+    const basis = (state.voerbeurs.costBasis || {})[a.id] || 0;
     totalInv += inv;
     totalValue += inv * state.voerbeurs.prices[a.id];
+    totalCost += inv * basis;
   });
   if (totalInv > 0) {
-    html += '<div class="vb-portfolio">' + totalInv + ' stuks in portefeuille (waarde: ' + formatNumber(Math.floor(totalValue * minuteDps)) + ')</div>';
+    let plHtml = '';
+    if (totalCost > 0) {
+      const plPct = ((totalValue - totalCost) / totalCost * 100).toFixed(0);
+      const sign = plPct >= 0 ? '+' : '';
+      const clr = plPct >= 0 ? '#43a047' : '#ef5350';
+      plHtml = ' <span style="color:' + clr + '">' + sign + plPct + '%</span>';
+    }
+    html += '<div class="vb-portfolio">' + totalInv + ' stuks in portefeuille (waarde: ' + formatNumber(Math.floor(totalValue * minuteDps)) + ')' + plHtml + '</div>';
   }
 
   container.innerHTML = html;
