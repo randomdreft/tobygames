@@ -141,20 +141,6 @@
         </div>
       </div>
 
-      <div class="minigame-box" id="mg-puzzel">
-        <h3>🧩 Dieren Puzzel <button class="mg-cancel" onclick="cancelMinigame('puzzel')">&#x2715; Stop</button></h3>
-        <div class="mg-lock-msg" id="lock-puzzel"></div>
-        <button class="mg-btn" id="puzzel-btn" onclick="startPuzzel()">Start Puzzel!</button>
-        <div id="puzzel-cooldown" class="cooldown-text"></div>
-        <div id="puzzel-game" style="display:none">
-          <div style="text-align:center;font-size:12px;color:var(--text-dim);margin-bottom:4px">Schuif de tegels op volgorde 1-8!</div>
-          <div id="puzzel-grid" class="puzzel-grid"></div>
-          <div id="puzzel-hud" style="display:flex;justify-content:space-between;font-size:14px;font-weight:600">
-            <span>Zetten: <b id="puzzel-moves">0</b></span>
-          </div>
-        </div>
-      </div>
-
       <div class="minigame-box" id="mg-voedsel">
         <h3>🍽️ Wat Eet Ik? <button class="mg-cancel" onclick="cancelMinigame('voedsel')">&#x2715; Stop</button></h3>
         <div class="mg-lock-msg" id="lock-voedsel"></div>
@@ -169,10 +155,24 @@
         </div>
       </div>
 
+      <div class="minigame-box" id="mg-puzzel">
+        <h3>🧩 Dieren Puzzel <button class="mg-cancel" onclick="cancelMinigame('puzzel')">&#x2715; Stop</button></h3>
+        <div class="mg-lock-msg" id="lock-puzzel"></div>
+        <button class="mg-btn" id="puzzel-btn" onclick="startPuzzel()">Start Puzzel!</button>
+        <div id="puzzel-cooldown" class="cooldown-text"></div>
+        <div id="puzzel-game" style="display:none">
+          <div style="text-align:center;font-size:12px;color:var(--text-dim);margin-bottom:4px">Schuif de tegels op volgorde 1-8!</div>
+          <div id="puzzel-grid" class="puzzel-grid"></div>
+          <div id="puzzel-hud" style="display:flex;justify-content:space-between;font-size:14px;font-weight:600">
+            <span>Zetten: <b id="puzzel-moves">0</b></span>
+          </div>
+        </div>
+      </div>
+
       <div class="minigame-box" id="mg-sort">
-        <h3>🗂️ Dieren Sorteren <button class="mg-cancel" onclick="cancelMinigame('sort')">&#x2715; Stop</button></h3>
+        <h3>🏠 Waar Woon Ik? <button class="mg-cancel" onclick="cancelMinigame('sort')">&#x2715; Stop</button></h3>
         <div class="mg-lock-msg" id="lock-sort"></div>
-        <button class="mg-btn" id="sort-btn" onclick="startSort()">Start Sorteren!</button>
+        <button class="mg-btn" id="sort-btn" onclick="startSort()">Start!</button>
         <div id="sort-cooldown" class="cooldown-text"></div>
         <div id="sort-game" style="display:none">
           <div id="sort-field"><div id="sort-current"></div><div id="sort-name"></div></div>
@@ -315,10 +315,10 @@
 </div>
 
 <script src="dierenklikker/sound.js?v=3"></script>
-<script src="dierenklikker/data.js?v=11"></script>
+<script src="dierenklikker/data.js?v=12"></script>
 <script src="dierenklikker/state.js?v=6"></script>
 <script src="dierenklikker/engine.js?v=14"></script>
-<script src="dierenklikker/minigames.js?v=6"></script>
-<script src="dierenklikker/ui.js?v=25"></script>
+<script src="dierenklikker/minigames.js?v=7"></script>
+<script src="dierenklikker/ui.js?v=26"></script>
 </body>
 </html>

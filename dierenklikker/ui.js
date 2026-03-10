@@ -148,7 +148,7 @@ function showDierenhemel(newStars) {
   if (subtitleEl) subtitleEl.innerHTML = (zooIsPrestige
     ? 'Je dieren zijn naar de hemel gestuurd!'
     : 'Bezoek je dieren in de wolken') +
-    '<span class="zoo-hint">\ud83e\udd1a Aai = ❤️ geluk &nbsp;·&nbsp; ' + HEMEL_HABITATS[0].food + ' Voer = eten (max ' + ZOO_MAX_FOOD + ', nodig om te 💩) &nbsp;·&nbsp; Tik op 💩 → kans op ⭐</span>';
+    '<span class="zoo-hint">\ud83e\udd1a Aai = ❤️ geluk &nbsp;·&nbsp; ' + HEMEL_HABITATS[0].food + ' Voer = eten (max ' + ZOO_MAX_FOOD + ', nodig om te 💩) &nbsp;·&nbsp; Tik op 💩 → kans op ⭐ (kans halveert per gevonden ster, reset bij evolutie)</span>';
 
   // Build interactive enclosure cards
   let html = '';
@@ -172,7 +172,7 @@ function showDierenhemel(newStars) {
     html += '<div class="zoo-animal-wrap" onclick="petZooAnimal(\'' + h.id + '\')" data-tip="' + escHtml(animal.name + ' aaien') + '|' + escHtml('Klik om te aaien (+' + ZOO_PET_AMOUNT + '% geluk)') + '">';
     html += '<div class="zoo-animal hemel-animal">' + animal.emoji + '</div>';
     html += '</div>';
-    html += '<div class="zoo-hearts" id="zoo-hearts-' + h.id + '" data-state="hearts-' + filled + '" data-tip="Geluk: ' + happyPct + '%|Geluk bepaalt hoe snel 💩 verschijnt en de kans op ⭐ (' + Math.round(getZooStarChance(enc.happiness || 0) * 100) + '% kans)">' + hearts + '</div>';
+    html += '<div class="zoo-hearts" id="zoo-hearts-' + h.id + '" data-state="hearts-' + filled + '" data-tip="Geluk: ' + happyPct + '%|⭐ kans: ' + (getZooStarChance(enc.happiness || 0) * 100).toFixed(1) + '% (halveert per ster, ' + ((state.zoo && state.zoo.starsEarned) || 0) + ' gevonden)">' + hearts + '</div>';
     html += '<div class="zoo-food-meter" id="zoo-food-meter-' + h.id + '" data-state="food-' + foodCount + '" data-tip="Voedsel: ' + foodCount + '/' + ZOO_MAX_FOOD + '|Elke 💩 kost 1 voedsel. Voer je dier om de voorraad aan te vullen.">' + foodPips + '</div>';
     html += '<div class="hemel-label">' + animal.name + '</div>';
     html += '<div class="zoo-actions">';
@@ -316,6 +316,8 @@ function collectZooItem(animalId, el) {
       state.prestige.stars++;
     }
     zooCollectedStars++;
+    if (!state.zoo) state.zoo = { enclosures: {}, starsEarned: 0 };
+    state.zoo.starsEarned = (state.zoo.starsEarned || 0) + 1;
     sfxLuckyClick();
   } else {
     sfxClick();
@@ -395,7 +397,7 @@ function updateZooHearts(animalId, happiness) {
   if (!el) return;
   const filled = zooHeartCount(happiness);
   const key = 'hearts-' + filled;
-  el.dataset.tip = 'Geluk: ' + Math.round(happiness) + '%|Bepaalt hoe snel 💩 verschijnt én de kans op ⭐ (' + Math.round(getZooStarChance(happiness) * 100) + '% kans)';
+  el.dataset.tip = 'Geluk: ' + Math.round(happiness) + '%|⭐ kans: ' + (getZooStarChance(happiness) * 100).toFixed(1) + '% (halveert per ster, ' + ((state.zoo && state.zoo.starsEarned) || 0) + ' gevonden)';
   if (el.dataset.state === key) return;
   el.dataset.state = key;
   let html = '';
@@ -558,6 +560,7 @@ function completePrestige() {
   state.daily = keepDaily;
   state.zooName = keepZooName;
   state.zoo = keepZoo;
+  state.zoo.starsEarned = 0; // reset diminishing returns on evolution
 
   if (!state.achievements['eerste_evolutie']) {
     state.achievements['eerste_evolutie'] = 1;
@@ -1313,7 +1316,7 @@ function renderStats() {
   html += '</div>';
 
   // Favoriete minigame
-  const mgNames = {quizPlayed:'Quiz', catcherPlayed:'Vanger', mathPlayed:'Wiskunde', buffPlayed:'Buffs', sortPlayed:'Sorteren', memoryPlayed:'Memory', tellenPlayed:'Tellen', indringerPlayed:'Indringer', groterPlayed:'Groter/Kleiner', voedselPlayed:'Wat Eet Ik?', racePlayed:'Paardenrace', puzzelPlayed:'Puzzel'};
+  const mgNames = {quizPlayed:'Quiz', catcherPlayed:'Vanger', mathPlayed:'Wiskunde', buffPlayed:'Buffs', sortPlayed:'Waar Woon Ik?', memoryPlayed:'Memory', tellenPlayed:'Tellen', indringerPlayed:'Indringer', groterPlayed:'Groter/Kleiner', voedselPlayed:'Wat Eet Ik?', racePlayed:'Paardenrace', puzzelPlayed:'Puzzel'};
   let favMg = '', favMgCount = 0;
   Object.keys(mgNames).forEach(k => {
     if ((s[k] || 0) > favMgCount) { favMgCount = s[k]; favMg = mgNames[k]; }
@@ -1370,7 +1373,7 @@ function renderStats() {
     const voedselTotal = s.voedselCorrect + s.voedselWrong;
     html += row('🍽️ Wat Eet Ik?', s.voedselCorrect + '/' + voedselTotal + ' goed (' + pct(s.voedselCorrect, voedselTotal) + '%)');
   }
-  if (s.sortPlayed) html += row('🗂️ Sorteren', s.sortCorrect + ' goed (beste streak: ' + s.sortBestStreak + ')');
+  if (s.sortPlayed) html += row('🏠 Waar Woon Ik?', s.sortCorrect + ' goed (beste streak: ' + s.sortBestStreak + ')');
   if (s.racePlayed) html += row('🏇 Paardenrace', s.raceWon + '/' + s.racePlayed + ' gewonnen (' + pct(s.raceWon, s.racePlayed) + '%)');
   if (s.puzzelPlayed) html += row('🧩 Puzzel', s.puzzelWon + 'x opgelost (beste: ' + (s.puzzelBestMoves || '-') + ' zetten)');
   if (s.memoryPlayed) html += row('🃏 Memory', s.memoryWon + '/' + s.memoryPlayed + ' perfect (' + pct(s.memoryWon, s.memoryPlayed) + '%)');

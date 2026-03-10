@@ -127,8 +127,8 @@ const MINIGAME_UNLOCKS = [
   {id:'groter', reqAnimal:'hond', label:'Koop een Hond'},
   {id:'buff', reqAnimal:'lama', label:'Koop een Lama'},
   {id:'race', reqAnimal:'paard', label:'Koop een Paard'},
-  {id:'puzzel', reqAnimal:'panda', label:'Koop een Panda'},
-  {id:'voedsel', reqAnimal:'olifant', label:'Koop een Olifant'},
+  {id:'voedsel', reqAnimal:'panda', label:'Koop een Panda'},
+  {id:'puzzel', reqAnimal:'olifant', label:'Koop een Olifant'},
   {id:'sort', reqAnimal:'walvis', label:'Koop een Walvis'},
   {id:'memory', reqAnimal:'draak', label:'Koop een Draak'}
 ];

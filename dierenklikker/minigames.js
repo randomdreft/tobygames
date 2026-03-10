@@ -387,7 +387,7 @@ function getActiveBuffs() {
   return activeBuffs;
 }
 
-/* Dieren Sorteren */
+/* Waar Woon Ik? */
 let sortActive = false;
 let sortInterval = null;
 let sortScore = 0;
