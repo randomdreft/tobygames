@@ -1613,38 +1613,44 @@ updateOrbiters._lastKey = '';
 
 /* Tooltip system */
 const tooltipEl = document.getElementById('tooltip');
-// Desktop: hover tooltips (always register — harmless on touch-only devices)
-document.addEventListener('mouseover', function(e) {
+let _tipHover = false; // true = shown via hover, false = shown via click/tap
+let _tapTipTimer = null;
+
+function showTip(e, viaHover) {
   const item = e.target.closest('[data-tip]');
   if (!item) return;
   const parts = item.dataset.tip.split('|');
   tooltipEl.innerHTML = '<div class="tip-title">' + parts[0] + '</div>' +
     (parts[1] ? '<div class="tip-desc">' + parts[1] + '</div>' : '');
   tooltipEl.style.display = 'block';
+  _tipHover = viaHover;
   positionTooltip(e);
+}
+
+function hideTip() {
+  tooltipEl.style.display = 'none';
+  clearTimeout(_tapTipTimer);
+}
+
+// Hover: show tooltip, track position, hide on leave
+document.addEventListener('mouseover', function(e) {
+  if (e.target.closest('[data-tip]')) showTip(e, true);
 });
 document.addEventListener('mousemove', function(e) {
   if (tooltipEl.style.display === 'block') positionTooltip(e);
 });
 document.addEventListener('mouseout', function(e) {
-  const item = e.target.closest('[data-tip]');
-  if (item) tooltipEl.style.display = 'none';
+  if (e.target.closest('[data-tip]') && _tipHover) hideTip();
 });
 
-// Touch/click: show same tooltip at tap position, auto-hide after delay
-let _tapTipTimer = null;
+// Click: on desktop dismiss hover tooltip; on touch show tooltip with auto-hide
 document.addEventListener('click', function(e) {
   const item = e.target.closest('[data-tip]');
-  if (!item) return;
-  // Skip if hover tooltip is already visible (desktop with mouse)
-  if (tooltipEl.style.display === 'block') return;
-  const parts = item.dataset.tip.split('|');
-  tooltipEl.innerHTML = '<div class="tip-title">' + parts[0] + '</div>' +
-    (parts[1] ? '<div class="tip-desc">' + parts[1] + '</div>' : '');
-  tooltipEl.style.display = 'block';
-  positionTooltip(e);
+  if (_tipHover) { hideTip(); return; }
+  if (!item) { hideTip(); return; }
+  showTip(e, false);
   clearTimeout(_tapTipTimer);
-  _tapTipTimer = setTimeout(() => { tooltipEl.style.display = 'none'; }, 2500);
+  _tapTipTimer = setTimeout(hideTip, 2500);
 });
 
 function positionTooltip(e) {
