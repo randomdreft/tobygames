@@ -33,6 +33,12 @@ body.rainbow-bg {
   background-size: 400% 400%;
   animation: rainbowShift 36s ease infinite;
 }
+body.drakenuur-bg {
+  background: linear-gradient(135deg,
+    #2a0a0a 0%, #4a1010 30%, #3a0808 60%, #1a0505 100%);
+  background-size: 200% 200%;
+  animation: drakenuurShift 20s ease infinite;
+}
 .back-btn {
   position: fixed; top: 12px; left: 12px; z-index: 100;
   background: rgba(255,255,255,0.12); backdrop-filter: blur(10px);
@@ -73,6 +79,11 @@ body.rainbow-bg {
   animation: shake 0.4s ease;
 }
 @keyframes rainbowShift {
+  0% { background-position: 0% 0%; }
+  50% { background-position: 100% 100%; }
+  100% { background-position: 0% 0%; }
+}
+@keyframes drakenuurShift {
   0% { background-position: 0% 0%; }
   50% { background-position: 100% 100%; }
   100% { background-position: 0% 0%; }
@@ -1229,4 +1240,86 @@ img.emoji {
   .zoo-btn { font-size: 11px; padding: 3px 6px; min-width: 56px; }
   .zoo-upgrade-btn { font-size: 10px; }
   .zoo-enclosure { min-height: 180px; }
+}
+
+/* Zoo unicorn effects */
+#zoo-unicorn-effects {
+  position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden;
+}
+.zoo-rainbow-arc {
+  position: absolute; top: -50%; left: -20%; right: -20%;
+  height: 100%; border-radius: 50%;
+  background: conic-gradient(from 180deg,
+    rgba(255,0,0,0.08), rgba(255,165,0,0.08), rgba(255,255,0,0.08),
+    rgba(0,128,0,0.08), rgba(0,0,255,0.08), rgba(75,0,130,0.08),
+    rgba(238,130,238,0.08), rgba(255,0,0,0.08));
+  opacity: 0.6;
+}
+.zoo-glitter-container { position: absolute; inset: 0; overflow: hidden; }
+.zoo-glitter {
+  position: absolute; top: -10px; width: 4px; height: 4px;
+  background: radial-gradient(circle, #ffd700, transparent);
+  border-radius: 50%;
+  animation: glitter-fall linear infinite;
+  opacity: 0.6;
+}
+@keyframes glitter-fall {
+  0% { transform: translateY(-10px) rotate(0deg); opacity: 0; }
+  10% { opacity: 0.7; }
+  90% { opacity: 0.7; }
+  100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+}
+.zoo-flying-unicorn {
+  position: absolute; bottom: 15%; font-size: 48px;
+  animation: unicorn-fly 12s ease-in-out infinite;
+  filter: drop-shadow(0 2px 8px rgba(255,215,0,0.4));
+  z-index: 0;
+}
+@keyframes unicorn-fly {
+  0%, 100% { left: -60px; transform: scaleX(1); }
+  48% { left: calc(100% + 60px); transform: scaleX(1); }
+  50% { left: calc(100% + 60px); transform: scaleX(-1); }
+  98% { left: -60px; transform: scaleX(-1); }
+}
+
+/* Voerbeurs */
+.vb-asset {
+  background: rgba(0,0,0,0.2); border-radius: 10px; padding: 10px;
+  margin-bottom: 8px; border: 1px solid rgba(255,215,0,0.15);
+}
+.vb-asset-header {
+  display: flex; justify-content: space-between; align-items: center;
+  font-size: 13px; margin-bottom: 6px; flex-wrap: wrap; gap: 4px;
+}
+.vb-asset-name { font-weight: 700; font-size: 14px; }
+.vb-asset-price { color: var(--gold); }
+.vb-asset-inv { color: var(--text-dim); }
+.vb-chart {
+  width: 100%; height: 60px; display: block;
+  background: rgba(0,0,0,0.15); border-radius: 6px;
+  margin-bottom: 6px;
+}
+.vb-chart-empty {
+  text-align: center; padding: 16px; color: var(--text-dim); font-size: 12px;
+}
+.vb-actions { display: flex; gap: 6px; }
+.vb-btn {
+  flex: 1; padding: 8px; border: 1px solid var(--panel-border);
+  border-radius: 8px; font-size: 12px; font-weight: 600;
+  cursor: pointer; transition: all 0.15s; text-align: center;
+  color: var(--text); background: rgba(0,0,0,0.2);
+}
+.vb-buy { border-color: rgba(67,160,71,0.4); }
+.vb-buy:hover:not(:disabled) { background: rgba(67,160,71,0.25); }
+.vb-sell { border-color: rgba(239,83,80,0.4); }
+.vb-sell:hover:not(:disabled) { background: rgba(239,83,80,0.25); }
+.vb-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.vb-portfolio {
+  text-align: center; font-size: 12px; color: var(--text-dim);
+  padding: 6px 0 2px; border-top: 1px solid rgba(255,255,255,0.05);
+  margin-top: 4px;
+}
+.vb-timer {
+  text-align: center; font-size: 11px; color: var(--text-dim); opacity: 0.7;
+  padding: 2px 0;
 }

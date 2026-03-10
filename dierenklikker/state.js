@@ -88,7 +88,8 @@ function formatDps(n) {
 const APPLE_EMOJI_BASE = 'emoji/';
 const HIRES_EMOJI = {
   '🐜':'1f41c','🐌':'1f40c','🐸':'1f438','🐔':'1f414','🐱':'1f431',
-  '🐕':'1f415','🦙':'1f999','🐴':'1f434','🐼':'1f43c','🐘':'1f418','🐋':'1f40b','🐉':'1f409'
+  '🐕':'1f415','🦙':'1f999','🐴':'1f434','🐼':'1f43c','🐘':'1f418','🐋':'1f40b','🐉':'1f409',
+  '🦄':'1f984'
 };
 function parseAppleEmoji(el) {
   if (typeof twemoji === 'undefined') return;
@@ -207,6 +208,16 @@ function stateToIni() {
         lines.push(a.id + '=' + enc.level + ',' + Math.round(enc.happiness || 0) + ',' + (enc.lastDecay || Date.now()) + ',' + food);
       }
     });
+  }
+  lines.push('');
+  lines.push('[voerbeurs]');
+  if (state.voerbeurs) {
+    VOERBEURS_ASSETS.forEach(a => {
+      lines.push(a.id + '_prijs=' + (state.voerbeurs.prices[a.id] || 5));
+      lines.push(a.id + '_voorraad=' + (state.voerbeurs.inventory[a.id] || 0));
+      lines.push(a.id + '_historie=' + (state.voerbeurs.history[a.id] || []).join(','));
+    });
+    lines.push('laatste_tick=' + (state.voerbeurs.lastTick || Date.now()));
   }
   return lines.join('\n');
 }
@@ -371,6 +382,18 @@ function iniToState(text) {
       };
     }
   });
+
+  // Voerbeurs
+  const vb = ini.voerbeurs || {};
+  if (Object.keys(vb).length > 0) {
+    s.voerbeurs = { prices: {}, inventory: {}, history: {}, lastTick: safeInt(vb.laatste_tick, Date.now(), 0) };
+    VOERBEURS_ASSETS.forEach(a => {
+      s.voerbeurs.prices[a.id] = safeInt(vb[a.id + '_prijs'], 5, 1, 10);
+      s.voerbeurs.inventory[a.id] = safeInt(vb[a.id + '_voorraad'], 0, 0, VOERBEURS_MAX_INVENTORY);
+      const hist = (vb[a.id + '_historie'] || '').split(',').filter(x => x).map(x => safeInt(x, 5, 1, 10));
+      s.voerbeurs.history[a.id] = hist.length > 0 ? hist.slice(-VOERBEURS_HISTORY_LENGTH) : [s.voerbeurs.prices[a.id]];
+    });
+  }
 
   // Preferences
   const pref = ini.voorkeur || {};

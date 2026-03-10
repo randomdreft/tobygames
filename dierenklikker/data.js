@@ -56,7 +56,10 @@ const COLOR_THEMES = [
   {id:'kosmos', name:'Kosmos', emoji:'🌌', stars:90,
    bg1:'#0a0014',bg2:'#1a0033',bg3:'#05000a',text:'#f3e5f5',textDim:'#ea80fc',textDark:'#aa00ff',
    gold:'#e040fb',green:'#d500f9',greenLight:'#ea80fc',red:'#ff1744',orange:'#ff9100',blue:'#e040fb',purple:'#aa00ff'},
-  {id:'regenboog', name:'Regenboog', emoji:'🌈', stars:100,
+  {id:'drakenuur', name:'Drakenuur', emoji:'🐉', stars:100,
+   bg1:'#2a0a0a',bg2:'#4a1010',bg3:'#1a0505',text:'#ffe0cc',textDim:'#ff8a50',textDark:'#b71c1c',
+   gold:'#ffd700',green:'#ff6e40',greenLight:'#ff9e80',red:'#d50000',orange:'#ff6d00',blue:'#ffab40',purple:'#dd2c00'},
+  {id:'regenboog', name:'Regenboog', emoji:'🌈', stars:110,
    bg1:'#1a1a2e',bg2:'#16213e',bg3:'#0f0f1a',text:'#ffffff',textDim:'#b0b0b0',textDark:'#555555',
    gold:'#ffd700',green:'#43a047',greenLight:'#66bb6a',red:'#ef5350',orange:'#ff9800',blue:'#42a5f5',purple:'#ab47bc'}
 ];
@@ -76,6 +79,20 @@ const VOEDSEL_COOLDOWN = 180000; // 3 min
 const RACE_COOLDOWN = 300000;    // 5 min
 const PUZZEL_COOLDOWN = 300000;  // 5 min
 const BUFF_DURATION = 30000;     // 30 sec
+
+// === Voerbeurs ===
+const VOERBEURS_TICK_INTERVAL = 10000; // 10 seconds
+const VOERBEURS_MAX_INVENTORY = 10;    // max per asset
+const VOERBEURS_PRICE_MIN = 1;
+const VOERBEURS_PRICE_MAX = 10;
+const VOERBEURS_PRICE_MEAN = 5;
+const VOERBEURS_HISTORY_LENGTH = 30;   // last 30 ticks visible
+const VOERBEURS_COOLDOWN = 300000;     // 5 min
+const VOERBEURS_ASSETS = [
+  {id:'vlees', emoji:'🥩', name:'Vlees'},
+  {id:'graan', emoji:'🌾', name:'Graan'},
+  {id:'vis', emoji:'🐟', name:'Vis'}
+];
 
 const STAR_SHOP = [
   {cat:'Snelheid', emoji:'⚡', perks:[
@@ -108,12 +125,13 @@ const STAR_SHOP = [
     {id:'sp_ba_olifant', name:'Koop alles: Olifanten', desc:'Koop-alles knop bij olifant-upgrades', cost:2},
     {id:'sp_ba_walvis', name:'Koop alles: Walvissen', desc:'Koop-alles knop bij walvis-upgrades', cost:2},
     {id:'sp_ba_draak', name:'Koop alles: Draken', desc:'Koop-alles knop bij draak-upgrades', cost:2},
+    {id:'sp_ba_eenhoorn', name:'Koop alles: Eenhoorns', desc:'Koop-alles knop bij eenhoorn-upgrades', cost:2},
   ]},
   {cat:'Synergieën', emoji:'🤝', perks:[
     {id:'sp_syn1', name:'Kruipertjes', desc:'Mier, Slak & Kikker krijgen +15% DPS', cost:2, animals:['mier','slak','kikker'], bonus:0.15},
     {id:'sp_syn2', name:'Boerderij', desc:'Kip, Hond & Lama krijgen +15% DPS', cost:3, animals:['kip','hond','lama'], bonus:0.15},
     {id:'sp_syn3', name:'Safari', desc:'Paard, Panda & Olifant krijgen +20% DPS', cost:5, animals:['paard','panda','olifant'], bonus:0.20},
-    {id:'sp_syn4', name:'Mythisch verbond', desc:'Walvis & Draak krijgen +25% DPS', cost:8, animals:['walvis','draak'], bonus:0.25},
+    {id:'sp_syn4', name:'Mythisch verbond', desc:'Walvis, Draak & Eenhoorn krijgen +25% DPS', cost:8, animals:['walvis','draak','eenhoorn'], bonus:0.25},
     {id:'sp_syn5', name:'Dierenrijk', desc:'Alle synergieën actief: alle dieren +10% DPS', cost:12, bonus:0.10},
   ]},
 ];
@@ -310,6 +328,14 @@ const ANIMALS = [
      {id:'draak_3', name:'IJsdraak', desc:'Bevriest de concurrentie', req:50, cost:1.35e14, mult:3},
      {id:'draak_4', name:'Drakenkoning', desc:'Alle draken buigen!', req:100, cost:1.35e15, mult:3},
      {id:'draak_5', name:'Kosmische draak', desc:'Heerser van het universum', req:250, cost:2.7e16, mult:5}
+   ]},
+  {id:'eenhoorn', emoji:'🦄', name:'Eenhoorn', plural:'eenhoorns', flavor:'Magisch en mythisch. Alleen voor de waardigsten.',
+   baseDps:10000000, basePrice:1000000000000, reqStars:110, upgrades:[
+     {id:'eenhoorn_1', name:'Glittermanen', desc:'Magische sparkles!', req:10, cost:3.5e13, mult:2},
+     {id:'eenhoorn_2', name:'Regenbooghoorn', desc:'Nog meer magie!', req:25, cost:2.8e14, mult:2},
+     {id:'eenhoorn_3', name:'Stervlucht', desc:'Vliegt tussen de sterren', req:50, cost:1.8e15, mult:3},
+     {id:'eenhoorn_4', name:'Eenhoornkoning', desc:'Alle eenhoorns buigen!', req:100, cost:1.8e16, mult:3},
+     {id:'eenhoorn_5', name:'Kosmische eenhoorn', desc:'Magie voorbij het universum', req:250, cost:3.6e17, mult:5}
    ]}
 ];
 

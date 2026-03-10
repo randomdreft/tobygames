@@ -50,6 +50,7 @@ function applyTheme(themeId) {
   r.setProperty('--blue', theme.blue);
   r.setProperty('--purple', theme.purple);
   document.body.classList.toggle('rainbow-bg', themeId === 'regenboog');
+  document.body.classList.toggle('drakenuur-bg', themeId === 'drakenuur');
 }
 
 function getHighestUnlockedTheme() {
@@ -185,6 +186,23 @@ function showDierenhemel(newStars) {
   });
   farm.innerHTML = html;
 
+  // Unicorn visual effects
+  const oldFx = document.getElementById('zoo-unicorn-effects');
+  if (oldFx) oldFx.remove();
+  if ((state.animals.eenhoorn || 0) > 0) {
+    const fx = document.createElement('div');
+    fx.id = 'zoo-unicorn-effects';
+    let glitters = '';
+    for (let i = 0; i < 30; i++) {
+      glitters += '<div class="zoo-glitter" style="left:' + (Math.random()*100) + '%;animation-delay:' + (Math.random()*5).toFixed(1) + 's;animation-duration:' + (3+Math.random()*4).toFixed(1) + 's"></div>';
+    }
+    fx.innerHTML = '<div class="zoo-rainbow-arc"></div>' +
+      '<div class="zoo-glitter-container">' + glitters + '</div>' +
+      '<div class="zoo-flying-unicorn">🦄</div>';
+    el.insertBefore(fx, farm);
+    parseAppleEmoji(fx);
+  }
+
   // Set initial button states
   ANIMALS.forEach(a => {
     const enc = state.zoo.enclosures[a.id];
@@ -224,6 +242,7 @@ function startZooTick() {
   zooRuntime = { pendingStars: {}, lastSpawn: {}, collected: 0 };
   const now = Date.now();
   ANIMALS.forEach(a => {
+    if (a.reqStars !== undefined) return; // star-gated animals excluded from zoo
     zooRuntime.pendingStars[a.id] = [];
     // First star appears 30-90s after opening zoo (staggered per animal),
     // then subsequent stars follow the full interval.
@@ -246,6 +265,7 @@ function zooTick() {
   updateZooHappiness();
 
   ANIMALS.forEach(a => {
+    if (a.reqStars !== undefined) return; // star-gated animals excluded from zoo
     const enc = state.zoo.enclosures[a.id];
     if (!enc) return;
 
@@ -549,6 +569,7 @@ function completePrestige() {
   const keepDaily = {...state.daily};
   const keepZooName = state.zooName;
   const keepZoo = state.zoo ? JSON.parse(JSON.stringify(state.zoo)) : { enclosures: {} };
+  const keepVoerbeurs = state.voerbeurs ? JSON.parse(JSON.stringify(state.voerbeurs)) : null;
   const dpsBeforeReset = getTotalDps();
 
   state = defaultState();
@@ -561,6 +582,7 @@ function completePrestige() {
   state.zooName = keepZooName;
   state.zoo = keepZoo;
   state.zoo.starsEarned = 0; // reset diminishing returns on evolution
+  state.voerbeurs = keepVoerbeurs;
 
   if (!state.achievements['eerste_evolutie']) {
     state.achievements['eerste_evolutie'] = 1;
@@ -820,7 +842,7 @@ function buildEvolution() {
 
   html += '<div class="prestige-info">';
   html += '<b>Hoe werkt Evolutie?</b><br>';
-  html += 'Als je van elk dier minstens eentje hebt (tot en met de Draak!), mag je je dierentuin laten <b>evolueren</b>.<br><br>';
+  html += 'Als je van elk dier minstens eentje hebt' + (state.prestige.stars >= 110 ? ' (tot en met de Eenhoorn!)' : ' (tot en met de Draak!)') + ', mag je je dierentuin laten <b>evolueren</b>.<br><br>';
   html += 'Dat betekent: je begint opnieuw, maar je krijgt er <b>evolutiesterren ⭐</b> voor!<br>';
   html += 'Elke ster maakt al je dieren <b>+5% sterker</b>, voor altijd.<br><br>';
 
@@ -1129,6 +1151,14 @@ function render() {
   updateCooldown('voedsel-btn', 'voedsel-cooldown', state.minigames.voedselLast, VOEDSEL_COOLDOWN * cdm, voedselActive);
   updateCooldown('race-btn', 'race-cooldown', state.minigames.raceLast, RACE_COOLDOWN * cdm, raceActive);
   updateCooldown('puzzel-btn', 'puzzel-cooldown', state.minigames.puzzelLast, PUZZEL_COOLDOWN * cdm, puzzelActive);
+
+  // Voerbeurs visibility
+  const vbBox = document.getElementById('mg-voerbeurs');
+  if (vbBox) {
+    const showVb = (state.animals.eenhoorn || 0) > 0;
+    vbBox.style.display = showVb ? '' : 'none';
+    _voerbeursVisible = showVb && vbBox.offsetParent !== null;
+  }
 
   // Buff indicator (multiple buffs)
   const buffInd = document.getElementById('buff-indicator');
@@ -1926,6 +1956,87 @@ function clickLucky(el) {
 }
 
 /* ================================================================
+   SECTIE 11d: VOERBEURS
+   ================================================================ */
+
+let _voerbeursVisible = false;
+
+function renderVoerbeurs() {
+  const container = document.getElementById('voerbeurs-content');
+  if (!container) return;
+  if (!_voerbeursVisible) return;
+  ensureVoerbeurs();
+  voerbeursTick();
+
+  const dps = getTotalDps();
+  const minuteDps = dps * 60;
+
+  let html = '';
+  VOERBEURS_ASSETS.forEach(a => {
+    const price = state.voerbeurs.prices[a.id];
+    const inv = state.voerbeurs.inventory[a.id] || 0;
+    const cost = price * minuteDps;
+    const revenue = price * minuteDps;
+    const history = state.voerbeurs.history[a.id] || [];
+
+    html += '<div class="vb-asset">';
+    html += '<div class="vb-asset-header">';
+    html += '<span class="vb-asset-name">' + a.emoji + ' ' + a.name + '</span>';
+    html += '<span class="vb-asset-price">Prijs: <b>' + price + '</b></span>';
+    html += '<span class="vb-asset-inv">Voorraad: <b>' + inv + '/' + VOERBEURS_MAX_INVENTORY + '</b></span>';
+    html += '</div>';
+    html += renderVoerbeursChart(history);
+    html += '<div class="vb-actions">';
+    html += '<button class="vb-btn vb-buy" onclick="voerbeursBuy(\'' + a.id + '\');renderVoerbeurs()"' +
+      (inv >= VOERBEURS_MAX_INVENTORY || state.currentPoints < cost || dps <= 0 ? ' disabled' : '') +
+      '>Koop (' + formatNumber(Math.floor(cost)) + ')</button>';
+    html += '<button class="vb-btn vb-sell" onclick="voerbeursSell(\'' + a.id + '\');renderVoerbeurs()"' +
+      (inv <= 0 || dps <= 0 ? ' disabled' : '') +
+      '>Verkoop (' + formatNumber(Math.floor(revenue)) + ')</button>';
+    html += '</div>';
+    html += '</div>';
+  });
+
+  // Totale portefeuille
+  let totalInv = 0, totalValue = 0;
+  VOERBEURS_ASSETS.forEach(a => {
+    const inv = state.voerbeurs.inventory[a.id] || 0;
+    totalInv += inv;
+    totalValue += inv * state.voerbeurs.prices[a.id];
+  });
+  if (totalInv > 0) {
+    html += '<div class="vb-portfolio">' + totalInv + ' stuks in portefeuille (waarde: ' + formatNumber(Math.floor(totalValue * minuteDps)) + ')</div>';
+  }
+
+  // Tick timer
+  const nextTick = Math.max(0, VOERBEURS_TICK_INTERVAL - (Date.now() - (state.voerbeurs.lastTick || Date.now())));
+  html += '<div class="vb-timer">Volgende tick: ' + Math.ceil(nextTick / 1000) + 's</div>';
+
+  container.innerHTML = html;
+  parseAppleEmoji(container);
+}
+
+function renderVoerbeursChart(history) {
+  if (!history || history.length < 2) return '<div class="vb-chart-empty">Wachten op data...</div>';
+  const w = 200, h = 60, pad = 4;
+  const min = VOERBEURS_PRICE_MIN, max = VOERBEURS_PRICE_MAX;
+  const xStep = (w - 2*pad) / (VOERBEURS_HISTORY_LENGTH - 1);
+  let path = '';
+  history.forEach((p, i) => {
+    const x = pad + i * xStep;
+    const y = h - pad - ((p - min) / (max - min)) * (h - 2*pad);
+    path += (i === 0 ? 'M' : 'L') + x.toFixed(1) + ',' + y.toFixed(1);
+  });
+  const lastPrice = history[history.length - 1];
+  const lastY = h - pad - ((lastPrice - min) / (max - min)) * (h - 2*pad);
+  const color = lastPrice >= 6 ? 'var(--green-light)' : lastPrice <= 4 ? 'var(--red)' : 'var(--gold)';
+  return '<svg class="vb-chart" viewBox="0 0 ' + w + ' ' + h + '" preserveAspectRatio="none">' +
+    '<path d="' + path + '" fill="none" stroke="' + color + '" stroke-width="2"/>' +
+    '<circle cx="' + (pad + (history.length-1) * xStep).toFixed(1) + '" cy="' + lastY.toFixed(1) + '" r="3" fill="' + color + '"/>' +
+    '</svg>';
+}
+
+/* ================================================================
    SECTIE 12: GAME LOOP
    ================================================================ */
 
@@ -1969,6 +2080,8 @@ function gameLoop() {
     checkAchievements();
     checkDailyChallenges();
     checkLuckySpawn();
+    voerbeursTick();
+    if (_voerbeursVisible) renderVoerbeurs();
     // Check if day changed
     if (getTodayStr() !== state.daily.date) initDailyChallenges();
     lastAchCheck = now;
@@ -1983,6 +2096,13 @@ function init() {
   loadSoundSettings();
   loadGame();
   initDailyChallenges();
+  // Theme fallback: if saved theme is no longer accessible, reset
+  if (state.prestige.themeLocked) {
+    const savedTheme = COLOR_THEMES.find(t => t.id === state.prestige.theme);
+    if (savedTheme && savedTheme.stars > state.prestige.stars) {
+      state.prestige.themeLocked = false;
+    }
+  }
   if (!state.prestige.themeLocked) state.prestige.theme = getHighestUnlockedTheme();
   applyTheme(state.prestige.theme || 'oerwoud');
   buildShop();

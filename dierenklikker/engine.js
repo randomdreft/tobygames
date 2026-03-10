@@ -207,11 +207,16 @@ function getHighestAnimal() {
 function isAnimalVisible(animalId) {
   const idx = ANIMALS.findIndex(a => a.id === animalId);
   if (idx === 0) return true;
+  const animal = ANIMALS[idx];
+  if (animal.reqStars !== undefined && state.prestige.stars < animal.reqStars) return false;
   return (state.animals[ANIMALS[idx-1].id] || 0) > 0;
 }
 
 function canPrestige() {
-  return ANIMALS.every(a => (state.animals[a.id] || 0) > 0);
+  return ANIMALS.every(a => {
+    if (a.reqStars !== undefined && state.prestige.stars < a.reqStars) return true;
+    return (state.animals[a.id] || 0) > 0;
+  });
 }
 
 function getPrestigeStars() {
@@ -242,6 +247,7 @@ function getNextStarInfo() {
 function ensureZooEnclosures() {
   if (!state.zoo) state.zoo = { enclosures: {} };
   ANIMALS.forEach(a => {
+    if (a.reqStars !== undefined) return; // star-gated animals excluded from zoo
     if (!state.zoo.enclosures[a.id]) {
       state.zoo.enclosures[a.id] = {
         level: 1,
@@ -603,7 +609,10 @@ function buildAchievementDefs() {
   defs.push({
     id: 'alle_dieren', emoji: '🌈', name: 'Alle dieren!',
     desc: 'Minstens 1 van elk dier!', group: 'Speciaal',
-    check: () => ANIMALS.every(a => (state.animals[a.id]||0) > 0)
+    check: () => ANIMALS.every(a => {
+      if (a.reqStars !== undefined && state.prestige.stars < a.reqStars) return true;
+      return (state.animals[a.id]||0) > 0;
+    })
   });
   defs.push({
     id: 'eerste_evolutie', emoji: '⭐', name: 'Geëvolueerd!',
@@ -970,5 +979,82 @@ function findUpgrade(id) {
   if (u) return u;
   u = OFFLINE_UPGRADES.find(u => u.id === id);
   return u;
+}
+
+/* ================================================================
+   SECTIE 7b: VOERBEURS
+   ================================================================ */
+
+function ensureVoerbeurs() {
+  if (!state.voerbeurs) {
+    state.voerbeurs = {
+      prices: {},
+      inventory: {},
+      history: {},
+      lastTick: Date.now()
+    };
+    VOERBEURS_ASSETS.forEach(a => {
+      state.voerbeurs.prices[a.id] = Math.floor(Math.random() * 5) + 3; // start 3-7
+      state.voerbeurs.inventory[a.id] = 0;
+      state.voerbeurs.history[a.id] = [state.voerbeurs.prices[a.id]];
+    });
+  }
+}
+
+function voerbeursTick() {
+  ensureVoerbeurs();
+  const now = Date.now();
+  const elapsed = now - (state.voerbeurs.lastTick || now);
+  if (elapsed < VOERBEURS_TICK_INTERVAL) return false;
+
+  const ticks = Math.min(Math.floor(elapsed / VOERBEURS_TICK_INTERVAL), 100);
+  for (let t = 0; t < ticks; t++) {
+    VOERBEURS_ASSETS.forEach(a => {
+      let price = state.voerbeurs.prices[a.id];
+      // Random move: -2, -1, 0, +1, +2
+      let move = Math.floor(Math.random() * 5) - 2;
+      // Mean reversion: tendency to move toward center
+      if (price > VOERBEURS_PRICE_MEAN + 1) move -= 1;
+      else if (price < VOERBEURS_PRICE_MEAN - 1) move += 1;
+      price = Math.max(VOERBEURS_PRICE_MIN, Math.min(VOERBEURS_PRICE_MAX, price + move));
+      state.voerbeurs.prices[a.id] = price;
+      if (!state.voerbeurs.history[a.id]) state.voerbeurs.history[a.id] = [];
+      state.voerbeurs.history[a.id].push(price);
+      if (state.voerbeurs.history[a.id].length > VOERBEURS_HISTORY_LENGTH) {
+        state.voerbeurs.history[a.id].shift();
+      }
+    });
+  }
+  state.voerbeurs.lastTick = now;
+  return ticks > 0;
+}
+
+function voerbeursBuy(assetId) {
+  ensureVoerbeurs();
+  const inv = state.voerbeurs.inventory[assetId] || 0;
+  if (inv >= VOERBEURS_MAX_INVENTORY) return;
+  const price = state.voerbeurs.prices[assetId];
+  const dps = getTotalDps();
+  if (dps <= 0) return;
+  const cost = price * dps * 60; // 1 min DPS per price point
+  if (state.currentPoints < cost) return;
+  state.currentPoints -= cost;
+  state.voerbeurs.inventory[assetId] = inv + 1;
+  sfxBuy();
+}
+
+function voerbeursSell(assetId) {
+  ensureVoerbeurs();
+  const inv = state.voerbeurs.inventory[assetId] || 0;
+  if (inv <= 0) return;
+  const price = state.voerbeurs.prices[assetId];
+  const dps = getTotalDps();
+  if (dps <= 0) return;
+  const revenue = price * dps * 60; // 1 min DPS per price point
+  state.currentPoints += revenue;
+  state.totalEarned += revenue;
+  state.allTime.totalEarned += revenue;
+  state.voerbeurs.inventory[assetId] = inv - 1;
+  sfxBuy();
 }
 
