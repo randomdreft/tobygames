@@ -1613,43 +1613,43 @@ updateOrbiters._lastKey = '';
 
 /* Tooltip system */
 const tooltipEl = document.getElementById('tooltip');
-let _tipHover = false; // true = shown via hover, false = shown via click/tap
+let _tipHover = false;
 let _tapTipTimer = null;
 
-function showTip(e, viaHover) {
-  const item = e.target.closest('[data-tip]');
-  if (!item) return;
-  const parts = item.dataset.tip.split('|');
+function showTip(parts, e) {
   tooltipEl.innerHTML = '<div class="tip-title">' + parts[0] + '</div>' +
     (parts[1] ? '<div class="tip-desc">' + parts[1] + '</div>' : '');
   tooltipEl.style.display = 'block';
-  _tipHover = viaHover;
   positionTooltip(e);
 }
 
 function hideTip() {
   tooltipEl.style.display = 'none';
+  _tipHover = false;
   clearTimeout(_tapTipTimer);
 }
 
-// Hover: show tooltip, track position, hide on leave
+// Hover tooltips (desktop) — click does NOT interfere
 document.addEventListener('mouseover', function(e) {
-  if (e.target.closest('[data-tip]')) showTip(e, true);
+  const item = e.target.closest('[data-tip]');
+  if (!item) return;
+  showTip(item.dataset.tip.split('|'), e);
+  _tipHover = true;
 });
 document.addEventListener('mousemove', function(e) {
   if (tooltipEl.style.display === 'block') positionTooltip(e);
 });
 document.addEventListener('mouseout', function(e) {
-  if (e.target.closest('[data-tip]') && _tipHover) hideTip();
+  if (_tipHover && e.target.closest('[data-tip]')) hideTip();
 });
 
-// Click: on desktop dismiss hover tooltip; on touch show tooltip with auto-hide
+// Click/tap tooltips (touch fallback) — only when hover isn't active
 document.addEventListener('click', function(e) {
-  const item = e.target.closest('[data-tip]');
-  if (_tipHover) { hideTip(); return; }
-  if (!item) { hideTip(); return; }
-  showTip(e, false);
+  if (_tipHover) return; // hover is handling it, don't interfere
   clearTimeout(_tapTipTimer);
+  const item = e.target.closest('[data-tip]');
+  if (!item) { hideTip(); return; }
+  showTip(item.dataset.tip.split('|'), e);
   _tapTipTimer = setTimeout(hideTip, 2500);
 });
 
