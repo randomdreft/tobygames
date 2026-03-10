@@ -36,7 +36,7 @@ function defaultState() {
       uniqueMinigames: [], upgradesBought: 0, memoryLowFaults: 0,
       snapshots: {}
     },
-    zoo: { enclosures: {} },
+    zoo: { enclosures: {}, starsEarned: 0 },
     zooName: '',
     lastTick: Date.now()
   };
@@ -198,6 +198,7 @@ function stateToIni() {
   lines.push('puzzel_laatst=' + state.minigames.puzzelLast);
   lines.push('');
   lines.push('[wolkendierentuin]');
+  lines.push('sterren_verdiend=' + ((state.zoo && state.zoo.starsEarned) || 0));
   if (state.zoo && state.zoo.enclosures) {
     ANIMALS.forEach(a => {
       const enc = state.zoo.enclosures[a.id];
@@ -358,6 +359,7 @@ function iniToState(text) {
 
   // Wolkendierentuin
   const wdt = ini.wolkendierentuin || {};
+  s.zoo.starsEarned = safeInt(wdt.sterren_verdiend, 0, 0);
   ANIMALS.forEach(a => {
     if (wdt[a.id]) {
       const parts = wdt[a.id].split(',');

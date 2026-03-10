@@ -273,10 +273,14 @@ function getZooSpawnInterval(happiness) {
 }
 
 function getZooStarChance(happiness) {
-  if (happiness >= 90) return 0.10;  // 1 in 10
-  if (happiness >= 60) return 0.075;
-  if (happiness >= 30) return 0.05;  // 1 in 20
-  return 0.05;
+  let base;
+  if (happiness >= 90) base = 0.10;       // 1 in 10
+  else if (happiness >= 60) base = 0.075;
+  else if (happiness >= 30) base = 0.05;  // 1 in 20
+  else base = 0.05;
+  // Diminishing returns: each star earned this evolution halves the chance
+  const earned = (state.zoo && state.zoo.starsEarned) || 0;
+  return base * Math.pow(0.5, earned);
 }
 
 function getZooAvailableStars() {
