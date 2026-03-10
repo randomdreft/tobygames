@@ -1626,24 +1626,20 @@ document.addEventListener('mouseout', function(e) {
   if (item) tooltipEl.style.display = 'none';
 });
 
-// Mobile: tap to show tooltip as toast (always register — fallback for touch)
-let _touchTipTimer = null;
+// Touch/click: show same tooltip at tap position, auto-hide after delay
+let _tapTipTimer = null;
 document.addEventListener('click', function(e) {
   const item = e.target.closest('[data-tip]');
   if (!item) return;
-  // Skip toast if hover tooltip is already visible (desktop with mouse)
+  // Skip if hover tooltip is already visible (desktop with mouse)
   if (tooltipEl.style.display === 'block') return;
   const parts = item.dataset.tip.split('|');
-  const text = parts[0] + (parts[1] ? ' — ' + parts[1] : '');
-  const existing = document.querySelector('.touch-tip-toast');
-  if (existing) existing.remove();
-  clearTimeout(_touchTipTimer);
-  const toast = document.createElement('div');
-  toast.className = 'toast touch-tip-toast';
-  toast.innerHTML = text;
-  toast.style.animation = 'toast-in 0.3s ease-out, toast-out 0.3s ease-in 2.2s forwards';
-  document.body.appendChild(toast);
-  _touchTipTimer = setTimeout(() => toast.remove(), 2500);
+  tooltipEl.innerHTML = '<div class="tip-title">' + parts[0] + '</div>' +
+    (parts[1] ? '<div class="tip-desc">' + parts[1] + '</div>' : '');
+  tooltipEl.style.display = 'block';
+  positionTooltip(e);
+  clearTimeout(_tapTipTimer);
+  _tapTipTimer = setTimeout(() => { tooltipEl.style.display = 'none'; }, 2500);
 });
 
 function positionTooltip(e) {
