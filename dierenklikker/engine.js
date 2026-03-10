@@ -245,10 +245,14 @@ function getNextStarInfo() {
    SECTIE 5b: WOLKENDIERENTUIN
    ================================================================ */
 
+function hasEverOwned(animalId) {
+  return !!(state.allTime && state.allTime.animalsOwned && state.allTime.animalsOwned[animalId]);
+}
+
 function ensureZooEnclosures() {
   if (!state.zoo) state.zoo = { enclosures: {} };
   ANIMALS.forEach(a => {
-    if (a.reqStars !== undefined) return; // star-gated animals excluded from zoo
+    if (!hasEverOwned(a.id)) return; // only show animals ever owned
     if (!state.zoo.enclosures[a.id]) {
       state.zoo.enclosures[a.id] = {
         level: 1,
@@ -923,6 +927,8 @@ function buyAnimal(animalId) {
     state.currentPoints -= price;
     state.animals[animalId] = (state.animals[animalId] || 0) + 1;
     state.allTime.totalAnimals++;
+    if (!state.allTime.animalsOwned) state.allTime.animalsOwned = {};
+    state.allTime.animalsOwned[animalId] = 1;
     bought++;
   }
   if (bought > 0) sfxBuy();

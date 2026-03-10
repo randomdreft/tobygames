@@ -92,7 +92,8 @@ const HEMEL_HABITATS = [
   {id:'panda', bg:'linear-gradient(180deg,#2d7a3f,#1a5a2a)', env:'🎋🎋🎋🎋🎋🎋🎋🎋🎋🎋', food:'🎋', desc:'Smult van bamboe'},
   {id:'olifant', bg:'linear-gradient(180deg,#c4a35a,#a08040)', env:'🌴🌅🦒🌴🌅🦒🌴🌅🦒🌴', food:'🍃', desc:'Plukt bladeren op de savanne'},
   {id:'walvis', bg:'linear-gradient(180deg,#1a5a8a,#0d3a5a)', env:'🌊🐚🪸🫧🌊🐚🪸🫧🌊🐚', food:'🦐', desc:'Zwemt door de hemelse oceaan'},
-  {id:'draak', bg:'linear-gradient(180deg,#5a2a6a,#3a1a4a)', env:'🌋✨🔮⭐🌋✨🔮⭐🌋✨', food:'🔥', desc:'Spuwt vuur op de bergtop'}
+  {id:'draak', bg:'linear-gradient(180deg,#5a2a6a,#3a1a4a)', env:'🌋✨🔮⭐🌋✨🔮⭐🌋✨', food:'🔥', desc:'Spuwt vuur op de bergtop'},
+  {id:'eenhoorn', bg:'linear-gradient(180deg,#9b59b6,#6c3483)', env:'🌈✨⭐💫🌈✨⭐💫🌈✨', food:'🌟', desc:'Schittert tussen de sterren'}
 ];
 
 let prestigeCache = null;
@@ -242,7 +243,7 @@ function startZooTick() {
   zooRuntime = { pendingStars: {}, lastSpawn: {}, collected: 0 };
   const now = Date.now();
   ANIMALS.forEach(a => {
-    if (a.reqStars !== undefined) return; // star-gated animals excluded from zoo
+    if (!hasEverOwned(a.id)) return; // only show animals ever owned
     zooRuntime.pendingStars[a.id] = [];
     // First star appears 30-90s after opening zoo (staggered per animal),
     // then subsequent stars follow the full interval.
@@ -265,7 +266,7 @@ function zooTick() {
   updateZooHappiness();
 
   ANIMALS.forEach(a => {
-    if (a.reqStars !== undefined) return; // star-gated animals excluded from zoo
+    if (!hasEverOwned(a.id)) return; // only show animals ever owned
     const enc = state.zoo.enclosures[a.id];
     if (!enc) return;
 

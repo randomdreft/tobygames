@@ -13,7 +13,7 @@ function defaultState() {
     upgrades: {},
     achievements: {},
     prestige: { stars: 0, timesReset: 0, theme: 'oerwoud', themeLocked: false, perks: {} },
-    allTime: { totalClicks: 0, totalEarned: 0, totalAnimals: 0, playTimeSeconds: 0 },
+    allTime: { totalClicks: 0, totalEarned: 0, totalAnimals: 0, playTimeSeconds: 0, animalsOwned: {} },
     stats: {
       quizPlayed: 0, quizCorrect: 0, quizWrong: 0,
       catcherPlayed: 0, catcherCaught: 0,
@@ -163,6 +163,7 @@ function stateToIni() {
   lines.push('totaal_verdiend=' + Math.floor(state.allTime.totalEarned));
   lines.push('totaal_dieren=' + state.allTime.totalAnimals);
   lines.push('speeltijd=' + Math.floor(state.allTime.playTimeSeconds));
+  lines.push('dieren_gehad=' + Object.keys(state.allTime.animalsOwned || {}).join(','));
   lines.push('');
   lines.push('[statistieken]');
   Object.keys(state.stats).forEach(k => lines.push(k + '=' + state.stats[k]));
@@ -332,6 +333,10 @@ function iniToState(text) {
   s.allTime.totalEarned = safeFloat(at.totaal_verdiend, 0, 0);
   s.allTime.totalAnimals = safeInt(at.totaal_dieren, 0, 0);
   s.allTime.playTimeSeconds = safeFloat(at.speeltijd, 0, 0);
+  const validAnimalIds = new Set(ANIMALS.map(a => a.id));
+  (at.dieren_gehad || '').split(',').filter(x => x && validAnimalIds.has(x)).forEach(id => {
+    s.allTime.animalsOwned[id] = 1;
+  });
 
   // Stats
   const st = ini.statistieken || {};
@@ -459,6 +464,16 @@ function iniToState(text) {
   if (s.allTime.playTimeSeconds < s.playTimeSeconds) s.allTime.playTimeSeconds = s.playTimeSeconds;
   const curTotalAnimals = ANIMALS.reduce((sum, a) => sum + (s.animals[a.id]||0), 0);
   if (s.allTime.totalAnimals < curTotalAnimals) s.allTime.totalAnimals = curTotalAnimals;
+
+  // Migrate animalsOwned: if player has prestiged but no animalsOwned data,
+  // mark all non-star-gated animals as owned (they must have been to prestige)
+  if (Object.keys(s.allTime.animalsOwned).length === 0) {
+    if (s.prestige.timesReset > 0) {
+      ANIMALS.forEach(a => { if (a.reqStars === undefined) s.allTime.animalsOwned[a.id] = 1; });
+    }
+    // Also mark any currently owned animals
+    ANIMALS.forEach(a => { if ((s.animals[a.id] || 0) > 0) s.allTime.animalsOwned[a.id] = 1; });
+  }
 
   s.lastTick = Date.now();
   return s;
