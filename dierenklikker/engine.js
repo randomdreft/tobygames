@@ -71,6 +71,7 @@ function buyPerk(perkId) {
   state.prestige.perks[perkId] = 1;
   sfxBuy();
   showToast('⭐ ' + perk.name + ' gekocht!');
+  buildUpgradeShop();
 }
 
 function findPerk(id) {
