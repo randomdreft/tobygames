@@ -987,8 +987,8 @@ function render() {
     el.classList.toggle('locked', !visible);
     document.getElementById('count-' + a.id).textContent = '×' + count;
     const priceEl = document.getElementById('price-' + a.id);
-    const saleBuff = getActiveBuff();
-    if (saleBuff && saleBuff.type === 'sale') {
+    const saleBuff = getActiveBuff('sale');
+    if (saleBuff) {
       const unsaledTotal = (() => { let t = 0; for (let i = 0; i < qty; i++) t += Math.ceil(a.basePrice * Math.pow(COST_MULTIPLIER, count + i)); return t; })();
       const priceColor = canAffordAll ? 'var(--green-light)' : 'var(--red)';
       priceEl.innerHTML = (buyMax ? '<span style="font-size:10px;opacity:.6">' + qty + '×</span> ' : '') + '<s style="color:#ffa726;opacity:.6;font-size:.85em">' + formatNumber(unsaledTotal) + '</s> <span style="color:' + priceColor + '">' + formatNumber(totalPrice) + '</span>';
