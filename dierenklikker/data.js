@@ -410,7 +410,7 @@ const QUIZ_QUESTIONS = [
   {q:"Welk dier kan het langst zonder water?", a:["Kameel","Olifant","Slang","Schildpad"], c:0},
   {q:"Wat eet een flamingo?", a:["Garnalen en algen","Vis","Gras","Insecten"], c:0},
   {q:"Waarom is een flamingo roze?", a:["Door zijn eten","Zonnebrand","Zo geboren","Door het water"], c:0},
-  {q:"Welk dier heeft geen botten?", a:["Kwal","Slak","Slang","Worm"], c:0},
+  {q:"Welk dier heeft geen botten?", a:["Kwal","Kikker","Slang","Hagedis"], c:0},
   {q:"Welk dier kan het langst slapen?", a:["Luiaard","Kat","Koala","Beer"], c:0},
   {q:"Hoeveel kleuren kan een kameleon worden?", a:["Heel veel!","2","3","Alleen groen"], c:0},
   {q:"Welk dier heeft de grootste tanden?", a:["Olifant","Nijlpaard","Walrus","Haai"], c:0},
