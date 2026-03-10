@@ -1623,7 +1623,7 @@ function hideTip() {
 }
 
 // Hover detection: mouseover for entering, mousemove for positioning + leaving
-document.addEventListener('mouseover', function(e) {
+function _handleHover(e) {
   const item = e.target.closest('[data-tip]');
   if (item && item !== _tipHoverItem) {
     const parts = item.dataset.tip.split('|');
@@ -1634,7 +1634,9 @@ document.addEventListener('mouseover', function(e) {
     clearTimeout(_tapTipTimer);
     positionTooltip(e);
   }
-});
+}
+document.addEventListener('mouseover', _handleHover);
+document.addEventListener('pointerover', _handleHover);
 document.addEventListener('mousemove', function(e) {
   if (_tipHoverItem && !e.target.closest('[data-tip]')) hideTip();
   if (tooltipEl.style.display === 'block') positionTooltip(e);
