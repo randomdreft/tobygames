@@ -633,6 +633,18 @@ function buildAchievementDefs() {
     check: () => (state.stats.voerbeursEarned || 0) >= 1e12,
     progress: () => ({cur: state.stats.voerbeursEarned || 0, max: 1e12})
   });
+  defs.push({
+    id: 'vb_earn_1q', emoji: '💹', name: 'Beurskeizer',
+    desc: '1 biljard verdiend via de voerbeurs!', group: 'Voerbeurs',
+    check: () => (state.stats.voerbeursEarned || 0) >= 1e15,
+    progress: () => ({cur: state.stats.voerbeursEarned || 0, max: 1e15})
+  });
+  defs.push({
+    id: 'vb_earn_1qi', emoji: '💹', name: 'Meester van de Markt',
+    desc: '1 triljoen verdiend via de voerbeurs!', group: 'Voerbeurs',
+    check: () => (state.stats.voerbeursEarned || 0) >= 1e18,
+    progress: () => ({cur: state.stats.voerbeursEarned || 0, max: 1e18})
+  });
 
   // Daily challenges
   defs.push({
