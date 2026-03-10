@@ -1622,21 +1622,21 @@ function hideTip() {
   clearTimeout(_tapTipTimer);
 }
 
-// Hover detection via mousemove (more reliable than mouseover across browsers)
-document.addEventListener('mousemove', function(e) {
+// Hover detection: mouseover for entering, mousemove for positioning + leaving
+document.addEventListener('mouseover', function(e) {
   const item = e.target.closest('[data-tip]');
   if (item && item !== _tipHoverItem) {
-    // Entered a new [data-tip] element
     const parts = item.dataset.tip.split('|');
     tooltipEl.innerHTML = '<div class="tip-title">' + parts[0] + '</div>' +
       (parts[1] ? '<div class="tip-desc">' + parts[1] + '</div>' : '');
     tooltipEl.style.display = 'block';
     _tipHoverItem = item;
     clearTimeout(_tapTipTimer);
-  } else if (!item && _tipHoverItem) {
-    // Left all [data-tip] elements
-    hideTip();
+    positionTooltip(e);
   }
+});
+document.addEventListener('mousemove', function(e) {
+  if (_tipHoverItem && !e.target.closest('[data-tip]')) hideTip();
   if (tooltipEl.style.display === 'block') positionTooltip(e);
 });
 
