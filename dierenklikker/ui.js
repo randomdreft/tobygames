@@ -1385,11 +1385,9 @@ function renderStats() {
   if (s.memoryWon) perfects.push('🃏 ' + s.memoryWon + 'x');
   if (perfects.length) html += row('Perfect scores', perfects.join(' · '));
 
-  if (s.luckyClicked || s.luckyMissed) {
-    const luckyTotal = (s.luckyClicked || 0) + (s.luckyMissed || 0);
-    const luckyPct = pct(s.luckyClicked || 0, luckyTotal);
+  if (s.luckyClicked) {
     html += heading('Geluksbeestjes');
-    html += row('🐞 Gevangen', (s.luckyClicked || 0) + '/' + luckyTotal + ' (' + luckyPct + '%)');
+    html += row('🐞 Gevangen', s.luckyClicked + 'x');
     if (s.luckyDouble) html += row('🐞🐞 Dubbel', s.luckyDouble + 'x');
     if (s.luckyJackpot) html += row('💰 Jackpots', s.luckyJackpot + 'x');
   }
