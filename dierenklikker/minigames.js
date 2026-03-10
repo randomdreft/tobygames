@@ -644,7 +644,7 @@ function startTellen() {
   // Pick target animal
   const pool = MEMORY_POOL.filter(e => !e.includes('\uFE0F') && e.length <= 2); // clean single emojis
   tellenTarget = pool[Math.floor(Math.random() * pool.length)];
-  tellenCount = 1 + Math.floor(Math.random() * 5); // 1-5
+  tellenCount = 1 + Math.floor(Math.random() * 8); // 1-8
 
   // Build grid: 16 cells, tellenCount of them are target
   const cells = [];
