@@ -2008,7 +2008,7 @@ function renderVoerbeurs() {
     html += '<button class="vb-btn vb-buy" onclick="voerbeursBuy(\'' + a.id + '\');renderVoerbeurs()"' +
       (inv >= VOERBEURS_MAX_INVENTORY || state.currentPoints < cost || dps <= 0 ? ' disabled' : '') +
       '>Koop ' + formatNumber(Math.floor(cost)) + '</button>';
-    html += '<button class="vb-btn vb-sell" onclick="voerbeursSell(\'' + a.id + '\');renderVoerbeurs()"' +
+    html += '<button class="vb-btn vb-sell" onclick="doVoerbeursSell(\'' + a.id + '\', this)"' +
       (inv <= 0 || dps <= 0 ? ' disabled' : '') +
       '>Verkoop ' + formatNumber(Math.floor(revenue)) + '</button>';
     html += '</div>';
@@ -2030,8 +2030,30 @@ function renderVoerbeurs() {
   parseAppleEmoji(container);
 }
 
+function doVoerbeursSell(assetId, btn) {
+  const price = state.voerbeurs.prices[assetId];
+  const dps = getTotalDps();
+  const revenue = price * dps * 60;
+  voerbeursSell(assetId);
+  // Floating particle like click particles
+  if (btn && revenue > 0) {
+    const rect = btn.getBoundingClientRect();
+    const box = document.getElementById('mg-voerbeurs');
+    const boxRect = box.getBoundingClientRect();
+    const p = document.createElement('div');
+    p.className = 'click-particle';
+    p.textContent = '+' + formatNumber(Math.floor(revenue));
+    p.style.left = (rect.left - boxRect.left + rect.width / 2) + 'px';
+    p.style.top = (rect.top - boxRect.top) + 'px';
+    box.style.position = 'relative';
+    box.appendChild(p);
+    setTimeout(() => p.remove(), 900);
+  }
+  renderVoerbeurs();
+}
+
 function renderVoerbeursCombinedChart() {
-  const w = 260, h = 100, pad = 8, padRight = 28;
+  const w = 500, h = 100, pad = 8, padRight = 28;
   const min = VOERBEURS_PRICE_MIN, max = VOERBEURS_PRICE_MAX;
   const xStep = (w - pad - padRight) / (VOERBEURS_HISTORY_LENGTH - 1);
 
