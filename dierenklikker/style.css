@@ -1283,29 +1283,30 @@ img.emoji {
 }
 
 /* Voerbeurs */
-.vb-asset {
-  background: rgba(0,0,0,0.2); border-radius: 10px; padding: 10px;
-  margin-bottom: 8px; border: 1px solid rgba(255,215,0,0.15);
-}
-.vb-asset-header {
-  display: flex; justify-content: space-between; align-items: center;
-  font-size: 13px; margin-bottom: 6px; flex-wrap: wrap; gap: 4px;
-}
-.vb-asset-name { font-weight: 700; font-size: 14px; }
-.vb-asset-price { color: var(--gold); }
-.vb-asset-inv { color: var(--text-dim); }
 .vb-chart {
-  width: 100%; height: 60px; display: block;
-  background: rgba(0,0,0,0.15); border-radius: 6px;
+  width: 100%; height: 100px; display: block;
+  background: rgba(0,0,0,0.2); border-radius: 8px;
   margin-bottom: 6px;
 }
-.vb-chart-empty {
-  text-align: center; padding: 16px; color: var(--text-dim); font-size: 12px;
+.vb-timer {
+  text-align: center; font-size: 11px; color: var(--text-dim); opacity: 0.7;
+  margin-bottom: 6px;
 }
+.vb-card {
+  background: rgba(0,0,0,0.15); border-radius: 8px; padding: 8px 10px;
+  margin-bottom: 6px;
+}
+.vb-card-header {
+  display: flex; justify-content: space-between; align-items: center;
+  font-size: 13px; margin-bottom: 6px; gap: 6px;
+}
+.vb-asset-name { font-weight: 700; font-size: 13px; }
+.vb-asset-price { font-size: 12px; }
+.vb-asset-inv { color: var(--text-dim); font-size: 12px; }
 .vb-actions { display: flex; gap: 6px; }
 .vb-btn {
-  flex: 1; padding: 8px; border: 1px solid var(--panel-border);
-  border-radius: 8px; font-size: 12px; font-weight: 600;
+  flex: 1; padding: 6px 4px; border: 1px solid var(--panel-border);
+  border-radius: 6px; font-size: 11px; font-weight: 600;
   cursor: pointer; transition: all 0.15s; text-align: center;
   color: var(--text); background: rgba(0,0,0,0.2);
 }
@@ -1319,7 +1320,8 @@ img.emoji {
   padding: 6px 0 2px; border-top: 1px solid rgba(255,255,255,0.05);
   margin-top: 4px;
 }
-.vb-timer {
-  text-align: center; font-size: 11px; color: var(--text-dim); opacity: 0.7;
-  padding: 2px 0;
+#mg-voerbeurs .vb-collapse-btn {
+  float: right; background: none; border: none; color: var(--text-dim);
+  font-size: 12px; cursor: pointer; padding: 2px 6px;
 }
+#mg-voerbeurs.vb-collapsed #voerbeurs-content { display: none; }

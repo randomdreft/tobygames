@@ -705,7 +705,8 @@ function buildUpgradeCategory(title, upgrades, animal, buyAllPerk) {
 
 function buildUpgradeShop() {
   const container = document.getElementById('tab-upgrades');
-  const allUpgrades = [CLICK_UPGRADES, GLOBAL_UPGRADES, OFFLINE_UPGRADES, ...ANIMALS.map(a => a.upgrades)].flat();
+  const visibleAnimals = ANIMALS.filter(a => isAnimalVisible(a.id));
+  const allUpgrades = [CLICK_UPGRADES, GLOBAL_UPGRADES, OFFLINE_UPGRADES, ...visibleAnimals.map(a => a.upgrades)].flat();
   const bought = allUpgrades.filter(u => state.upgrades[u.id]).length;
   const total = allUpgrades.length;
   const pct = total ? Math.floor(bought / total * 100) : 0;
@@ -714,6 +715,7 @@ function buildUpgradeShop() {
   html += buildUpgradeCategory('🌍 Globale upgrades', GLOBAL_UPGRADES);
   html += buildUpgradeCategory('🌙 Offline upgrades', OFFLINE_UPGRADES);
   ANIMALS.forEach(a => {
+    if (!isAnimalVisible(a.id)) return;
     html += buildUpgradeCategory(a.emoji + ' ' + a.name + '-upgrades', a.upgrades, a, 'sp_ba_' + a.id);
   });
   container.innerHTML = html;
@@ -1960,6 +1962,15 @@ function clickLucky(el) {
    ================================================================ */
 
 let _voerbeursVisible = false;
+const VB_COLORS = ['#ff6b6b','#ffd93d','#6bcb77'];
+
+function toggleVoerbeurs() {
+  const box = document.getElementById('mg-voerbeurs');
+  if (!box) return;
+  box.classList.toggle('vb-collapsed');
+  const btn = box.querySelector('.vb-collapse-btn');
+  if (btn) btn.textContent = box.classList.contains('vb-collapsed') ? '▼' : '▲';
+}
 
 function renderVoerbeurs() {
   const container = document.getElementById('voerbeurs-content');
@@ -1972,27 +1983,34 @@ function renderVoerbeurs() {
   const minuteDps = dps * 60;
 
   let html = '';
-  VOERBEURS_ASSETS.forEach(a => {
+
+  // Combined chart
+  html += renderVoerbeursCombinedChart();
+
+  // Tick timer
+  const nextTick = Math.max(0, VOERBEURS_TICK_INTERVAL - (Date.now() - (state.voerbeurs.lastTick || Date.now())));
+  html += '<div class="vb-timer">Volgende tick: ' + Math.ceil(nextTick / 1000) + 's</div>';
+
+  // Per-asset trade cards
+  VOERBEURS_ASSETS.forEach((a, ai) => {
     const price = state.voerbeurs.prices[a.id];
     const inv = state.voerbeurs.inventory[a.id] || 0;
     const cost = price * minuteDps;
     const revenue = price * minuteDps;
-    const history = state.voerbeurs.history[a.id] || [];
 
-    html += '<div class="vb-asset">';
-    html += '<div class="vb-asset-header">';
+    html += '<div class="vb-card" style="border-left:3px solid ' + VB_COLORS[ai] + '">';
+    html += '<div class="vb-card-header">';
     html += '<span class="vb-asset-name">' + a.emoji + ' ' + a.name + '</span>';
-    html += '<span class="vb-asset-price">Prijs: <b>' + price + '</b></span>';
-    html += '<span class="vb-asset-inv">Voorraad: <b>' + inv + '/' + VOERBEURS_MAX_INVENTORY + '</b></span>';
+    html += '<span class="vb-asset-price" style="color:' + VB_COLORS[ai] + '">Prijs: <b>' + price + '</b></span>';
+    html += '<span class="vb-asset-inv">' + inv + '/' + VOERBEURS_MAX_INVENTORY + '</span>';
     html += '</div>';
-    html += renderVoerbeursChart(history);
     html += '<div class="vb-actions">';
     html += '<button class="vb-btn vb-buy" onclick="voerbeursBuy(\'' + a.id + '\');renderVoerbeurs()"' +
       (inv >= VOERBEURS_MAX_INVENTORY || state.currentPoints < cost || dps <= 0 ? ' disabled' : '') +
-      '>Koop (' + formatNumber(Math.floor(cost)) + ')</button>';
+      '>Koop ' + formatNumber(Math.floor(cost)) + '</button>';
     html += '<button class="vb-btn vb-sell" onclick="voerbeursSell(\'' + a.id + '\');renderVoerbeurs()"' +
       (inv <= 0 || dps <= 0 ? ' disabled' : '') +
-      '>Verkoop (' + formatNumber(Math.floor(revenue)) + ')</button>';
+      '>Verkoop ' + formatNumber(Math.floor(revenue)) + '</button>';
     html += '</div>';
     html += '</div>';
   });
@@ -2008,32 +2026,47 @@ function renderVoerbeurs() {
     html += '<div class="vb-portfolio">' + totalInv + ' stuks in portefeuille (waarde: ' + formatNumber(Math.floor(totalValue * minuteDps)) + ')</div>';
   }
 
-  // Tick timer
-  const nextTick = Math.max(0, VOERBEURS_TICK_INTERVAL - (Date.now() - (state.voerbeurs.lastTick || Date.now())));
-  html += '<div class="vb-timer">Volgende tick: ' + Math.ceil(nextTick / 1000) + 's</div>';
-
   container.innerHTML = html;
   parseAppleEmoji(container);
 }
 
-function renderVoerbeursChart(history) {
-  if (!history || history.length < 2) return '<div class="vb-chart-empty">Wachten op data...</div>';
-  const w = 200, h = 60, pad = 4;
+function renderVoerbeursCombinedChart() {
+  const w = 260, h = 100, pad = 8, padRight = 28;
   const min = VOERBEURS_PRICE_MIN, max = VOERBEURS_PRICE_MAX;
-  const xStep = (w - 2*pad) / (VOERBEURS_HISTORY_LENGTH - 1);
-  let path = '';
-  history.forEach((p, i) => {
-    const x = pad + i * xStep;
-    const y = h - pad - ((p - min) / (max - min)) * (h - 2*pad);
-    path += (i === 0 ? 'M' : 'L') + x.toFixed(1) + ',' + y.toFixed(1);
+  const xStep = (w - pad - padRight) / (VOERBEURS_HISTORY_LENGTH - 1);
+
+  let svg = '<svg class="vb-chart" viewBox="0 0 ' + w + ' ' + h + '">';
+
+  // Y-axis labels
+  for (let v = min; v <= max; v += 3) {
+    const y = h - pad - ((v - min) / (max - min)) * (h - 2*pad);
+    svg += '<text x="' + (w - 2) + '" y="' + (y + 3).toFixed(1) + '" fill="rgba(255,255,255,0.3)" font-size="8" text-anchor="end">' + v + '</text>';
+    svg += '<line x1="' + pad + '" y1="' + y.toFixed(1) + '" x2="' + (w - padRight) + '" y2="' + y.toFixed(1) + '" stroke="rgba(255,255,255,0.06)"/>';
+  }
+
+  // Lines + emoji endpoints for each asset
+  VOERBEURS_ASSETS.forEach((a, ai) => {
+    const history = state.voerbeurs.history[a.id] || [];
+    if (history.length < 1) return;
+    const color = VB_COLORS[ai];
+
+    let path = '';
+    history.forEach((p, i) => {
+      const x = pad + i * xStep;
+      const y = h - pad - ((p - min) / (max - min)) * (h - 2*pad);
+      path += (i === 0 ? 'M' : 'L') + x.toFixed(1) + ',' + y.toFixed(1);
+    });
+    svg += '<path d="' + path + '" fill="none" stroke="' + color + '" stroke-width="1.5" opacity="0.8"/>';
+
+    // Emoji icon at the endpoint
+    const lastPrice = history[history.length - 1];
+    const lastX = pad + (history.length - 1) * xStep;
+    const lastY = h - pad - ((lastPrice - min) / (max - min)) * (h - 2*pad);
+    svg += '<text x="' + lastX.toFixed(1) + '" y="' + (lastY + 5).toFixed(1) + '" font-size="14" text-anchor="middle" data-tip="' + escHtml(a.name) + '|Prijs: ' + lastPrice + '">' + a.emoji + '</text>';
   });
-  const lastPrice = history[history.length - 1];
-  const lastY = h - pad - ((lastPrice - min) / (max - min)) * (h - 2*pad);
-  const color = lastPrice >= 6 ? 'var(--green-light)' : lastPrice <= 4 ? 'var(--red)' : 'var(--gold)';
-  return '<svg class="vb-chart" viewBox="0 0 ' + w + ' ' + h + '" preserveAspectRatio="none">' +
-    '<path d="' + path + '" fill="none" stroke="' + color + '" stroke-width="2"/>' +
-    '<circle cx="' + (pad + (history.length-1) * xStep).toFixed(1) + '" cy="' + lastY.toFixed(1) + '" r="3" fill="' + color + '"/>' +
-    '</svg>';
+
+  svg += '</svg>';
+  return svg;
 }
 
 /* ================================================================
