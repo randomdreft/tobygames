@@ -88,8 +88,7 @@ function formatDps(n) {
 const APPLE_EMOJI_BASE = 'emoji/';
 const HIRES_EMOJI = {
   '🐜':'1f41c','🐌':'1f40c','🐸':'1f438','🐔':'1f414','🐱':'1f431',
-  '🐕':'1f415','🦙':'1f999','🐴':'1f434','🐼':'1f43c','🐘':'1f418','🐋':'1f40b','🐉':'1f409',
-  '🦄':'1f984'
+  '🐕':'1f415','🦙':'1f999','🐴':'1f434','🐼':'1f43c','🐘':'1f418','🐋':'1f40b','🐉':'1f409'
 };
 function parseAppleEmoji(el) {
   if (typeof twemoji === 'undefined') return;
