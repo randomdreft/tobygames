@@ -1255,7 +1255,7 @@ img.emoji {
     rgba(238,130,238,0.08), rgba(255,0,0,0.08));
   opacity: 0.6;
 }
-.zoo-glitter-container { position: absolute; inset: 0; overflow: hidden; }
+.zoo-glitter-container { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
 .zoo-glitter {
   position: absolute; top: -10px; width: 4px; height: 4px;
   background: radial-gradient(circle, #ffd700, transparent);

@@ -677,11 +677,11 @@ function startTellen() {
     setTimeout(() => {
       // Phase 3: ask question
       const options = new Set([tellenCount]);
-      while (options.size < 4) {
-        let fake = tellenCount + Math.floor(Math.random() * 5) - 2;
-        if (fake < 0) fake = 0;
-        if (fake > 8) fake = 8;
-        if (fake !== tellenCount) options.add(fake);
+      const possible = [];
+      for (let i = 0; i <= 9; i++) if (i !== tellenCount) possible.push(i);
+      while (options.size < 4 && possible.length > 0) {
+        const idx = Math.floor(Math.random() * possible.length);
+        options.add(possible.splice(idx, 1)[0]);
       }
       const sorted = [...options].sort((a,b) => a - b);
       let qhtml = '<div id="tellen-prompt">Hoeveel ' + tellenTarget + ' zag je?</div>';
