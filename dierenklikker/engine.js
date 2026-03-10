@@ -586,6 +586,50 @@ function buildAchievementDefs() {
     progress: () => ({cur: state.stats.voedselPerfect || 0, max: 1})
   });
 
+  // Voerbeurs
+  defs.push({
+    id: 'vb_sell_1', emoji: '📈', name: 'Eerste handel',
+    desc: 'Je eerste verkoop op de voerbeurs!', group: 'Voerbeurs',
+    check: () => (state.stats.voerbeursSells || 0) >= 1,
+    progress: () => ({cur: state.stats.voerbeursSells || 0, max: 1})
+  });
+  defs.push({
+    id: 'vb_sell_10', emoji: '📈', name: 'Handelaar',
+    desc: '10 keer verkocht op de voerbeurs!', group: 'Voerbeurs',
+    check: () => (state.stats.voerbeursSells || 0) >= 10,
+    progress: () => ({cur: state.stats.voerbeursSells || 0, max: 10})
+  });
+  defs.push({
+    id: 'vb_sell_50', emoji: '📈', name: 'Beursmakelaar',
+    desc: '50 keer verkocht op de voerbeurs!', group: 'Voerbeurs',
+    check: () => (state.stats.voerbeursSells || 0) >= 50,
+    progress: () => ({cur: state.stats.voerbeursSells || 0, max: 50})
+  });
+  defs.push({
+    id: 'vb_sell_100', emoji: '📈', name: 'Wolf van de Beurs',
+    desc: '100 keer verkocht op de voerbeurs!', group: 'Voerbeurs',
+    check: () => (state.stats.voerbeursSells || 0) >= 100,
+    progress: () => ({cur: state.stats.voerbeursSells || 0, max: 100})
+  });
+  defs.push({
+    id: 'vb_earn_1m', emoji: '💹', name: 'Winstmaker',
+    desc: '1 miljoen verdiend via de voerbeurs!', group: 'Voerbeurs',
+    check: () => (state.stats.voerbeursEarned || 0) >= 1e6,
+    progress: () => ({cur: state.stats.voerbeursEarned || 0, max: 1e6})
+  });
+  defs.push({
+    id: 'vb_earn_1b', emoji: '💹', name: 'Beursmagnaat',
+    desc: '1 miljard verdiend via de voerbeurs!', group: 'Voerbeurs',
+    check: () => (state.stats.voerbeursEarned || 0) >= 1e9,
+    progress: () => ({cur: state.stats.voerbeursEarned || 0, max: 1e9})
+  });
+  defs.push({
+    id: 'vb_earn_1t', emoji: '💹', name: 'Beurstycoon',
+    desc: '1 biljoen verdiend via de voerbeurs!', group: 'Voerbeurs',
+    check: () => (state.stats.voerbeursEarned || 0) >= 1e12,
+    progress: () => ({cur: state.stats.voerbeursEarned || 0, max: 1e12})
+  });
+
   // Daily challenges
   defs.push({
     id: 'dc_streak_3', emoji: '📅', name: 'Trouwe speler',
@@ -1056,6 +1100,10 @@ function voerbeursSell(assetId) {
   state.totalEarned += revenue;
   state.allTime.totalEarned += revenue;
   state.voerbeurs.inventory[assetId] = inv - 1;
+  if (!state.stats.voerbeursSells) state.stats.voerbeursSells = 0;
+  if (!state.stats.voerbeursEarned) state.stats.voerbeursEarned = 0;
+  state.stats.voerbeursSells++;
+  state.stats.voerbeursEarned += revenue;
   sfxBuy();
 }
 
