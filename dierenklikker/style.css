@@ -128,7 +128,7 @@ body.drakenuur-bg {
 .panel {
   background: var(--panel); backdrop-filter: blur(8px);
   border: 1px solid var(--panel-border); border-radius: 16px;
-  padding: 16px; overflow-y: auto;
+  padding: 16px; overflow-y: auto; scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.2) transparent;
 }
 .panel::-webkit-scrollbar { width: 6px; }
 .panel::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 3px; }
@@ -700,7 +700,7 @@ img.emoji {
   background: linear-gradient(135deg, #1a472a, #0d3b2e);
   border: 1px solid var(--panel-border); border-radius: 16px;
   padding: 24px; max-width: 500px; width: 100%; max-height: 80vh;
-  overflow-y: auto;
+  overflow-y: auto; scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.2) transparent;
 }
 .modal-box h2 { font-size: 20px; margin-bottom: 12px; text-align: center; }
 .modal-box p { font-size: 14px; line-height: 1.5; margin-bottom: 12px; }
@@ -963,7 +963,7 @@ img.emoji {
 #dierenhemel {
   display: none; position: fixed; inset: 0; z-index: 250;
   flex-direction: column; align-items: center;
-  overflow-y: auto; overflow-x: hidden;
+  overflow-y: auto; overflow-x: hidden; scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.2) transparent;
 }
 #dierenhemel.show { display: flex; }
 .hemel-sky {
