@@ -223,6 +223,18 @@ function getPrestigeStars() {
   return Math.max(0, Math.floor(Math.log10(state.totalEarned) - threshold));
 }
 
+function getNextStarInfo() {
+  const threshold = 9 + state.prestige.stars * 0.02;
+  const currentStars = getPrestigeStars();
+  const nextTarget = Math.pow(10, threshold + currentStars + 1);
+  const remaining = nextTarget - state.totalEarned;
+  if (remaining <= 0) return { remaining: 0, seconds: 0 };
+  let effectiveDps = getTotalDps();
+  if (hasPerk('sp_auto')) effectiveDps += getClickValue();
+  if (effectiveDps <= 0) return { remaining, seconds: Infinity };
+  return { remaining, seconds: remaining / effectiveDps };
+}
+
 /* ================================================================
    SECTIE 5b: WOLKENDIERENTUIN
    ================================================================ */

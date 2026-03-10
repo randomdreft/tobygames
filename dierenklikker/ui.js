@@ -20,6 +20,16 @@ function showPrestigeModal() {
     keepHtml += prestigeKeepLine(totalAfter, PRESTIGE_KEEP_GLOBAL, 'Globale upgrades', '🌍');
   }
   document.getElementById('prestige-keep-info').innerHTML = keepHtml;
+  // Next star info
+  const nsi = getNextStarInfo();
+  const nextEl = document.getElementById('prestige-next-star');
+  if (nsi.seconds <= 0) {
+    nextEl.innerHTML = '✨ Je hebt al genoeg voor een extra ster! Blijf verdienen voor nóg meer.';
+  } else if (!isFinite(nsi.seconds)) {
+    nextEl.innerHTML = '';
+  } else {
+    nextEl.innerHTML = 'Volgende ster: nog ' + formatNumber(Math.ceil(nsi.remaining)) + ' punten nodig (' + formatTime(nsi.seconds) + ')';
+  }
   showModal('prestige-modal');
 }
 
