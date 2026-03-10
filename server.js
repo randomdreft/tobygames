@@ -207,7 +207,7 @@ function handleLeaderboardGet(req, res) {
   const trustedOnly = url.searchParams.get('trusted') === '1';
 
   let filtered = trustedOnly ? leaderboard.filter(e => e.trust >= 60) : leaderboard;
-  const top10 = filtered.slice(0, 10).map((e, i) => ({
+  const top = filtered.slice(0, 100).map((e, i) => ({
     rank: i + 1,
     zooName: e.zooName,
     score: e.score,
@@ -233,7 +233,7 @@ function handleLeaderboardGet(req, res) {
   }
 
   res.writeHead(200);
-  res.end(JSON.stringify({ top: top10, me, total: filtered.length }));
+  res.end(JSON.stringify({ top: top, me, total: filtered.length }));
 }
 
 // --- MIME types ---

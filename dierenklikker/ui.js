@@ -1486,8 +1486,8 @@ function renderLeaderboard() {
     html += '</div>';
   }
 
-  // My position (if not in top 10)
-  if (_leaderboardData.me && _leaderboardData.me.rank > 10) {
+  // My position (if not in top 100)
+  if (_leaderboardData.me && _leaderboardData.me.rank > 100) {
     html += '<div class="stat-heading">Jouw positie</div>';
     var e = _leaderboardData.me;
     html += '<div class="lb-table">';
