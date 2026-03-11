@@ -913,6 +913,10 @@ function buildEvolution() {
 
   html += '<span style="color:var(--text-dim);font-size:12px">Tip: na evolutie ga je veel sneller! Elke keer verdien je meer sterren.</span>';
   html += '</div>';
+
+  // Next star progress (updated live by tick)
+  html += '<div id="next-star-progress" style="padding:10px 12px;border-radius:8px;background:rgba(255,215,0,0.06);border:1px solid rgba(255,215,0,0.15);margin-bottom:12px"></div>';
+
   html += '<button class="opt-btn prestige-btn" id="prestige-btn" onclick="showPrestigeModal()">⭐ Evolueer!</button>';
 
   // Theme picker — only show if at least one unlockable theme is available
@@ -1132,6 +1136,35 @@ function render() {
       let line = '<b>Jouw score:</b> ' + formatNumber(Math.floor(state.totalEarned)) + ' verdiend';
       if (ps > 0) line += ' → <span style="color:var(--gold)">' + ps + ' nieuwe ⭐</span>';
       pScoreLine.innerHTML = line;
+    }
+  }
+
+  // Next star progress bar on evolution tab
+  const nextStarDiv = document.getElementById('next-star-progress');
+  if (nextStarDiv) {
+    if (state.totalEarned > 0) {
+      const nsi = getNextStarInfo();
+      const ps2 = getPrestigeStars();
+      const threshold = 9 + state.prestige.stars * 0.02;
+      const nextTarget = Math.pow(10, threshold + ps2 + 1);
+      const prevTarget = ps2 > 0 ? Math.pow(10, threshold + ps2) : 0;
+      const range = nextTarget - prevTarget;
+      const pct = range > 0 ? Math.min(100, Math.max(0, (state.totalEarned - prevTarget) / range * 100)) : 0;
+      let h = '<div style="font-size:13px;font-weight:700;margin-bottom:6px">⭐ Volgende ster</div>';
+      h += '<div style="height:8px;border-radius:4px;background:rgba(255,255,255,0.1);overflow:hidden;margin-bottom:6px">';
+      h += '<div style="height:100%;width:' + pct.toFixed(1) + '%;border-radius:4px;background:var(--gold);transition:width 0.3s"></div>';
+      h += '</div>';
+      if (nsi.seconds <= 0) {
+        h += '<div style="font-size:12px;color:var(--gold)">✨ Je hebt al genoeg voor een extra ster!</div>';
+      } else if (!isFinite(nsi.seconds)) {
+        h += '<div style="font-size:12px;color:var(--text-dim)">Nog ' + formatNumber(Math.ceil(nsi.remaining)) + ' punten nodig</div>';
+      } else {
+        h += '<div style="font-size:12px;color:var(--text-dim)">Nog ' + formatNumber(Math.ceil(nsi.remaining)) + ' punten nodig (' + formatTime(nsi.seconds) + ')</div>';
+      }
+      nextStarDiv.innerHTML = h;
+      nextStarDiv.style.display = '';
+    } else {
+      nextStarDiv.style.display = 'none';
     }
   }
 
