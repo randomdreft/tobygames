@@ -2174,9 +2174,7 @@ function tick() {
       const value = getClickValue();
       state.currentPoints += value;
       state.totalEarned += value;
-      state.totalClicks++;
       state.allTime.totalEarned += value;
-      state.allTime.totalClicks++;
     }
   }
 }
