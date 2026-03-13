@@ -502,7 +502,6 @@ function loadGame() {
     if (!data) return false;
     const loaded = iniToState(data);
     if (!loaded) return false;
-    const oldTick = loaded.lastTick;
     loaded.lastTick = Date.now();
 
     // Calculate offline earnings
@@ -603,4 +602,3 @@ function resetGame() {
   parseAppleEmoji(document.body);
   showToast('Spel gereset!');
 }
-

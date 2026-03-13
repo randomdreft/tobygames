@@ -11,7 +11,7 @@ Een verzameling zelfgemaakte HTML5-games. De meeste spellen zijn een enkel HTML-
 ### 🐾 Dierenklikker
 *Idle clicker met dieren, mini-games en een evolutiesysteem*
 
-Klik op dieren, verdien punten, koop nieuwe diersoorten en ontgrendel upgrades. Met 12 diersoorten (van mier tot draak), 12 mini-games, een buff-systeem, een prestige-mechanisme (evolutie), een Wolkendierentuin waar geëvolueerde dieren wonen en sterren produceren, een sterrenshop met permanente perks, dagelijkse uitdagingen, een multiplayer scorebord, unlockbare kleurthema's en geluidseffecten. Het grootste en meest uitgebreide spel op de site.
+Klik op dieren, verdien punten, koop nieuwe diersoorten en ontgrendel upgrades. Met 13 diersoorten (van mier tot eenhoorn), 12 mini-games, een buff-systeem, een prestige-mechanisme (evolutie), een Wolkendierentuin waar geëvolueerde dieren wonen en sterren produceren, een sterrenshop met permanente perks, dagelijkse uitdagingen, lieveheersbeestjes, een multiplayer scorebord, unlockbare kleurthema's en geluidseffecten. Het grootste en meest uitgebreide spel op de site.
 
 **[Speel Dierenklikker](https://tobygames.nl/dierenklikker.html)**
 

@@ -576,7 +576,6 @@ function completePrestige() {
   const keepZooName = state.zooName;
   const keepZoo = state.zoo ? JSON.parse(JSON.stringify(state.zoo)) : { enclosures: {} };
   const keepVoerbeurs = state.voerbeurs ? JSON.parse(JSON.stringify(state.voerbeurs)) : null;
-  const dpsBeforeReset = getTotalDps();
 
   state = defaultState();
   state.achievements = keepAch;

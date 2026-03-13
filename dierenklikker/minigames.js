@@ -8,6 +8,18 @@ let catcherInterval = null;
 let catcherScore = 0;
 let catcherSpawnInterval = null;
 
+function shuffleInPlace(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+function shuffledCopy(arr) {
+  return shuffleInPlace([...arr]);
+}
+
 function mgSetActive(id, active) {
   const box = document.getElementById('mg-' + id);
   if (box) box.classList.toggle('mg-active', active);
@@ -112,7 +124,7 @@ function startQuiz() {
   const q = QUIZ_QUESTIONS[Math.floor(Math.random() * QUIZ_QUESTIONS.length)];
   // Shuffle answers (keep track of correct)
   const correctAnswer = q.a[q.c];
-  const shuffled = [...q.a].sort(() => Math.random() - 0.5);
+  const shuffled = shuffledCopy(q.a);
   const correctIdx = shuffled.indexOf(correctAnswer);
 
   let html = '<div class="quiz-question">' + q.q + '</div><div class="quiz-answers">';
@@ -329,7 +341,7 @@ function startBuff() {
   document.getElementById('buff-btn').disabled = true;
 
   // Pick 4 random animals for flavor
-  const shuffled = [...ANIMALS].sort(() => Math.random() - 0.5);
+  const shuffled = shuffledCopy(ANIMALS);
   mgSetActive('buff', true);
   const game = document.getElementById('buff-game');
   game.style.display = 'block';
@@ -417,7 +429,7 @@ function startSort() {
 function nextSortAnimal() {
   // Bag-based shuffle: refill when empty for fair category distribution
   if (sortBag.length === 0) {
-    sortBag = [...SORT_ANIMALS].sort(() => Math.random() - 0.5);
+    sortBag = shuffledCopy(SORT_ANIMALS);
     // If last shown animal is same as first in new bag, swap with a random later one
     if (sortCurrent && sortBag[0].emoji === sortCurrent.emoji && sortBag.length > 1) {
       const swapIdx = 1 + Math.floor(Math.random() * (sortBag.length - 1));
@@ -507,9 +519,9 @@ function startMemory() {
   document.getElementById('memory-mistakes').textContent = '0';
 
   // Pick 8 random unique emojis
-  const shuffled = [...MEMORY_POOL].sort(() => Math.random() - 0.5);
+  const shuffled = shuffledCopy(MEMORY_POOL);
   const picked = shuffled.slice(0, 8);
-  memoryCards = [...picked, ...picked].sort(() => Math.random() - 0.5);
+  memoryCards = shuffledCopy([...picked, ...picked]);
 
   const grid = document.getElementById('memory-grid');
   grid.innerHTML = '';
@@ -653,7 +665,7 @@ function startTellen() {
     const r = pool[Math.floor(Math.random() * pool.length)];
     if (r !== tellenTarget) cells.push(r);
   }
-  cells.sort(() => Math.random() - 0.5);
+  shuffleInPlace(cells);
 
   // Phase 1: show target (big icon)
   game.innerHTML = '<div id="tellen-prompt">Let op de:</div>' +
@@ -767,11 +779,11 @@ function nextIndringer() {
   const other = INTRUDER_GROUPS[g2idx];
 
   // 3 from group, 1 intruder
-  const shuffled = [...group.animals].sort(() => Math.random() - 0.5);
+  const shuffled = shuffledCopy(group.animals);
   const three = shuffled.slice(0, 3);
   const intruder = other.animals[Math.floor(Math.random() * other.animals.length)];
 
-  const cards = [...three, intruder].sort(() => Math.random() - 0.5);
+  const cards = shuffledCopy([...three, intruder]);
   indringerCorrectIdx = cards.indexOf(intruder);
 
   const grid = document.getElementById('indringer-grid');
@@ -854,7 +866,7 @@ function nextGroter() {
   groterRound++;
   if (groterRound > 10 || groterMistakes >= 3) { endGroter(); return; }
   // Pick 2 different animals
-  const shuffled = [...ANIMAL_WEIGHTS].sort(() => Math.random() - 0.5);
+  const shuffled = shuffledCopy(ANIMAL_WEIGHTS);
   let a = shuffled[0], b = shuffled[1];
   // Ensure they're not too similar
   if (Math.abs(a.kg - b.kg) / Math.max(a.kg, b.kg) < 0.3) {
@@ -963,7 +975,7 @@ function startRace() {
   document.getElementById('race-game').scrollIntoView({ behavior: 'smooth', block: 'center' });
 
   // Pick 3 random horse names
-  const shuffled = [...RACE_NAMES].sort(() => Math.random() - 0.5);
+  const shuffled = shuffledCopy(RACE_NAMES);
   raceHorses = shuffled.slice(0, 3).map((h, i) => ({
     ...h, pos: 0, speed: 0.7 + Math.random() * 0.6,
     color: ['#ff6b35','#42a5f5','#66bb6a'][i]
@@ -1095,7 +1107,7 @@ function startPuzzel() {
   document.getElementById('puzzel-game').scrollIntoView({ behavior: 'smooth', block: 'center' });
 
   // Pick 8 random emojis for tiles 1-8
-  const shuffled = [...PUZZEL_EMOJIS].sort(() => Math.random() - 0.5);
+  const shuffled = shuffledCopy(PUZZEL_EMOJIS);
   const icons = shuffled.slice(0, 8);
 
   // Generate solvable puzzle: start solved, then do random moves
@@ -1205,7 +1217,7 @@ function startVoedsel() {
   voedselScore = 0;
   voedselMistakes = 0;
   voedselRound = 0;
-  voedselBag = [...FOOD_QUIZ].sort(() => Math.random() - 0.5);
+  voedselBag = shuffledCopy(FOOD_QUIZ);
   document.getElementById('voedsel-btn').disabled = true;
   document.getElementById('voedsel-game').style.display = 'block';
   document.getElementById('voedsel-score').textContent = '0';
@@ -1216,12 +1228,12 @@ function startVoedsel() {
 function nextVoedsel() {
   voedselRound++;
   if (voedselRound > 10 || voedselMistakes >= 3) { endVoedsel(); return; }
-  if (voedselBag.length === 0) voedselBag = [...FOOD_QUIZ].sort(() => Math.random() - 0.5);
+  if (voedselBag.length === 0) voedselBag = shuffledCopy(FOOD_QUIZ);
   voedselCurrent = voedselBag.shift();
 
   const field = document.getElementById('voedsel-field');
-  const wrongPick = [...voedselCurrent.wrong].sort(() => Math.random() - 0.5).slice(0, 2);
-  const options = [voedselCurrent.food, ...wrongPick].sort(() => Math.random() - 0.5);
+  const wrongPick = shuffledCopy(voedselCurrent.wrong).slice(0, 2);
+  const options = shuffledCopy([voedselCurrent.food, ...wrongPick]);
 
   let html = '<div class="voedsel-animal">' + voedselCurrent.emoji + '</div>';
   html += '<div class="voedsel-name">' + voedselCurrent.name + ' eet...</div>';
@@ -1292,4 +1304,3 @@ function endVoedsel() {
   }, 3000);
   saveGame();
 }
-

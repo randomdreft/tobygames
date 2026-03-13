@@ -6,7 +6,7 @@ Alle spellen op [tobygames.nl](https://tobygames.nl). Grotere spellen zijn opges
 
 | Bestand(en) | Spel | Beschrijving |
 |-------------|------|-------------|
-| `dierenklikker.html` + `dierenklikker/` | Dierenklikker | Idle clicker met 12 dieren, 12 mini-games, buffs, upgrades, evolutie, kleurthema's, geluid |
+| `dierenklikker.html` + `dierenklikker/` | Dierenklikker | Idle clicker met 13 dieren, 12 mini-games, buffs, upgrades, evolutie, kleurthema's, scorebord, wolkendierentuin en geluid |
 | `typen/index.html` + `typen/` | TobyTypen | ADHD-vriendelijke typecursus met 28 lessen, boss fights, XP-systeem |
 | `snake.html` | Snake | Klassiek slangenspel met aanpasbare kleuren en snelheid |
 | `worms.html` | Neuswormen | Trek wormen uit neusgaten met een pincet |
@@ -35,7 +35,8 @@ Het meest uitgebreide spel. Cookie Clicker-achtig incrementeel spel met veel sub
 ### Kernsystemen
 
 - **Klikken & DPS**: klik op het dier voor punten, koop dieren die automatisch punten genereren
-- **12 diersoorten**: mier, slak, kikker, kip, kat, hond, lama, paard, panda, olifant, walvis, draak — elk met 5 upgrades
+- **13 diersoorten**: mier, slak, kikker, kip, kat, hond, lama, paard, panda, olifant, walvis, draak en eenhoorn — elk met 5 upgrades
+- **Eenhoorn endgame**: ontgrendelt pas vanaf 110 sterren en telt daarna ook mee voor evolutie
 - **Klik-upgrades**: 7 stappen (vaste waarde + DPS-percentage per klik)
 - **Globale upgrades**: 7 stappen (DPS +10% tot x2)
 - **Offline upgrades**: 5 stappen (10% tot 100% DPS terwijl offline)
@@ -70,11 +71,11 @@ Vijf buffs (30 seconden actief, 60s met sterrenshop-perk):
 - **Uitverkoop** (🏷️): alle dieren halve prijs
 - **Gouden Regen** (⭐): +20% van DPS per klik
 - **Jackpot** (💰): direct 30 sec DPS als bonus
-- **Geluksregen** (🍀): 3× meer lieveheersbeestjes gedurende de buff
+- **Geluksregen** (🍀): 5× meer lieveheersbeestjes gedurende de buff
 
 ### Evolutiesysteem (prestige)
 
-- Beschikbaar wanneer je alle 12 diersoorten bezit
+- Beschikbaar wanneer je alle basisdieren bezit; vanaf 110 sterren moet je ook de eenhoorn hebben
 - Reset dieren en punten, behoud sterren (+5% DPS per ster)
 - Sterren gebaseerd op verdiende punten per run: `floor(log10(verdiend) - 9 - sterren×0.02)`. Graduele strafschaling voorkomt oneindig farmen; plafond rond ~400 sterren
 - Bij 3⭐: behoud offline upgrades. Bij 7⭐: klik-upgrades. Bij 12⭐: globale upgrades.
@@ -109,8 +110,8 @@ Vijf buffs (30 seconden actief, 60s met sterrenshop-perk):
 
 ### Kleurthema's
 
-11 thema's, elke 10 sterren een nieuw thema (0-100 sterren):
-- Oerwoud (standaard), Oceaan, Savanne, Bloesem, Middernacht, Vulkaan, Arctisch, Herfstbos, Koninklijk, Kosmos, Regenboog
+12 thema's, elke 10 sterren een nieuw thema (0-110 sterren):
+- Oerwoud (standaard), Oceaan, Savanne, Bloesem, Middernacht, Vulkaan, Arctisch, Herfstbos, Koninklijk, Kosmos, Drakenuur, Regenboog
 - Standaard: automatisch het hoogst vrijgespeelde thema
 - "Onthoud deze kleurstelling" toggle om handmatige keuze vast te zetten
 - Thema-definitie in `data.js` (`COLOR_THEMES`), toepassing in `ui.js` (`applyTheme`)
@@ -135,15 +136,15 @@ Vijf buffs (30 seconden actief, 60s met sterrenshop-perk):
 Na eerste evolutie beschikbaar. Perks kosten sterren en bieden permanente voordelen:
 - **Geluk**: hogere kans op lieveheersbeestjes, hogere beloning
 - **Evolutie**: behoud upgrades bij evolutie (offline, klik, globaal)
-- **Koop alles**: per diersoort (12×) en per upgradecategorie (4×) een "Koop alles"-knop, elk 2⭐
+- **Koop alles**: per diersoort (13×, inclusief eenhoorn) en per upgradecategorie (4×) een "Koop alles"-knop, elk 2⭐
 - **Synergieën**: bonussen voor combinaties van dieren
 
 ### Wolkendierentuin (Dierenhemel)
 
 Bij evolutie gaan bezeten dieren naar de "wolkendierentuin" — een apart tabblad met enclosures per dier:
-- **4 niveaus**: Wolkenweitje (gratis) → Wolkenverblijf (3⭐) → Wolkenpaleis (6⭐) → Gouden Paleis (10⭐)
-- **Gelukssysteem**: dieren hebben geluk (happiness) dat langzaam daalt; aaien en voeren verhoogt het
-- **Poep & sterren**: dieren produceren periodiek 💩 (elke 1,5–3 min afhankelijk van geluk). Er is een kans dat het een ⭐ is in plaats van poep: 20% bij geluk ≥90, 15% bij ≥60, 10% bij ≥30. Items blijven liggen tot de speler ze opruimt/verzamelt, max 3 per verblijf. Als alle 3 plekken vol zitten (bijv. 3x poep) komt er niks nieuws bij tot je opruimt.
+- **4 niveaus**: Wolkenweitje (gratis) → Wolkenverblijf (1⭐) → Wolkenpaleis (3⭐) → Gouden Paleis (7⭐)
+- **Gelukssysteem**: dieren hebben geluk (happiness) dat langzaam daalt; aaien verhoogt geluk en voeren vult hun voedselvoorraad aan
+- **Poep & sterren**: dieren produceren periodiek 💩 of soms ⭐ (elke 1,5–3 min afhankelijk van geluk, zolang ze voedsel hebben). Basiskans op een ster: 10% bij geluk ≥90, 7,5% bij ≥60, 5% bij ≥30, daarna halveert de kans per al gevonden zoo-ster in die evolutie. Items blijven liggen tot de speler ze opruimt/verzamelt, max 3 per verblijf.
 - **Verval**: geluk daalt per uur, hogere niveaus hebben minder verval (10/6/3/1 per uur)
 - **Naamgeving**: spelers geven hun dierentuin een eigen naam
 - Staat wordt opgeslagen in INI-formaat onder `[wolkendierentuin]`
@@ -160,6 +161,8 @@ Bij evolutie gaan bezeten dieren naar de "wolkendierentuin" — een apart tabbla
 - **Cooldown voortgangsbalken**: visueel balkje onder elke minigame-timer
 - **Milestone voortgang**: gouden balkje onder elk dier in de winkel (pas zichtbaar na eerste evolutie), details in tooltip
 - **Notificatie-badges**: groen bolletje op Dieren/Upgrades-tab als je iets kunt kopen, goud op Evolutie als je kunt evolueren. Verborgen op actieve tab.
+- **Lieveheersbeestjes**: willekeurige bonus-spawns met punten, buffs en jackpots
+- **Voerbeurs**: eindgame-markt die vrijkomt bij de eenhoorn, met prijsfluctuaties en inventaris
 - **DPS-uitsplitsing**: in statistieken een breakdown per diersoort met percentage, plus prestatie-/sterren-/buff-bonus
 - **DPS-tooltip op dieren**: hover toont aantal, DPS per stuk, totaal DPS, percentage en volgende milestone
 - **Toetsenbordsneltoetsen**: Spatie = klik (geen key-repeat), 1-5 = winkeltabs, G = games, S = statistieken
