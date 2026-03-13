@@ -989,6 +989,8 @@ function render() {
 
   // DPS
   const dps = getTotalDps();
+  const clickValue = getClickValue(dps);
+  const saleBuff = getActiveBuff('sale');
   document.getElementById('dps-display').textContent = formatDps(dps) + ' per seconde';
 
   // Big animal (hires image, no twemoji)
@@ -1005,93 +1007,101 @@ function render() {
     parseAppleEmoji(bigEl);
   }
   document.getElementById('animal-name').textContent = highest.name;
-  document.getElementById('click-info').textContent = '+' + formatNumber(Math.floor(getClickValue())) + ' per klik';
+  document.getElementById('click-info').textContent = '+' + formatNumber(Math.floor(clickValue)) + ' per klik';
 
   // Orbiters
   updateOrbiters();
 
   // Animal shop
-  const totalDps = getTotalDps();
-  ANIMALS.forEach(a => {
-    const el = document.getElementById('shop-' + a.id);
-    if (!el) return;
-    const count = state.animals[a.id] || 0;
-    const qty = buyMax ? Math.max(1, getMaxAffordable(a.id)) : buyMultiplier;
-    const totalPrice = getBulkPrice(a.id, qty);
-    const canAffordAll = state.currentPoints >= totalPrice;
-    const visible = isAnimalVisible(a.id);
-    el.classList.toggle('affordable', canAffordAll);
-    el.classList.toggle('locked', !visible);
-    document.getElementById('count-' + a.id).textContent = '×' + count;
-    const priceEl = document.getElementById('price-' + a.id);
-    const saleBuff = getActiveBuff('sale');
-    if (saleBuff) {
-      const unsaledTotal = (() => { let t = 0; for (let i = 0; i < qty; i++) t += Math.ceil(a.basePrice * Math.pow(COST_MULTIPLIER, count + i)); return t; })();
-      const priceColor = canAffordAll ? 'var(--green-light)' : 'var(--red)';
-      priceEl.innerHTML = (buyMax ? '<span style="font-size:10px;opacity:.6">' + qty + '×</span> ' : '') + '<s style="color:#ffa726;opacity:.6;font-size:.85em">' + formatNumber(unsaledTotal) + '</s> <span style="color:' + priceColor + '">' + formatNumber(totalPrice) + '</span>';
-    } else {
-      priceEl.innerHTML = (buyMax && qty > 1 ? '<span style="font-size:10px;opacity:.6">' + qty + '×</span> ' : '') + formatNumber(totalPrice);
-    }
-    // Tooltip with DPS info and milestone
-    const animalDps = getAnimalDps(a.id);
-    const animalTotalDps = animalDps * count;
-    const pct = totalDps > 0 && count > 0 ? (animalTotalDps / totalDps * 100) : 0;
-    if (count > 0) {
-      const nextMs = MILESTONES.find(m => count < m);
-      let tip = escHtml(a.name) + '|';
-      tip += escHtml(count + ' ' + (count === 1 ? a.name.toLowerCase() : a.plural));
-      tip += '<br>' + escHtml('+' + formatDps(animalDps) + '/s per stuk');
-      tip += '<br>' + escHtml(formatDps(animalTotalDps) + '/s totaal (' + pct.toFixed(1) + '%)');
-      if (nextMs) tip += '<br>' + escHtml('Volgende bonus bij ' + nextMs);
-      el.setAttribute('data-tip', tip);
-    } else {
-      el.setAttribute('data-tip', escHtml(a.name) + '|' + escHtml(a.flavor));
-    }
-    // Milestone progress bar
-    const msEl = document.getElementById('milestone-' + a.id);
-    if (msEl) {
-      const nextMs = MILESTONES.find(m => count < m);
-      if (nextMs && visible && state.prestige.timesReset > 0) {
-        const prevMs = MILESTONES[MILESTONES.indexOf(nextMs) - 1] || 0;
-        const pctMs = Math.min(100, Math.round((count - prevMs) / (nextMs - prevMs) * 100));
-        msEl.innerHTML = '<div class="milestone-bar"><div class="milestone-bar-fill" style="width:' + pctMs + '%"></div></div>';
+  const animalsTab = document.getElementById('tab-animals');
+  if (animalsTab && animalsTab.classList.contains('active')) {
+    ANIMALS.forEach(a => {
+      const el = document.getElementById('shop-' + a.id);
+      if (!el) return;
+      const count = state.animals[a.id] || 0;
+      const qty = buyMax ? Math.max(1, getMaxAffordable(a.id)) : buyMultiplier;
+      const totalPrice = getBulkPrice(a.id, qty);
+      const canAffordAll = state.currentPoints >= totalPrice;
+      const visible = isAnimalVisible(a.id);
+      el.classList.toggle('affordable', canAffordAll);
+      el.classList.toggle('locked', !visible);
+      document.getElementById('count-' + a.id).textContent = '×' + count;
+      const priceEl = document.getElementById('price-' + a.id);
+      if (saleBuff) {
+        const originalTotalPrice = (() => {
+          let total = 0;
+          let price = a.basePrice * Math.pow(COST_MULTIPLIER, count);
+          for (let i = 0; i < qty; i++) {
+            total += Math.ceil(price);
+            price *= COST_MULTIPLIER;
+          }
+          return total;
+        })();
+        const priceColor = canAffordAll ? 'var(--green-light)' : 'var(--red)';
+        priceEl.innerHTML = (buyMax ? '<span style="font-size:10px;opacity:.6">' + qty + '×</span> ' : '') + '<s style="color:#ffa726;opacity:.6;font-size:.85em">' + formatNumber(originalTotalPrice) + '</s> <span style="color:' + priceColor + '">' + formatNumber(totalPrice) + '</span>';
       } else {
-        msEl.innerHTML = '';
+        priceEl.innerHTML = (buyMax && qty > 1 ? '<span style="font-size:10px;opacity:.6">' + qty + '×</span> ' : '') + formatNumber(totalPrice);
       }
-    }
-  });
+      const animalDps = getAnimalDps(a.id);
+      const animalTotalDps = animalDps * count;
+      const pct = dps > 0 && count > 0 ? (animalTotalDps / dps * 100) : 0;
+      if (count > 0) {
+        const nextMs = MILESTONES.find(m => count < m);
+        let tip = escHtml(a.name) + '|';
+        tip += escHtml(count + ' ' + (count === 1 ? a.name.toLowerCase() : a.plural));
+        tip += '<br>' + escHtml('+' + formatDps(animalDps) + '/s per stuk');
+        tip += '<br>' + escHtml(formatDps(animalTotalDps) + '/s totaal (' + pct.toFixed(1) + '%)');
+        if (nextMs) tip += '<br>' + escHtml('Volgende bonus bij ' + nextMs);
+        el.setAttribute('data-tip', tip);
+      } else {
+        el.setAttribute('data-tip', escHtml(a.name) + '|' + escHtml(a.flavor));
+      }
+      const msEl = document.getElementById('milestone-' + a.id);
+      if (msEl) {
+        const nextMs = MILESTONES.find(m => count < m);
+        if (nextMs && visible && state.prestige.timesReset > 0) {
+          const prevMs = MILESTONES[MILESTONES.indexOf(nextMs) - 1] || 0;
+          const pctMs = Math.min(100, Math.round((count - prevMs) / (nextMs - prevMs) * 100));
+          msEl.innerHTML = '<div class="milestone-bar"><div class="milestone-bar-fill" style="width:' + pctMs + '%"></div></div>';
+        } else {
+          msEl.innerHTML = '';
+        }
+      }
+    });
+  }
 
   // Upgrades
   const allUpgradeSets = [CLICK_UPGRADES, GLOBAL_UPGRADES, OFFLINE_UPGRADES, ...ANIMALS.map(a => a.upgrades)];
-  allUpgradeSets.flat().forEach(u => {
-    const el = document.getElementById('upg-' + u.id);
-    if (!el) return;
-    const bought = !!state.upgrades[u.id];
-    el.classList.toggle('bought', bought);
-    el.classList.toggle('affordable', !bought && state.currentPoints >= u.cost);
-    // Check requirements
-    if (u.req !== undefined) {
-      const animal = ANIMALS.find(a => a.upgrades.some(au => au.id === u.id));
-      if (animal) {
-        const locked = (state.animals[animal.id] || 0) < u.req;
-        el.classList.toggle('locked', locked && !bought);
+  const upgradesTab = document.getElementById('tab-upgrades');
+  if (upgradesTab && upgradesTab.classList.contains('active')) {
+    allUpgradeSets.flat().forEach(u => {
+      const el = document.getElementById('upg-' + u.id);
+      if (!el) return;
+      const bought = !!state.upgrades[u.id];
+      el.classList.toggle('bought', bought);
+      el.classList.toggle('affordable', !bought && state.currentPoints >= u.cost);
+      if (u.req !== undefined) {
+        const animal = ANIMALS.find(a => a.upgrades.some(au => au.id === u.id));
+        if (animal) {
+          const locked = (state.animals[animal.id] || 0) < u.req;
+          el.classList.toggle('locked', locked && !bought);
+        }
       }
-    }
-    const priceEl = document.getElementById('upgprice-' + u.id);
-    if (priceEl) priceEl.textContent = bought ? 'Gekocht!' : formatNumber(u.cost);
-  });
-  // Buy-all button disabled state
-  ANIMALS.forEach(a => {
-    const btn = document.getElementById('buy-all-btn-' + a.id);
-    if (!btn) return;
-    const hasAffordable = a.upgrades.some(u => {
-      if (state.upgrades[u.id]) return false;
-      if (state.currentPoints < u.cost) return false;
-      if (u.req !== undefined && (state.animals[a.id] || 0) < u.req) return false;
-      return true;
+      const priceEl = document.getElementById('upgprice-' + u.id);
+      if (priceEl) priceEl.textContent = bought ? 'Gekocht!' : formatNumber(u.cost);
     });
-    btn.disabled = !hasAffordable;
-  });
+    ANIMALS.forEach(a => {
+      const btn = document.getElementById('buy-all-btn-' + a.id);
+      if (!btn) return;
+      const hasAffordable = a.upgrades.some(u => {
+        if (state.upgrades[u.id]) return false;
+        if (state.currentPoints < u.cost) return false;
+        if (u.req !== undefined && (state.animals[a.id] || 0) < u.req) return false;
+        return true;
+      });
+      btn.disabled = !hasAffordable;
+    });
+  }
 
   const upgSummary = document.querySelector('.upg-summary');
   if (upgSummary) {
@@ -1568,8 +1578,8 @@ function renderLeaderboard() {
     html += '</div>';
   }
 
-  // My position (if not in top 100)
-  if (_leaderboardData.me && _leaderboardData.me.rank > 100) {
+  // My position when you're outside the visible top 10
+  if (_leaderboardData.me && _leaderboardData.me.rank > 10) {
     html += '<div class="stat-heading">Jouw positie</div>';
     var e = _leaderboardData.me;
     html += '<div class="lb-table">';
@@ -1714,6 +1724,7 @@ function showMidTab(tabId) {
   if (tabId === 'starshop') buildStarShop();
   if (tabId === 'leaderboard') { submitLeaderboard(); setTimeout(fetchLeaderboard, 500); }
   try { localStorage.setItem('dk_midtab', tabId); } catch(e) {}
+  render();
 }
 
 function showShopTab(tabId) {
@@ -1724,6 +1735,7 @@ function showShopTab(tabId) {
   if (tabId === 'achievements') buildAchievements();
   if (tabId === 'evolution') buildEvolution();
   try { localStorage.setItem('dk_shoptab', tabId); } catch(e) {}
+  render();
 }
 
 function showMobilePanel(panel) {
@@ -2155,7 +2167,7 @@ function renderVoerbeursCombinedChart() {
 let autoClickAccum = 0;
 function tick() {
   const now = Date.now();
-  const dt = Math.min((now - state.lastTick) / 1000, 1); // cap at 1 second per tick
+  const dt = Math.min((now - state.lastTick) / 1000, MAX_TICK_CATCHUP_SECONDS);
   state.lastTick = now;
 
   const dps = getTotalDps();
@@ -2166,12 +2178,12 @@ function tick() {
   state.allTime.totalEarned += earned;
   state.allTime.playTimeSeconds += dt;
 
-  // Auto-click perk (1x per second)
+  // Auto-click perk (1x per second), including short catch-up after throttling.
   if (hasPerk('sp_auto')) {
     autoClickAccum += dt;
-    if (autoClickAccum >= 1) {
+    while (autoClickAccum >= 1) {
       autoClickAccum -= 1;
-      const value = getClickValue();
+      const value = getClickValue(dps);
       state.currentPoints += value;
       state.totalEarned += value;
       state.allTime.totalEarned += value;

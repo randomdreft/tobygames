@@ -66,6 +66,7 @@ const COLOR_THEMES = [
 const AUTOSAVE_INTERVAL = 30000; // 30 sec
 const TICK_INTERVAL = 100;       // 100ms
 const RENDER_INTERVAL = 250;     // 250ms
+const MAX_TICK_CATCHUP_SECONDS = 60; // catch up short throttling/background pauses
 const QUIZ_COOLDOWN = 180000;    // 3 min
 const CATCHER_COOLDOWN = 300000; // 5 min
 const MATH_COOLDOWN = 180000;    // 3 min
@@ -454,4 +455,3 @@ const QUIZ_QUESTIONS = [
   {q:"Welk dier kan het langst onder water blijven?", a:["Lederschildpad","Dolfijn","Walvis","Krokodil"], c:0},
   {q:"Wat is het kleinste vogeltje?", a:["Bijkolibrie","Winterkoning","Pimpelmees","Goudhaantje"], c:0}
 ];
-

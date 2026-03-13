@@ -91,12 +91,15 @@ function getAnimalPrice(animalId) {
 }
 
 function getBulkPrice(animalId, qty) {
+  if (qty <= 0) return 0;
   const a = ANIMALS.find(x => x.id === animalId);
   const count = state.animals[animalId] || 0;
   const saleMult = getActiveBuff('sale') ? (1 - 0.5 * getBuffStrength()) : 1;
   let total = 0;
+  let price = a.basePrice * Math.pow(COST_MULTIPLIER, count) * saleMult;
   for (let i = 0; i < qty; i++) {
-    total += Math.ceil(a.basePrice * Math.pow(COST_MULTIPLIER, count + i) * saleMult);
+    total += Math.ceil(price);
+    price *= COST_MULTIPLIER;
   }
   return total;
 }
@@ -139,7 +142,7 @@ function getTotalDps() {
   return total;
 }
 
-function getClickValue() {
+function getClickValue(currentDps) {
   let base = 1;
   let dpsPct = 0;
   CLICK_UPGRADES.forEach(u => {
@@ -152,7 +155,8 @@ function getClickValue() {
   base *= (1 + state.prestige.stars * PRESTIGE_BONUS);
   // Active buff effects on clicks
   if (getActiveBuff('clickdps')) dpsPct += 20 * getBuffStrength();
-  return base + getTotalDps() * (dpsPct / 100);
+  const dps = currentDps !== undefined ? currentDps : getTotalDps();
+  return base + dps * (dpsPct / 100);
 }
 
 function getOfflinePercent() {
@@ -189,11 +193,11 @@ function getMaxAffordable(animalId) {
   const saleMult = getActiveBuff('sale') ? (1 - 0.5 * getBuffStrength()) : 1;
   let remaining = state.currentPoints;
   let qty = 0;
-  while (qty < 10000) {
-    const price = Math.ceil(a.basePrice * Math.pow(COST_MULTIPLIER, count + qty) * saleMult);
-    if (remaining < price) break;
-    remaining -= price;
+  let price = a.basePrice * Math.pow(COST_MULTIPLIER, count) * saleMult;
+  while (remaining >= Math.ceil(price)) {
+    remaining -= Math.ceil(price);
     qty++;
+    price *= COST_MULTIPLIER;
   }
   return qty;
 }
@@ -1137,4 +1141,3 @@ function voerbeursSell(assetId) {
   state.stats.voerbeursEarned += revenue;
   sfxBuy();
 }
-
