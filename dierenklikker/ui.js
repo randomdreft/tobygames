@@ -1019,8 +1019,10 @@ function render() {
       const el = document.getElementById('shop-' + a.id);
       if (!el) return;
       const count = state.animals[a.id] || 0;
-      const qty = buyMax ? Math.max(1, getMaxAffordable(a.id)) : buyMultiplier;
-      const totalPrice = getBulkPrice(a.id, qty);
+      const maxQty = buyMax ? getMaxAffordable(a.id) : buyMultiplier;
+      const displayQty = buyMax ? maxQty : buyMultiplier;
+      const priceQty = buyMax ? Math.max(1, maxQty) : buyMultiplier;
+      const totalPrice = getBulkPrice(a.id, priceQty);
       const canAffordAll = state.currentPoints >= totalPrice;
       const visible = isAnimalVisible(a.id);
       el.classList.toggle('affordable', canAffordAll);
@@ -1031,16 +1033,16 @@ function render() {
         const originalTotalPrice = (() => {
           let total = 0;
           let price = a.basePrice * Math.pow(COST_MULTIPLIER, count);
-          for (let i = 0; i < qty; i++) {
+          for (let i = 0; i < priceQty; i++) {
             total += Math.ceil(price);
             price *= COST_MULTIPLIER;
           }
           return total;
         })();
         const priceColor = canAffordAll ? 'var(--green-light)' : 'var(--red)';
-        priceEl.innerHTML = (buyMax ? '<span style="font-size:10px;opacity:.6">' + qty + '×</span> ' : '') + '<s style="color:#ffa726;opacity:.6;font-size:.85em">' + formatNumber(originalTotalPrice) + '</s> <span style="color:' + priceColor + '">' + formatNumber(totalPrice) + '</span>';
+        priceEl.innerHTML = (buyMax ? '<span style="font-size:10px;opacity:.6">' + displayQty + '×</span> ' : '') + '<s style="color:#ffa726;opacity:.6;font-size:.85em">' + formatNumber(originalTotalPrice) + '</s> <span style="color:' + priceColor + '">' + formatNumber(totalPrice) + '</span>';
       } else {
-        priceEl.innerHTML = (buyMax && qty > 1 ? '<span style="font-size:10px;opacity:.6">' + qty + '×</span> ' : '') + formatNumber(totalPrice);
+        priceEl.innerHTML = (buyMax ? '<span style="font-size:10px;opacity:.6">' + displayQty + '×</span> ' : '') + formatNumber(totalPrice);
       }
       const animalDps = getAnimalDps(a.id);
       const animalTotalDps = animalDps * count;
@@ -1112,22 +1114,23 @@ function render() {
     upgSummary.textContent = boughtCount + '/' + totalCount + ' upgrades (' + pctUpg + '%)';
   }
 
-  // Achievements (update earned status)
-  achievementDefs.forEach(a => {
-    const el = document.getElementById('ach-' + a.id);
-    if (!el) return;
-    const e = !!state.achievements[a.id];
-    el.classList.toggle('earned', e);
-    el.classList.toggle('unearned', !e);
-    el.setAttribute('data-tip', e || achSpoilerActive ? escHtml(a.name) + '|' + escHtml(a.desc) : '???|Nog niet ontgrendeld');
-  });
+  const achievementsTab = document.getElementById('tab-achievements');
+  if (achievementsTab && achievementsTab.classList.contains('active')) {
+    achievementDefs.forEach(a => {
+      const el = document.getElementById('ach-' + a.id);
+      if (!el) return;
+      const e = !!state.achievements[a.id];
+      el.classList.toggle('earned', e);
+      el.classList.toggle('unearned', !e);
+      el.setAttribute('data-tip', e || achSpoilerActive ? escHtml(a.name) + '|' + escHtml(a.desc) : '???|Nog niet ontgrendeld');
+    });
 
-  // Achievement summary
-  const achSummary = document.querySelector('.ach-summary');
-  if (achSummary) {
-    const earned = Object.keys(state.achievements).filter(k => state.achievements[k]).length;
-    const pct = achievementDefs.length ? Math.floor(earned / achievementDefs.length * 100) : 0;
-    achSummary.textContent = earned + '/' + achievementDefs.length + ' prestaties (' + pct + '%) — elke prestatie geeft +2% DPS!';
+    const achSummary = document.querySelector('.ach-summary');
+    if (achSummary) {
+      const earned = Object.keys(state.achievements).filter(k => state.achievements[k]).length;
+      const pct = achievementDefs.length ? Math.floor(earned / achievementDefs.length * 100) : 0;
+      achSummary.textContent = earned + '/' + achievementDefs.length + ' prestaties (' + pct + '%) — elke prestatie geeft +2% DPS!';
+    }
   }
 
   // Prestige button + score preview (kept in sync)
@@ -1234,8 +1237,8 @@ function render() {
   // Daily challenges
   renderDailyChallenges();
 
-  // Stats
-  renderStats();
+  const statsTab = document.getElementById('mid-stats');
+  if (statsTab && statsTab.classList.contains('active')) renderStats();
 
   // Notification badges on shop tabs
   updateTabBadges();
@@ -1616,7 +1619,8 @@ function escapeHtml(str) {
 }
 
 function toggleLeaderboardFilter() {
-  _leaderboardTrustedOnly = !_leaderboardTrustedOnly;
+  const checkbox = document.getElementById('lb-trusted');
+  _leaderboardTrustedOnly = checkbox ? checkbox.checked : !_leaderboardTrustedOnly;
   fetchLeaderboard();
 }
 
