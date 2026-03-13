@@ -121,6 +121,14 @@ function calculateTrust(data) {
     reasons.push('sterren zonder dieren');
   }
 
+  // 9. Play time can't exceed time since game launch (26 feb 2026)
+  const GAME_BIRTH = new Date('2026-02-26T00:00:00Z').getTime();
+  const maxPossibleSeconds = (Date.now() - GAME_BIRTH) / 1000;
+  if (playTime > maxPossibleSeconds) {
+    trust -= 50;
+    reasons.push('speeltijd onmogelijk');
+  }
+
   return { score: Math.max(0, Math.min(100, trust)), reasons };
 }
 
