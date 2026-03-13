@@ -39,6 +39,24 @@ function saveLeaderboard() {
   }
 }
 
+function recalcTrust() {
+  let changed = 0;
+  for (const entry of leaderboard) {
+    const result = calculateTrust(entry);
+    if (entry.trust !== result.score || JSON.stringify(entry.trustReasons) !== JSON.stringify(result.reasons)) {
+      console.log('Recalc trust: ' + entry.zooName + ' ' + entry.trust + ' -> ' + result.score + ' [' + result.reasons.join(', ') + ']');
+      entry.trust = result.score;
+      entry.trustReasons = result.reasons;
+      changed++;
+    }
+  }
+  if (changed > 0) {
+    leaderboard.sort((a, b) => b.score - a.score);
+    saveLeaderboard();
+    console.log('Recalculated trust for ' + changed + ' entries');
+  }
+}
+
 // Anti-cheat: calculate trust score (0-100)
 // 12 animals in order of cost: mier, slak, kikker, kip, kat, hond, lama, paard, panda, olifant, walvis, draak
 const ANIMAL_ORDER = ['mier','slak','kikker','kip','kat','hond','lama','paard','panda','olifant','walvis','draak'];
@@ -319,8 +337,9 @@ function serveFile(filePath, res) {
   stream.on('error', () => { res.writeHead(500); res.end('Error'); });
 }
 
-// Load leaderboard data on startup
+// Load leaderboard data on startup and recalculate trust scores
 loadLeaderboard();
+recalcTrust();
 
 server.listen(PORT, '0.0.0.0', () => {
   console.log('TobyGames server running on port ' + PORT);
