@@ -119,6 +119,11 @@ function formatTime(seconds) {
   return d + 'd ' + (h%24) + 'u';
 }
 
+function saveNumber(n) {
+  if (n === undefined || n === null || isNaN(n) || !isFinite(n)) return '0';
+  return String(n);
+}
+
 /* ================================================================
    SECTIE 4: SAVEGAME (INI formaat)
    ================================================================ */
@@ -135,10 +140,10 @@ function stateToIni() {
   lines.push('');
   lines.push('[speler]');
   lines.push('dierentuin_naam=' + (state.zooName || ''));
-  lines.push('punten=' + Math.floor(state.currentPoints));
-  lines.push('totaal_verdiend=' + Math.floor(state.totalEarned));
-  lines.push('totaal_klikken=' + state.totalClicks);
-  lines.push('speeltijd=' + Math.floor(state.playTimeSeconds));
+  lines.push('punten=' + saveNumber(state.currentPoints));
+  lines.push('totaal_verdiend=' + saveNumber(state.totalEarned));
+  lines.push('totaal_klikken=' + saveNumber(state.totalClicks));
+  lines.push('speeltijd=' + saveNumber(state.playTimeSeconds));
   lines.push('');
   lines.push('[dieren]');
   ANIMALS.forEach(a => lines.push(a.id + '=' + (state.animals[a.id] || 0)));
@@ -160,10 +165,10 @@ function stateToIni() {
   Object.keys(state.prestige.perks || {}).forEach(id => { if (state.prestige.perks[id]) lines.push(id + '=1'); });
   lines.push('');
   lines.push('[allertijden]');
-  lines.push('totaal_klikken=' + state.allTime.totalClicks);
-  lines.push('totaal_verdiend=' + Math.floor(state.allTime.totalEarned));
-  lines.push('totaal_dieren=' + state.allTime.totalAnimals);
-  lines.push('speeltijd=' + Math.floor(state.allTime.playTimeSeconds));
+  lines.push('totaal_klikken=' + saveNumber(state.allTime.totalClicks));
+  lines.push('totaal_verdiend=' + saveNumber(state.allTime.totalEarned));
+  lines.push('totaal_dieren=' + saveNumber(state.allTime.totalAnimals));
+  lines.push('speeltijd=' + saveNumber(state.allTime.playTimeSeconds));
   lines.push('dieren_gehad=' + Object.keys(state.allTime.animalsOwned || {}).join(','));
   lines.push('');
   lines.push('[statistieken]');
@@ -278,6 +283,45 @@ function sanitizeZooName(raw) {
     return false;
   }).join('').trim();
   return cleaned.slice(0, 20);
+}
+
+function getHighestUnlockedThemeId(stars) {
+  let best = COLOR_THEMES[0];
+  COLOR_THEMES.forEach(t => {
+    if (t.stars <= stars) best = t;
+  });
+  return best.id;
+}
+
+function normalizeLoadedState(s) {
+  if (!s || !s.prestige) return s;
+
+  const themeExists = COLOR_THEMES.some(t => t.id === s.prestige.theme);
+  if (!themeExists) {
+    s.prestige.theme = getHighestUnlockedThemeId(s.prestige.stars || 0);
+    s.prestige.themeLocked = false;
+  } else {
+    const theme = COLOR_THEMES.find(t => t.id === s.prestige.theme);
+    if (theme && theme.stars > (s.prestige.stars || 0)) {
+      s.prestige.themeLocked = false;
+      s.prestige.theme = getHighestUnlockedThemeId(s.prestige.stars || 0);
+    } else if (!s.prestige.themeLocked) {
+      s.prestige.theme = getHighestUnlockedThemeId(s.prestige.stars || 0);
+    }
+  }
+
+  if (!Array.isArray(s.daily.completed)) s.daily.completed = [];
+  const targetLen = Array.isArray(s.daily.challenges) ? s.daily.challenges.length : 0;
+  if (s.daily.completed.length < targetLen) {
+    while (s.daily.completed.length < targetLen) s.daily.completed.push(false);
+  } else if (s.daily.completed.length > targetLen) {
+    s.daily.completed = s.daily.completed.slice(0, targetLen);
+  }
+
+  if (!Array.isArray(s.daily.uniqueMinigames)) s.daily.uniqueMinigames = [];
+  s.daily.uniqueMinigames = [...new Set(s.daily.uniqueMinigames.filter(Boolean))];
+
+  return s;
 }
 
 function iniToState(text) {
@@ -479,7 +523,7 @@ function iniToState(text) {
   }
 
   s.lastTick = Date.now();
-  return s;
+  return normalizeLoadedState(s);
 }
 
 function saveGame() {
@@ -579,26 +623,33 @@ function doImport() {
     return;
   }
   loaded.lastTick = Date.now();
+  if (typeof clearTransientGameRuntime === 'function') clearTransientGameRuntime();
   state = loaded;
+  cleanupObsoleteAchievements();
   // Award the hacker achievement
   if (!state.achievements['savegame_hacker']) {
     state.achievements['savegame_hacker'] = 1;
     showToast('🏆 Prestatie: Savegame Hacker!');
   }
   closeModal('import-modal');
+  if (typeof applyTheme === 'function') applyTheme(state.prestige.theme || 'oerwoud');
   saveGame();
   buildShop();
   renderZooName();
+  if (typeof render === 'function') render();
   parseAppleEmoji(document.body);
   showToast('Savegame geladen!');
 }
 
 function resetGame() {
   if (!confirm('Weet je het zeker? Je verliest ALLES!')) return;
+  if (typeof clearTransientGameRuntime === 'function') clearTransientGameRuntime();
   state = defaultState();
   localStorage.removeItem('dierenklikker_save');
+  if (typeof applyTheme === 'function') applyTheme(state.prestige.theme || 'oerwoud');
   buildShop();
   renderZooName();
+  if (typeof render === 'function') render();
   parseAppleEmoji(document.body);
   showToast('Spel gereset!');
 }

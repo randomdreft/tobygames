@@ -2168,6 +2168,22 @@ function renderVoerbeursCombinedChart() {
    ================================================================ */
 
 let autoClickAccum = 0;
+
+function clearTransientGameRuntime() {
+  if (typeof cancelAllMinigames === 'function') cancelAllMinigames();
+  stopZooTick();
+  const hemel = document.getElementById('dierenhemel');
+  if (hemel) hemel.classList.remove('show');
+  document.querySelectorAll('.zoo-star, .zoo-poop, .lucky-bug, .lucky-miss').forEach(el => el.remove());
+  luckyActive = [];
+  luckyRecentCatch = 0;
+  luckyNextSpawn = 0;
+  activeBuffs = [];
+  autoClickAccum = 0;
+  buyMultiplier = 1;
+  buyMax = false;
+}
+
 function tick() {
   const now = Date.now();
   const dt = Math.min((now - state.lastTick) / 1000, MAX_TICK_CATCHUP_SECONDS);
