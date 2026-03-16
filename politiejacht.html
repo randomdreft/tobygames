@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Politiejacht - TobyGames</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚔</text></svg>">
-<link rel="stylesheet" href="politiejacht/style.css">
+<link rel="stylesheet" href="politiejacht/style.css?v=2">
 </head>
 <body>
 <a href="index.html" class="back-btn">&larr; TobyGames</a>
@@ -26,6 +26,7 @@
             <span id="time-display">0:00</span>
             <span id="collected-display">0 &#x26FD;</span>
         </div>
+        <div id="powerup-display" style="display:none"></div>
     </div>
 
     <!-- Start Screen -->
@@ -34,7 +35,7 @@
         <p>
             Vlucht voor de politie door de stad!
             Rijden kost brandstof &mdash; verzamel jerrycans om je tank te vullen.
-            Hoeveel brandstof kun jij overhouden?
+            Pak power-ups, ontwijk spike strips en wegblokkades!
         </p>
         <div id="mode-toggle">
             <button id="mode-fuel" class="mode-btn active">&#x26FD; Benzine</button>
@@ -62,6 +63,7 @@
     <div id="gameover-screen" class="overlay" style="display:none">
         <h1 id="gameover-title">&#x1F4A5; Gepakt!</h1>
         <div id="gameover-reason"></div>
+        <div id="gameover-stats"></div>
         <div id="final-score">Score: <span id="score-value">0</span></div>
         <div id="scoreboard">
             <h3>&#x1F3C6; Top 10</h3>
@@ -74,10 +76,13 @@
     <div id="joystick-base">
         <div id="joystick-knob"></div>
     </div>
+
+    <!-- Power-up deploy button (mobile) -->
+    <button id="powerup-btn" style="display:none">&#x1F6E2;&#xFE0F;</button>
 </div>
 
-<script src="politiejacht/sound.js"></script>
-<script src="politiejacht/renderer.js"></script>
-<script src="politiejacht/game.js"></script>
+<script src="politiejacht/sound.js?v=2"></script>
+<script src="politiejacht/renderer.js?v=2"></script>
+<script src="politiejacht/game.js?v=2"></script>
 </body>
 </html>

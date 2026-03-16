@@ -268,6 +268,52 @@ body {
 .score-date { color: var(--text-dim); width: 70px; text-align: right; }
 .score-empty { color: var(--text-dim); font-style: italic; padding: 8px 0; }
 
+/* Power-up display */
+#powerup-display {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    background: rgba(0,0,0,0.45);
+    backdrop-filter: blur(8px);
+    border-radius: 12px;
+    padding: 4px 14px;
+    font-weight: 700;
+    font-size: 14px;
+    min-width: 100px;
+}
+
+#gameover-stats {
+    font-size: 14px;
+    color: var(--text-dim);
+    margin-bottom: 4px;
+}
+
+/* Power-up deploy button (mobile) */
+#powerup-btn {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    z-index: 75;
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    border: 3px solid rgba(255,255,255,0.35);
+    background: rgba(0,0,0,0.45);
+    backdrop-filter: blur(6px);
+    color: white;
+    font-size: 26px;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+}
+#powerup-btn:active {
+    background: rgba(255,255,255,0.2);
+    transform: scale(0.92);
+}
+
 /* Joystick */
 #joystick-base {
     display: none;
