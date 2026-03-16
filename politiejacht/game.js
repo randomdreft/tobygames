@@ -25,6 +25,38 @@ const BUILDING_COLORS = [
     '#5a7a6a', '#6a8a7a', '#4a6a5a',
 ];
 
+// Cars (unlockable)
+const CARS = [
+    { id: 'standaard', name: 'Standaard', color: null,
+      speed: 1.0, accel: 1.0, fuel: 1.0, turn: 1.0,
+      desc: 'Betrouwbaar en gebalanceerd', unlock: null },
+    { id: 'speedster', name: 'Speedster', color: '#3498db',
+      speed: 1.15, accel: 1.1, fuel: 0.85, turn: 1.0,
+      desc: 'Snel maar dorstig',
+      unlock: { desc: 'Overleef 1 minuut', check: s => s.bestTime >= 60 } },
+    { id: 'tank', name: 'Tank', color: '#2c3e50',
+      speed: 0.85, accel: 0.9, fuel: 1.35, turn: 0.9,
+      desc: 'Langzaam maar zuinig',
+      unlock: { desc: 'Verzamel 15 jerrycans', check: s => s.bestCollected >= 15 } },
+    { id: 'racer', name: 'Racer', color: '#f39c12',
+      speed: 1.25, accel: 1.2, fuel: 0.75, turn: 1.1,
+      desc: 'Razend\u200Bsnel, weinig bereik',
+      unlock: { desc: 'Overleef 2 minuten', check: s => s.bestTime >= 120 } },
+    { id: 'suv', name: 'SUV', color: '#1a1a2e',
+      speed: 0.9, accel: 0.95, fuel: 1.2, turn: 1.15,
+      desc: 'Zwaar maar wendbaar',
+      unlock: { desc: 'Score 30+', check: s => s.bestScore >= 30 } },
+];
+
+// Waves
+const WAVES = [
+    { time: 0, name: 'Ontsnap!', sub: 'Vlucht voor de politie' },
+    { time: 30, name: 'Versterking!', sub: 'Meer politie op komst' },
+    { time: 60, name: 'Spike Strips!', sub: 'Pas op voor nagels op de weg' },
+    { time: 90, name: 'Wegblokkades!', sub: 'De wegen worden afgezet' },
+    { time: 120, name: 'Eindspurt!', sub: 'Maximale druk!' },
+];
+
 // NPC Traffic
 const TRAFFIC_COUNT = 10;
 const TRAFFIC_COLORS = [
@@ -145,6 +177,14 @@ class Game {
         this.jerrycanTimer = 0;
         this.countdownVal = 3;
 
+        // Persistent stats & car selection
+        this.playerStats = this.loadStats();
+        this.selectedCar = 0;
+
+        // Wave system
+        this.currentWave = 0;
+        this.waveAnnouncement = null;
+
         this.highScores = this.loadHighScores();
         this.sound = new SoundManager();
         this.renderer = new Renderer(this);
@@ -175,25 +215,43 @@ class Game {
         this.buildings = [];
         _buildings = this.buildings;
         for (let i = 0; i < GRID_N * GRID_N; i++) {
-            const isPark = Math.random() < 0.12;
-            if (isPark) {
+            const roll = Math.random();
+            if (roll < 0.12) {
+                // Park (some with pond)
                 const trees = [];
                 const n = 4 + Math.floor(Math.random() * 5);
                 for (let t = 0; t < n; t++) {
                     trees.push({ x: 0.15 + Math.random() * 0.7, y: 0.15 + Math.random() * 0.7 });
                 }
-                this.buildings.push({ isPark: true, trees });
+                this.buildings.push({
+                    isPark: true, trees,
+                    hasPond: Math.random() < 0.35,
+                    pondX: 0.3 + Math.random() * 0.4,
+                    pondY: 0.3 + Math.random() * 0.4
+                });
             } else {
                 const base = BUILDING_COLORS[Math.floor(Math.random() * BUILDING_COLORS.length)];
                 const r = parseInt(base.slice(1, 3), 16);
                 const g = parseInt(base.slice(3, 5), 16);
                 const b = parseInt(base.slice(5, 7), 16);
-                const roofColor = `rgb(${Math.floor(r * 0.75)},${Math.floor(g * 0.75)},${Math.floor(b * 0.75)})`;
+                const roofColor = `rgb(${Math.floor(r * 0.7)},${Math.floor(g * 0.7)},${Math.floor(b * 0.7)})`;
+                // Assign building type
+                const typeRoll = Math.random();
+                let type;
+                if (typeRoll < 0.30) type = 'standard';
+                else if (typeRoll < 0.45) type = 'tall';
+                else if (typeRoll < 0.60) type = 'shop';
+                else if (typeRoll < 0.80) type = 'apartment';
+                else type = 'warehouse';
+                const awningColors = ['#c0392b', '#2980b9', '#27ae60', '#8e44ad', '#d35400', '#f39c12'];
                 this.buildings.push({
-                    isPark: false,
-                    color: base,
-                    roofColor,
-                    lit: Math.random() > 0.4
+                    isPark: false, type,
+                    color: base, roofColor,
+                    lit: Math.random() > 0.4,
+                    awningColor: awningColors[Math.floor(Math.random() * awningColors.length)],
+                    floors: type === 'tall' ? 5 : type === 'apartment' ? 4 : 3,
+                    hasAntenna: type === 'tall' && Math.random() < 0.6,
+                    garageSide: Math.floor(Math.random() * 4) // 0=top,1=right,2=bottom,3=left
                 });
             }
         }
@@ -294,12 +352,14 @@ class Game {
             document.getElementById('mode-fuel').classList.add('active');
             document.getElementById('mode-ev').classList.remove('active');
             this._updateModeLabels();
+            this._updateCarUI();
         });
         document.getElementById('mode-ev').addEventListener('click', () => {
             this.evMode = true;
             document.getElementById('mode-ev').classList.add('active');
             document.getElementById('mode-fuel').classList.remove('active');
             this._updateModeLabels();
+            this._updateCarUI();
         });
 
         document.getElementById('start-btn').addEventListener('click', () => this.startCountdown());
@@ -309,7 +369,34 @@ class Game {
         const pBtn = document.getElementById('powerup-btn');
         if (pBtn) pBtn.addEventListener('click', () => this.deployPowerup());
 
+        // Car selector
+        const carPrev = document.getElementById('car-prev');
+        const carNext = document.getElementById('car-next');
+        if (carPrev) carPrev.addEventListener('click', () => {
+            let idx = this.selectedCar - 1;
+            if (idx < 0) idx = CARS.length - 1;
+            this.selectCar(idx);
+        });
+        if (carNext) carNext.addEventListener('click', () => {
+            let idx = this.selectedCar + 1;
+            if (idx >= CARS.length) idx = 0;
+            this.selectCar(idx);
+        });
+
+        // Generate car dots
+        const dotsEl = document.getElementById('car-dots');
+        if (dotsEl) {
+            dotsEl.innerHTML = CARS.map((c, i) =>
+                `<span class="car-dot${i === 0 ? ' active' : ''}${this.isCarUnlocked(i) ? ' unlocked' : ''}" data-idx="${i}"></span>`
+            ).join('');
+            dotsEl.addEventListener('click', e => {
+                const idx = e.target.dataset.idx;
+                if (idx != null) this.selectCar(parseInt(idx));
+            });
+        }
+
         this._updateModeLabels();
+        this._updateCarUI();
         this.updateScoreboard();
     }
 
@@ -320,6 +407,8 @@ class Game {
     // === GAME FLOW ===
 
     startCountdown() {
+        // Fall back to standard if selected car is locked
+        if (!this.isCarUnlocked(this.selectedCar)) this.selectedCar = 0;
         this.sound.init();
         this.state = 'countdown';
         this.countdownVal = 3;
@@ -395,6 +484,10 @@ class Game {
         // Initial jerrycans
         this.jerrycans = [];
         for (let i = 0; i < 5; i++) this._spawnJerrycan();
+
+        // Wave system
+        this.currentWave = 0;
+        this.waveAnnouncement = { name: WAVES[0].name, sub: WAVES[0].sub, timer: 2.5 };
 
         // NPC traffic
         this.traffic = [];
@@ -590,6 +683,13 @@ class Game {
         const score = Math.max(0, Math.round(this.fuel));
         this.saveScore(score);
 
+        // Update persistent stats
+        this.playerStats.totalGames++;
+        this.playerStats.bestTime = Math.max(this.playerStats.bestTime, Math.floor(this.time));
+        this.playerStats.bestScore = Math.max(this.playerStats.bestScore, score);
+        this.playerStats.bestCollected = Math.max(this.playerStats.bestCollected, this.collected);
+        this.saveStats();
+
         document.getElementById('gameover-title').textContent =
             reason === 'caught' ? '\u{1F4A5} Gepakt!' : (this.evMode ? '\u{1F50B} Batterij leeg!' : '\u26FD Tank leeg!');
         document.getElementById('gameover-reason').textContent =
@@ -636,6 +736,17 @@ class Game {
         dt = Math.min(dt, 0.05);
         this.time += dt;
 
+        // Wave transitions
+        if (this.currentWave < WAVES.length - 1 && this.time >= WAVES[this.currentWave + 1].time) {
+            this.currentWave++;
+            const w = WAVES[this.currentWave];
+            this.waveAnnouncement = { name: w.name, sub: w.sub, timer: 2.5 };
+        }
+        if (this.waveAnnouncement) {
+            this.waveAnnouncement.timer -= dt;
+            if (this.waveAnnouncement.timer <= 0) this.waveAnnouncement = null;
+        }
+
         this.updatePlayer(dt);
         this.updatePolice(dt);
         this.updateTraffic(dt);
@@ -653,9 +764,10 @@ class Game {
     updatePlayer(dt) {
         const p = this.player;
         const k = this.keys;
+        const car = CARS[this.selectedCar];
 
-        // Effective max speed (boost / slow)
-        let maxSpeed = PLAYER_MAX_SPEED;
+        // Effective max speed (car + boost / slow)
+        let maxSpeed = PLAYER_MAX_SPEED * car.speed;
         if (this.speedBoostTimer > 0) maxSpeed *= SPEED_BOOST_MULT;
         if (this.playerSlow > 0) maxSpeed *= 0.5;
 
@@ -682,9 +794,9 @@ class Game {
             }
         }
 
-        // Acceleration
+        // Acceleration (with car multiplier)
         if (accelInput > 0) {
-            p.speed += PLAYER_ACCEL * dt;
+            p.speed += PLAYER_ACCEL * car.accel * dt;
         } else if (accelInput < 0) {
             p.speed -= PLAYER_BRAKE * dt;
         } else {
@@ -693,10 +805,10 @@ class Game {
         }
         p.speed = clamp(p.speed, -maxSpeed * 0.4, maxSpeed);
 
-        // Turning
+        // Turning (with car handling)
         const speedFactor = Math.min(Math.abs(p.speed) / 50, 1);
         const turnDir = p.speed >= 0 ? 1 : -1;
-        p.angle += turnInput * PLAYER_TURN * speedFactor * turnDir * dt;
+        p.angle += turnInput * PLAYER_TURN * car.turn * speedFactor * turnDir * dt;
 
         // Movement with collision
         const moveX = Math.cos(p.angle) * p.speed * dt;
@@ -985,8 +1097,9 @@ class Game {
     }
 
     updateFuel(dt) {
-        const speedRatio = Math.abs(this.player.speed) / PLAYER_MAX_SPEED;
-        const drain = FUEL_IDLE_DRAIN + speedRatio * FUEL_MOVE_DRAIN;
+        const car = CARS[this.selectedCar];
+        const speedRatio = Math.abs(this.player.speed) / (PLAYER_MAX_SPEED * car.speed);
+        const drain = (FUEL_IDLE_DRAIN + speedRatio * FUEL_MOVE_DRAIN) / car.fuel;
         this.fuel -= drain * dt;
         if (this.fuel <= 0) {
             this.fuel = 0;
@@ -1280,6 +1393,73 @@ class Game {
     }
 
     // === HIGH SCORES ===
+
+    // === STATS & CAR SELECTION ===
+
+    loadStats() {
+        try {
+            const d = localStorage.getItem('politiejacht_stats');
+            return d ? JSON.parse(d) : { bestTime: 0, bestScore: 0, bestCollected: 0, totalGames: 0 };
+        } catch (e) { return { bestTime: 0, bestScore: 0, bestCollected: 0, totalGames: 0 }; }
+    }
+
+    saveStats() {
+        try {
+            localStorage.setItem('politiejacht_stats', JSON.stringify(this.playerStats));
+        } catch (e) { /* silent */ }
+    }
+
+    isCarUnlocked(idx) {
+        if (idx === 0) return true;
+        const car = CARS[idx];
+        return car.unlock && car.unlock.check(this.playerStats);
+    }
+
+    selectCar(idx) {
+        if (idx < 0 || idx >= CARS.length) return;
+        // Show the card (even if locked, so player sees what to unlock)
+        this.selectedCar = idx;
+        this._updateCarUI();
+    }
+
+    _updateCarUI() {
+        const card = document.getElementById('car-card');
+        if (!card) return;
+        const car = CARS[this.selectedCar];
+        const locked = !this.isCarUnlocked(this.selectedCar);
+
+        document.getElementById('car-name').textContent = car.name;
+        document.getElementById('car-desc').textContent = car.desc;
+
+        // Stat bars
+        const stats = { speed: car.speed, fuel: car.fuel, turn: car.turn };
+        for (const [key, val] of Object.entries(stats)) {
+            const bar = document.getElementById('stat-' + key);
+            if (bar) bar.style.width = Math.round((val / 1.35) * 100) + '%';
+        }
+
+        // Lock overlay
+        const lockEl = document.getElementById('car-lock');
+        if (locked) {
+            lockEl.style.display = 'block';
+            lockEl.textContent = '\u{1F512} ' + car.unlock.desc;
+        } else {
+            lockEl.style.display = 'none';
+        }
+
+        // Color preview
+        const preview = document.getElementById('car-color-preview');
+        if (preview) {
+            preview.style.background = car.color || (this.evMode ? '#2ecc71' : '#e74c3c');
+        }
+
+        // Nav dots
+        const dots = document.querySelectorAll('.car-dot');
+        dots.forEach((d, i) => {
+            d.classList.toggle('active', i === this.selectedCar);
+            d.classList.toggle('unlocked', this.isCarUnlocked(i));
+        });
+    }
 
     loadHighScores() {
         try {

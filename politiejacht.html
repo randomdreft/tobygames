@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Politiejacht - TobyGames</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚔</text></svg>">
-<link rel="stylesheet" href="politiejacht/style.css?v=2">
+<link rel="stylesheet" href="politiejacht/style.css?v=3">
 </head>
 <body>
 <a href="index.html" class="back-btn">&larr; TobyGames</a>
@@ -41,6 +41,22 @@
             <button id="mode-fuel" class="mode-btn active">&#x26FD; Benzine</button>
             <button id="mode-ev" class="mode-btn">&#x1F50B; Elektrisch</button>
         </div>
+        <div id="car-selector">
+            <button class="car-nav" id="car-prev">&#x25C0;</button>
+            <div id="car-card">
+                <div id="car-color-preview"></div>
+                <div id="car-name">Standaard</div>
+                <div id="car-desc">Betrouwbaar en gebalanceerd</div>
+                <div id="car-stats">
+                    <div class="stat-row"><span>Snelheid</span><div class="stat-bar"><div id="stat-speed"></div></div></div>
+                    <div class="stat-row"><span>Zuinig</span><div class="stat-bar"><div id="stat-fuel"></div></div></div>
+                    <div class="stat-row"><span>Handling</span><div class="stat-bar"><div id="stat-turn"></div></div></div>
+                </div>
+                <div id="car-lock" style="display:none"></div>
+            </div>
+            <button class="car-nav" id="car-next">&#x25B6;</button>
+        </div>
+        <div id="car-dots"></div>
         <button id="start-btn" class="action-btn">&#x25B6; Start de Jacht!</button>
         <div id="controls-info">
             <p><kbd>&#x2191;</kbd><kbd>&#x2193;</kbd><kbd>&#x2190;</kbd><kbd>&#x2192;</kbd> of <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> &mdash; Touch: sleep om te sturen</p>
@@ -81,8 +97,8 @@
     <button id="powerup-btn" style="display:none">&#x1F6E2;&#xFE0F;</button>
 </div>
 
-<script src="politiejacht/sound.js?v=2"></script>
-<script src="politiejacht/renderer.js?v=2"></script>
-<script src="politiejacht/game.js?v=2"></script>
+<script src="politiejacht/sound.js?v=3"></script>
+<script src="politiejacht/renderer.js?v=3"></script>
+<script src="politiejacht/game.js?v=3"></script>
 </body>
 </html>

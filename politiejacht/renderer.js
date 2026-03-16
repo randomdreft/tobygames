@@ -34,6 +34,7 @@ class Renderer {
         this.drawFuelArrow();
         this.drawVignette();
         this.drawMinimap();
+        this.drawWaveAnnouncement();
         this.sirenTick += 0.05;
     }
 
@@ -94,6 +95,17 @@ class Renderer {
                     if (bldg.isPark) {
                         ctx.fillStyle = '#2d5a2d';
                         this._roundRect(bx, by, bw, bh, 6);
+                        // Pond
+                        if (bldg.hasPond) {
+                            ctx.fillStyle = '#1a6090';
+                            ctx.beginPath();
+                            ctx.ellipse(bx + bldg.pondX * bw, by + bldg.pondY * bh, 18, 12, 0.4, 0, Math.PI * 2);
+                            ctx.fill();
+                            ctx.fillStyle = '#2080b0';
+                            ctx.beginPath();
+                            ctx.ellipse(bx + bldg.pondX * bw - 2, by + bldg.pondY * bh - 2, 12, 7, 0.4, 0, Math.PI * 2);
+                            ctx.fill();
+                        }
                         ctx.fillStyle = '#1e4a1e';
                         for (const t of bldg.trees) {
                             ctx.beginPath();
@@ -107,21 +119,7 @@ class Renderer {
                             ctx.fill();
                         }
                     } else {
-                        ctx.fillStyle = 'rgba(0,0,0,0.25)';
-                        this._roundRect(bx + 3, by + 3, bw, bh, 4);
-                        ctx.fillStyle = bldg.color;
-                        this._roundRect(bx, by, bw, bh, 4);
-                        ctx.fillStyle = bldg.roofColor;
-                        this._roundRect(bx + 6, by + 6, bw - 12, bh - 12, 2);
-                        const winColor = bldg.lit ? '#ffe87a' : '#556680';
-                        ctx.fillStyle = winColor;
-                        const cols = 3, rows = 3;
-                        const wx = (bw - 24) / cols, wy = (bh - 24) / rows;
-                        for (let r = 0; r < rows; r++) {
-                            for (let c = 0; c < cols; c++) {
-                                ctx.fillRect(bx + 14 + c * wx, by + 14 + r * wy, wx * 0.5, wy * 0.5);
-                            }
-                        }
+                        this._drawBuilding(ctx, bx, by, bw, bh, bldg);
                     }
                 }
             }
@@ -162,7 +160,9 @@ class Renderer {
             ctx.restore();
         }
 
-        this._drawCar(p.x, p.y, p.angle, p.w, p.h, this.game.evMode ? '#2ecc71' : '#e74c3c', 'player');
+        const car = CARS[this.game.selectedCar];
+        const playerColor = car.color || (this.game.evMode ? '#2ecc71' : '#e74c3c');
+        this._drawCar(p.x, p.y, p.angle, p.w, p.h, playerColor, 'player');
 
         // Exhaust
         if (Math.abs(p.speed) > 20) {
@@ -683,6 +683,162 @@ class Renderer {
         // Player
         ctx.fillStyle = g.evMode ? '#2ecc71' : '#e74c3c';
         ctx.fillRect(mx + g.player.x * scale - 2, my + g.player.y * scale - 2, 5, 5);
+    }
+
+    _drawBuilding(ctx, bx, by, bw, bh, bldg) {
+        const type = bldg.type || 'standard';
+        const shadowOff = type === 'tall' ? 5 : 3;
+
+        // Shadow
+        ctx.fillStyle = `rgba(0,0,0,${type === 'tall' ? 0.35 : 0.25})`;
+        this._roundRect(bx + shadowOff, by + shadowOff, bw, bh, 4);
+
+        // Body
+        ctx.fillStyle = bldg.color;
+        this._roundRect(bx, by, bw, bh, 4);
+
+        if (type === 'tall') {
+            // Tall building: darker body, antenna, more windows
+            ctx.fillStyle = bldg.roofColor;
+            this._roundRect(bx + 4, by + 4, bw - 8, bh - 8, 2);
+            const winColor = bldg.lit ? '#ffe87a' : '#556680';
+            ctx.fillStyle = winColor;
+            const cols = 4, rows = 5;
+            const wx = (bw - 16) / cols, wy = (bh - 16) / rows;
+            for (let r = 0; r < rows; r++) {
+                for (let c = 0; c < cols; c++) {
+                    ctx.fillRect(bx + 10 + c * wx, by + 10 + r * wy, wx * 0.45, wy * 0.4);
+                }
+            }
+            // Antenna
+            if (bldg.hasAntenna) {
+                ctx.strokeStyle = '#999';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(bx + bw / 2, by);
+                ctx.lineTo(bx + bw / 2, by - 12);
+                ctx.stroke();
+                ctx.fillStyle = '#ff3333';
+                ctx.beginPath();
+                ctx.arc(bx + bw / 2, by - 12, 2.5, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        } else if (type === 'shop') {
+            // Shop: awning + display window
+            ctx.fillStyle = bldg.roofColor;
+            this._roundRect(bx + 6, by + 6, bw - 12, bh - 12, 2);
+            // Awning on front side
+            ctx.fillStyle = bldg.awningColor;
+            this._roundRect(bx - 2, by + bh - 18, bw + 4, 16, 3);
+            // Stripe pattern on awning
+            ctx.fillStyle = 'rgba(255,255,255,0.3)';
+            for (let sx = bx; sx < bx + bw; sx += 10) {
+                ctx.fillRect(sx, by + bh - 18, 5, 16);
+            }
+            // Display window
+            ctx.fillStyle = bldg.lit ? '#ddf0ff' : '#445566';
+            this._roundRect(bx + 10, by + bh - 34, bw - 20, 14, 2);
+            // Small upper windows
+            const winColor = bldg.lit ? '#ffe87a' : '#556680';
+            ctx.fillStyle = winColor;
+            for (let c = 0; c < 3; c++) {
+                ctx.fillRect(bx + 14 + c * ((bw - 28) / 3), by + 12, 12, 10);
+            }
+        } else if (type === 'warehouse') {
+            // Warehouse: industrial, garage doors
+            ctx.fillStyle = bldg.roofColor;
+            this._roundRect(bx + 3, by + 3, bw - 6, bh - 6, 2);
+            // Garage doors
+            ctx.fillStyle = '#4a4a4a';
+            this._roundRect(bx + 10, by + bh / 2 - 5, bw * 0.35, bh * 0.35, 3);
+            this._roundRect(bx + bw * 0.55, by + bh / 2 - 5, bw * 0.35, bh * 0.35, 3);
+            // Door lines
+            ctx.strokeStyle = '#3a3a3a';
+            ctx.lineWidth = 1;
+            for (let dy = 0; dy < bh * 0.35; dy += 6) {
+                ctx.beginPath();
+                ctx.moveTo(bx + 10, by + bh / 2 - 5 + dy);
+                ctx.lineTo(bx + 10 + bw * 0.35, by + bh / 2 - 5 + dy);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(bx + bw * 0.55, by + bh / 2 - 5 + dy);
+                ctx.lineTo(bx + bw * 0.55 + bw * 0.35, by + bh / 2 - 5 + dy);
+                ctx.stroke();
+            }
+            // Single window
+            ctx.fillStyle = '#556680';
+            ctx.fillRect(bx + bw / 2 - 8, by + 12, 16, 10);
+        } else if (type === 'apartment') {
+            // Apartment: many windows, balcony lines
+            ctx.fillStyle = bldg.roofColor;
+            this._roundRect(bx + 5, by + 5, bw - 10, bh - 10, 2);
+            const winColor = bldg.lit ? '#ffe87a' : '#556680';
+            ctx.fillStyle = winColor;
+            const cols = 4, rows = 4;
+            const wx = (bw - 20) / cols, wy = (bh - 20) / rows;
+            for (let r = 0; r < rows; r++) {
+                for (let c = 0; c < cols; c++) {
+                    ctx.fillRect(bx + 12 + c * wx, by + 12 + r * wy, wx * 0.5, wy * 0.45);
+                }
+                // Balcony line
+                if (r > 0) {
+                    ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+                    ctx.lineWidth = 1;
+                    ctx.beginPath();
+                    ctx.moveTo(bx + 8, by + 12 + r * wy - 2);
+                    ctx.lineTo(bx + bw - 8, by + 12 + r * wy - 2);
+                    ctx.stroke();
+                }
+            }
+        } else {
+            // Standard building (original style)
+            ctx.fillStyle = bldg.roofColor;
+            this._roundRect(bx + 6, by + 6, bw - 12, bh - 12, 2);
+            const winColor = bldg.lit ? '#ffe87a' : '#556680';
+            ctx.fillStyle = winColor;
+            const cols = 3, rows = 3;
+            const wx = (bw - 24) / cols, wy = (bh - 24) / rows;
+            for (let r = 0; r < rows; r++) {
+                for (let c = 0; c < cols; c++) {
+                    ctx.fillRect(bx + 14 + c * wx, by + 14 + r * wy, wx * 0.5, wy * 0.5);
+                }
+            }
+        }
+    }
+
+    drawWaveAnnouncement() {
+        const wa = this.game.waveAnnouncement;
+        if (!wa) return;
+        const ctx = this.ctx;
+        const vw = this.game.viewW, vh = this.game.viewH;
+
+        const fadeIn = Math.min(1, (2.5 - wa.timer) / 0.4);
+        const fadeOut = Math.min(1, wa.timer / 0.4);
+        const a = Math.min(fadeIn, fadeOut);
+
+        ctx.save();
+        ctx.globalAlpha = a;
+
+        // Backdrop
+        ctx.fillStyle = 'rgba(0,0,0,0.35)';
+        ctx.fillRect(0, vh * 0.32, vw, vh * 0.18);
+
+        // Wave name
+        ctx.fillStyle = '#fff';
+        ctx.font = `bold ${Math.min(36, vw * 0.06)}px sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.shadowColor = 'rgba(0,0,0,0.5)';
+        ctx.shadowBlur = 10;
+        ctx.fillText(wa.name, vw / 2, vh * 0.38);
+
+        // Subtitle
+        ctx.shadowBlur = 0;
+        ctx.fillStyle = '#a0b0c0';
+        ctx.font = `${Math.min(18, vw * 0.03)}px sans-serif`;
+        ctx.fillText(wa.sub, vw / 2, vh * 0.44);
+
+        ctx.restore();
     }
 
     _roundRect(x, y, w, h, r) {
