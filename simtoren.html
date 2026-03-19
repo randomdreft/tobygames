@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>SimToren - TobyGames</title>
+  <link rel="stylesheet" href="simtoren/style.css?v=1">
+</head>
+<body>
+  <a href="index.html" class="back-btn">&larr; TobyGames</a>
+
+  <div id="game-container">
+    <canvas id="gameCanvas"></canvas>
+
+    <div id="hud">
+      <div id="money-display">&euro;500.000</div>
+      <div id="income-display">+&euro;0/u</div>
+      <div id="population-display">&#x1f465; 0</div>
+      <div id="star-display">&#x2b50;</div>
+      <div id="time-display">Dag 1 - 08:00</div>
+      <div id="speed-controls">
+        <button class="speed-btn" data-speed="0">&#x23f8;</button>
+        <button class="speed-btn" data-speed="1">&#x25b6;</button>
+        <button class="speed-btn active" data-speed="2">&#x25b6;&#x25b6;</button>
+        <button class="speed-btn" data-speed="3">&#x25b6;&#x25b6;&#x25b6;</button>
+      </div>
+    </div>
+
+    <div id="build-menu">
+      <h3>&#x1f3d7;&#xfe0f; Bouwen</h3>
+      <div id="build-buttons"></div>
+      <button id="demolish-btn" class="tool-btn">&#x1f528; Slopen</button>
+    </div>
+
+    <div id="info-panel" class="hidden">
+      <button id="info-close">&#x2715;</button>
+      <h3 id="info-title"></h3>
+      <div id="info-content"></div>
+      <button id="info-demolish" class="danger-btn">&#x1f5d1;&#xfe0f; Slopen</button>
+    </div>
+
+    <div id="start-screen" class="overlay">
+      <h1>&#x1f3d7;&#xfe0f; SimToren</h1>
+      <p>Bouw de hoogste toren van Nederland!</p>
+      <p class="subtitle">
+        Plaats kantoren, appartementen, winkels en meer.<br>
+        Zorg voor liften en trappen zodat iedereen kan komen waar ze moeten zijn.<br><br>
+        &#x1f5b1;&#xfe0f; Scroll om te navigeren &middot; Klik op kamers voor info<br>
+        &#x2328;&#xfe0f; 1-4 voor snelheid &middot; Esc om te deselecteren
+      </p>
+      <button id="new-game-btn" class="primary-btn">Nieuw Spel</button>
+      <button id="continue-btn" class="primary-btn hidden">Doorgaan</button>
+    </div>
+
+    <div id="floor-indicator">Begane grond</div>
+  </div>
+
+  <script src="simtoren/config.js?v=1"></script>
+  <script src="simtoren/state.js?v=1"></script>
+  <script src="simtoren/world.js?v=1"></script>
+  <script src="simtoren/people.js?v=1"></script>
+  <script src="simtoren/elevator.js?v=1"></script>
+  <script src="simtoren/renderer.js?v=1"></script>
+  <script src="simtoren/sound.js?v=1"></script>
+  <script src="simtoren/ui.js?v=1"></script>
+</body>
+</html>
