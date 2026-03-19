@@ -11,7 +11,12 @@ const World = {
     if (type === 'lobby' && state.hasLobby) return false;
 
     for (let u = x; u < x + def.width; u++) {
-      if (state.grid[floor + ',' + u] !== undefined) return false;
+      const existing = state.grid[floor + ',' + u];
+      if (existing !== undefined) {
+        // Transport (stairs/elevators) may overlap the lobby
+        if (def.isTransport && state.rooms[existing] && state.rooms[existing].type === 'lobby') continue;
+        return false;
+      }
     }
     return true;
   },
@@ -54,6 +59,19 @@ const World = {
       delete state.grid[room.floor + ',' + u];
     }
     room.demolished = true;
+
+    // Restore lobby grid cells underneath demolished transport
+    if (def.isTransport && room.floor === 0 && state.hasLobby) {
+      const lobbyIdx = state.rooms.findIndex(r => r.type === 'lobby' && !r.demolished);
+      if (lobbyIdx >= 0) {
+        for (let u = room.x; u < room.x + def.width; u++) {
+          if (state.grid[room.floor + ',' + u] === undefined) {
+            state.grid[room.floor + ',' + u] = lobbyIdx;
+          }
+        }
+      }
+    }
+
     if (room.type === 'lobby') state.hasLobby = false;
     state.money += Math.floor(def.cost * 0.5);
 
@@ -79,7 +97,12 @@ const World = {
 
     for (let f = bottomFloor; f <= topFloor; f++) {
       for (let u = x; u < x + 2; u++) {
-        if (state.grid[f + ',' + u] !== undefined) return null;
+        const existing = state.grid[f + ',' + u];
+        if (existing !== undefined) {
+          // Elevator may overlap the lobby
+          if (state.rooms[existing] && state.rooms[existing].type === 'lobby') continue;
+          return null;
+        }
       }
     }
 

@@ -360,11 +360,15 @@ const Renderer = {
         const floors = top - bot + 1;
         const cost = ROOMS.elevator.cost * floors;
         const ok = state.money >= cost;
-        // Check for overlaps
+        // Check for overlaps (lobby overlap allowed)
         let blocked = false;
         for (let f = bot; f <= top; f++) {
           for (let u = ui.elevDragX; u < ui.elevDragX + 2; u++) {
-            if (state.grid[f + ',' + u] !== undefined) { blocked = true; break; }
+            const existing = state.grid[f + ',' + u];
+            if (existing !== undefined) {
+              if (state.rooms[existing] && state.rooms[existing].type === 'lobby') continue;
+              blocked = true; break;
+            }
           }
           if (blocked) break;
         }
