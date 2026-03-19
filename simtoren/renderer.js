@@ -103,7 +103,7 @@ const Renderer = {
 
   // --- Ground ---
   drawGround(ctx) {
-    const gy = this.floorToY(-1) + CONFIG.FLOOR_PX;
+    const gy = this.floorToY(CONFIG.FLOOR_MIN) + CONFIG.FLOOR_PX;
     ctx.fillStyle = '#5a8a3a';
     ctx.fillRect(0, gy, this.width, 4);
     ctx.fillStyle = '#3a2a1a';
