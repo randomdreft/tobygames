@@ -512,7 +512,7 @@ function buildAchievementDefs() {
   });
   defs.push({
     id: 'mg_memory_perfect', emoji: '🧠', name: 'Fotografisch geheugen',
-    desc: 'Memory gewonnen met 0 fouten!', group: 'Minigames',
+    desc: 'Memory gewonnen met max 3 fouten!', group: 'Minigames',
     check: () => (state.stats.memoryWon || 0) >= 1
   });
 
@@ -726,7 +726,7 @@ const DAILY_CHALLENGE_POOL = [
   {id:'dc_lucky', emoji:'🐞', desc:'Vang een lieveheersbeestje', stat:'luckyClicked', target:1},
   {id:'dc_buff', emoji:'✨', desc:'Gebruik een buff', stat:'buffPlayed', target:1, req:'lama'},
   // Speciaal
-  {id:'dc_memory', emoji:'🃏', desc:'Win memory met max 1 fout', daily:'memoryLowFaults', target:1, req:'draak'},
+  {id:'dc_memory', emoji:'🃏', desc:'Win memory met max 3 fouten', daily:'memoryLowFaults', target:1, req:'draak'},
   {id:'dc_groter_perfect', emoji:'⚖️', desc:'Haal 10/10 bij Groter/Kleiner', stat:'groterPerfect', target:1, req:'hond'},
 ];
 
