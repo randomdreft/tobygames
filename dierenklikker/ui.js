@@ -1121,7 +1121,36 @@ function render() {
       const e = !!state.achievements[a.id];
       el.classList.toggle('earned', e);
       el.classList.toggle('unearned', !e);
-      el.setAttribute('data-tip', e || achSpoilerActive ? escHtml(a.name) + '|' + escHtml(a.desc) : '???|Nog niet ontgrendeld');
+      let achTip;
+      if (e) {
+        achTip = escHtml(a.name) + '|' + escHtml(a.desc);
+      } else if (achSpoilerActive) {
+        let tipDesc = escHtml(a.desc);
+        if (a.progress) {
+          const p = a.progress();
+          if (p.invert) {
+            tipDesc += ' (beste: ' + (p.cur >= 999 ? '-' : p.cur) + ' zetten)';
+          } else {
+            tipDesc += ' (' + formatNumber(Math.min(p.cur, p.max)) + '/' + formatNumber(p.max) + ')';
+          }
+        }
+        achTip = escHtml(a.name) + '|' + tipDesc;
+      } else {
+        achTip = '???|Nog niet ontgrendeld';
+      }
+      el.setAttribute('data-tip', achTip);
+      // Update progress bar
+      const bar = el.querySelector('.ach-progress');
+      if (!e && a.progress) {
+        const p = a.progress();
+        const pct = p.invert
+          ? (p.cur >= 999 ? 0 : Math.min(100, Math.max(0, (1 - (p.cur - p.max) / (999 - p.max)) * 100)))
+          : Math.min(100, Math.floor(p.cur / p.max * 100));
+        if (pct > 0 && pct < 100) {
+          if (bar) { bar.style.height = pct + '%'; }
+          else { const nb = document.createElement('div'); nb.className = 'ach-progress'; nb.style.height = pct + '%'; el.insertBefore(nb, el.firstChild); }
+        } else if (bar) { bar.remove(); }
+      } else if (bar) { bar.remove(); }
     });
 
     const achSummary = document.querySelector('.ach-summary');
@@ -1467,6 +1496,12 @@ function renderStats() {
   if (s.voedselPerfect) perfects.push('🍽️ ' + s.voedselPerfect + 'x');
   if (s.memoryWon) perfects.push('🃏 ' + s.memoryWon + 'x');
   if (perfects.length) html += row('Perfect scores', perfects.join(' · '));
+
+  if (s.voerbeursSells) {
+    html += heading('Voerbeurs');
+    html += row('Verkopen', s.voerbeursSells + 'x');
+    html += row('Totaal verdiend', formatNumber(Math.floor(s.voerbeursEarned || 0)));
+  }
 
   if (s.luckyClicked) {
     html += heading('Geluksbeestjes');
