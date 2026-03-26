@@ -80,6 +80,8 @@ function toggleThemeLock() {
   saveGame();
 }
 
+// Intentionally excludes the unicorn: it is a mythic background visitor,
+// not a resident enclosure animal in the Wolkendierentuin.
 const HEMEL_HABITATS = [
   {id:'mier', bg:'linear-gradient(180deg,#8B6914,#654a0e)', env:'🌱🍂🌿🍃🌱🍂🌿🍃🌱🍂', food:'🍞', desc:'Sjouwt vrolijk kruimels rond'},
   {id:'slak', bg:'linear-gradient(180deg,#4a7c3f,#2d5a27)', env:'🌿🌧️🍃🌱🍀🌿🌧️🍃🌱🍀', food:'🍃', desc:'Glijdt door de dauw'},

@@ -7,6 +7,18 @@ let catcherActive = false;
 let catcherInterval = null;
 let catcherScore = 0;
 let catcherSpawnInterval = null;
+let memoryTimeouts = [];
+let tellenTimeouts = [];
+
+function clearMemoryTimeouts() {
+  memoryTimeouts.forEach(clearTimeout);
+  memoryTimeouts = [];
+}
+
+function clearTellenTimeouts() {
+  tellenTimeouts.forEach(clearTimeout);
+  tellenTimeouts = [];
+}
 
 function shuffleInPlace(arr) {
   for (let i = arr.length - 1; i > 0; i--) {
@@ -59,12 +71,14 @@ function cancelMinigame(id) {
   // Memory
   if (id === 'memory' && memoryActive) {
     memoryActive = false;
+    clearMemoryTimeouts();
     document.getElementById('memory-game').style.display = 'none';
     document.getElementById('memory-btn').disabled = false;
   }
   // Tellen
   if (id === 'tellen' && tellenActive) {
     tellenActive = false;
+    clearTellenTimeouts();
     document.getElementById('tellen-game').style.display = 'none';
     document.getElementById('tellen-btn').disabled = false;
   }
@@ -106,6 +120,7 @@ function cancelMinigame(id) {
   const buffGame = document.getElementById('buff-game');
   if (id === 'buff' && buffGame && buffGame.style.display !== 'none') {
     buffGame.style.display = 'none';
+    document.getElementById('buff-btn').disabled = false;
   }
 }
 
@@ -509,6 +524,7 @@ function startMemory() {
   if (memoryActive || !isMinigameUnlocked('memory')) return;
   if (Date.now() - state.minigames.memoryLast < MEMORY_COOLDOWN * getCooldownMultiplier()) return;
   memoryActive = true; sfxGameStart(); mgSetActive('memory', true);
+  clearMemoryTimeouts();
   memoryPairs = 0;
   memoryMistakes = 0;
   memoryFlipped = [];
@@ -553,7 +569,8 @@ function flipCard(index) {
     if (memoryCards[a] === memoryCards[b]) {
       // Match!
       sfxMemoryMatch();
-      setTimeout(() => {
+      memoryTimeouts.push(setTimeout(() => {
+        if (!memoryActive) return;
         cards[a].classList.add('matched');
         cards[b].classList.add('matched');
         memoryFlipped = [];
@@ -562,7 +579,8 @@ function flipCard(index) {
         if (memoryPairs === 8) endMemory();
         else if (memoryPairs === 7) {
           // Auto-flip last 2 cards — they're guaranteed to match
-          setTimeout(() => {
+          memoryTimeouts.push(setTimeout(() => {
+            if (!memoryActive) return;
             const remaining = document.querySelectorAll('.memory-card.face-down');
             if (remaining.length === 2) {
               const idxA = parseInt(remaining[0].dataset.index);
@@ -575,23 +593,25 @@ function flipCard(index) {
               remaining[1].classList.add('face-up');
               remaining[1].textContent = memoryCards[idxB];
               parseAppleEmoji(remaining[1]);
-              setTimeout(() => {
+              memoryTimeouts.push(setTimeout(() => {
+                if (!memoryActive) return;
                 remaining[0].classList.add('matched');
                 remaining[1].classList.add('matched');
                 memoryPairs++;
                 document.getElementById('memory-pairs').textContent = memoryPairs;
                 endMemory();
-              }, 400);
+              }, 400));
             }
-          }, 500);
+          }, 500));
         }
-      }, 400);
+      }, 400));
     } else {
       // No match
       sfxMemoryFail();
       memoryMistakes++;
       document.getElementById('memory-mistakes').textContent = memoryMistakes;
-      setTimeout(() => {
+      memoryTimeouts.push(setTimeout(() => {
+        if (!memoryActive) return;
         cards[a].classList.remove('face-up');
         cards[a].classList.add('face-down');
         cards[a].textContent = '?';
@@ -599,12 +619,13 @@ function flipCard(index) {
         cards[b].classList.add('face-down');
         cards[b].textContent = '?';
         memoryFlipped = [];
-      }, 700);
+      }, 700));
     }
   }
 }
 
 function endMemory() {
+  clearMemoryTimeouts();
   memoryActive = false; mgSetActive('memory', false);
   sfxGameEnd();
   state.minigames.memoryLast = Date.now();
@@ -649,6 +670,7 @@ function startTellen() {
   if (tellenActive || !isMinigameUnlocked('tellen')) return;
   if (Date.now() - state.minigames.tellenLast < TELLEN_COOLDOWN * getCooldownMultiplier()) return;
   tellenActive = true; sfxGameStart(); mgSetActive('tellen', true);
+  clearTellenTimeouts();
   document.getElementById('tellen-btn').disabled = true;
   const game = document.getElementById('tellen-game');
   game.style.display = 'block';
@@ -672,7 +694,8 @@ function startTellen() {
     '<div style="font-size:64px;text-align:center;margin:8px 0">' + tellenTarget + '</div>';
   parseAppleEmoji(game);
 
-  setTimeout(() => {
+  tellenTimeouts.push(setTimeout(() => {
+    if (!tellenActive) return;
     // Phase 2: flash grid with wiggle
     let html = '<div id="tellen-flash">';
     cells.forEach((c, i) => {
@@ -686,7 +709,8 @@ function startTellen() {
     game.innerHTML = html;
     parseAppleEmoji(game);
 
-    setTimeout(() => {
+    tellenTimeouts.push(setTimeout(() => {
+      if (!tellenActive) return;
       // Phase 3: ask question
       const options = new Set([tellenCount]);
       const possible = [];
@@ -704,12 +728,13 @@ function startTellen() {
       qhtml += '</div>';
       game.innerHTML = qhtml;
       parseAppleEmoji(game);
-    }, 3000);
-  }, 2000);
+    }, 3000));
+  }, 2000));
 }
 
 function answerTellen(n) {
   if (!tellenActive) return;
+  clearTellenTimeouts();
   tellenActive = false; mgSetActive('tellen', false);
   state.minigames.tellenLast = Date.now();
   state.stats.tellenPlayed++; dailyTrackMinigame('tellen');

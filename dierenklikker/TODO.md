@@ -62,6 +62,7 @@ De game draait op een Node.js server in Docker (zie `/Dockerfile` en `/server.js
 - C1 (Hemel als speelbare wereld) en C2 (Dierentuin layout) gecombineerd
 - Dierenhemel omgebouwd tot interactieve Wolkendierentuin
 - Alle 12 geëvolueerde dieren wonen in verblijven in de wolken
+- De eenhoorn woont daar bewust niet: die is een mythische achtergrondverschijning, geen verblijf-dier
 - **Verblijven upgraden** (4 niveaus: Wolkenweitje → Wolkenverblijf → Wolkenpaleis → Gouden Paleis)
   - Hogere niveaus verlagen geluk-verval (10%/6%/3%/1% per uur)
   - Upgrades kosten sterren (0/1/2/4)

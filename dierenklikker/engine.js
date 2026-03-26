@@ -507,8 +507,8 @@ function buildAchievementDefs() {
   defs.push({
     id: 'mg_memory_10', emoji: '🧠', name: 'Goed geheugen',
     desc: '10 memory potjes gewonnen!', group: 'Minigames',
-    check: () => (state.stats.memoryPlayed || 0) >= 10,
-    progress: () => ({cur: state.stats.memoryPlayed || 0, max: 10})
+    check: () => (state.stats.memoryWon || 0) >= 10,
+    progress: () => ({cur: state.stats.memoryWon || 0, max: 10})
   });
   defs.push({
     id: 'mg_memory_perfect', emoji: '🧠', name: 'Fotografisch geheugen',
@@ -716,11 +716,11 @@ const DAILY_CHALLENGE_POOL = [
   {id:'dc_race', emoji:'🏇', desc:'Win een paardenrace', stat:'raceWon', target:1, req:'paard'},
   {id:'dc_catcher', emoji:'🎯', desc:'Vang 10 dieren in de Vanger', stat:'catcherCaught', target:10, req:'kikker'},
   {id:'dc_quiz', emoji:'🧠', desc:'Beantwoord 5 quizvragen goed', stat:'quizCorrect', target:5, req:'slak'},
-  {id:'dc_puzzel', emoji:'🧩', desc:'Los een puzzel op', stat:'puzzelWon', target:1, req:'panda'},
+  {id:'dc_puzzel', emoji:'🧩', desc:'Los een puzzel op', stat:'puzzelWon', target:1, req:'olifant'},
   {id:'dc_sort', emoji:'📦', desc:'Sorteer 10 dieren goed', stat:'sortCorrect', target:10, req:'walvis'},
   {id:'dc_tellen', emoji:'🔢', desc:'Beantwoord 5 telvragen goed', stat:'tellenCorrect', target:5, req:'mier'},
   {id:'dc_math', emoji:'🔢', desc:'Beantwoord 5 rekenvragen goed', stat:'mathCorrect', target:5, req:'kat'},
-  {id:'dc_voedsel', emoji:'🍽️', desc:'Beantwoord 5 voedsel-vragen goed', stat:'voedselCorrect', target:5, req:'olifant'},
+  {id:'dc_voedsel', emoji:'🍽️', desc:'Beantwoord 5 voedsel-vragen goed', stat:'voedselCorrect', target:5, req:'panda'},
   {id:'dc_indringer', emoji:'🕵️', desc:'Scoor 5+ bij de Indringer', stat:'indringerBest', target:5, req:'kip', best:true},
   // Geluk & buff
   {id:'dc_lucky', emoji:'🐞', desc:'Vang een lieveheersbeestje', stat:'luckyClicked', target:1},
