@@ -526,16 +526,16 @@ function buildAchievementDefs() {
 
   // Minigames — Indringer
   defs.push({
-    id: 'mg_indringer_10', emoji: '🕵️', name: 'Speurder',
+    id: 'mg_indringer_5', emoji: '🕵️', name: 'Speurder',
+    desc: 'Score van 5 in één indringer-potje!', group: 'Minigames',
+    check: () => (state.stats.indringerBest || 0) >= 5,
+    progress: () => ({cur: state.stats.indringerBest || 0, max: 5})
+  });
+  defs.push({
+    id: 'mg_indringer_10', emoji: '🕵️', name: 'Detective',
     desc: 'Score van 10 in één indringer-potje!', group: 'Minigames',
     check: () => (state.stats.indringerBest || 0) >= 10,
     progress: () => ({cur: state.stats.indringerBest || 0, max: 10})
-  });
-  defs.push({
-    id: 'mg_indringer_20', emoji: '🕵️', name: 'Detective',
-    desc: 'Score van 20 in één indringer-potje!', group: 'Minigames',
-    check: () => (state.stats.indringerBest || 0) >= 20,
-    progress: () => ({cur: state.stats.indringerBest || 0, max: 20})
   });
 
   // Minigames — Groter of Kleiner
