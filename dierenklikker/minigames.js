@@ -632,7 +632,7 @@ function endMemory() {
   state.stats.memoryPlayed++; dailyTrackMinigame('memory');
   state.stats.memoryPairsFound += memoryPairs;
   if (memoryMistakes <= 3) state.stats.memoryWon++;
-  if (memoryMistakes <= 3 && state.daily.date) state.daily.memoryLowFaults++;
+  if (memoryMistakes <= 5 && state.daily.date) state.daily.memoryLowFaults++;
 
   // 0-3 fouten = 100%, daarna aflopend: 4=96%, 5=84%, 6=64%, 7=36%, 8+=10%
   const penaltyMult = memoryMistakes <= 3 ? 1 : Math.max(0.1, 1 - Math.pow(memoryMistakes - 3, 2) / 25);

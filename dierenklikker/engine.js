@@ -726,7 +726,7 @@ const DAILY_CHALLENGE_POOL = [
   {id:'dc_lucky', emoji:'🐞', desc:'Vang een lieveheersbeestje', stat:'luckyClicked', target:1},
   {id:'dc_buff', emoji:'✨', desc:'Gebruik een buff', stat:'buffPlayed', target:1, req:'lama'},
   // Speciaal
-  {id:'dc_memory', emoji:'🃏', desc:'Win memory met max 3 fouten', daily:'memoryLowFaults', target:1, req:'draak'},
+  {id:'dc_memory', emoji:'🃏', desc:'Win memory met max 5 fouten', daily:'memoryLowFaults', target:1, req:'draak'},
   {id:'dc_groter_perfect', emoji:'⚖️', desc:'Haal 10/10 bij Groter/Kleiner', stat:'groterPerfect', target:1, req:'hond'},
 ];
 
