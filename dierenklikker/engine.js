@@ -947,7 +947,11 @@ function buyAnimal(animalId) {
     state.allTime.animalsOwned[animalId] = 1;
     bought++;
   }
-  if (bought > 0) sfxBuy();
+  if (bought > 0) {
+    sfxBuy();
+    // First purchase of this animal unlocks the next — rebuild upgrades tab
+    if (bought === (state.animals[animalId] || 0)) buildUpgradeShop();
+  }
 }
 
 function buyUpgrade(upgradeId) {
