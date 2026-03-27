@@ -190,7 +190,8 @@ function handleLeaderboardPost(req, res) {
       playTimeSeconds: Math.floor(data.playTimeSeconds || 0),
       totalClicks: Math.floor(data.totalClicks || 0),
       totalAnimals: Math.floor(data.totalAnimals || 0),
-      achievements: Math.floor(data.achievements || 0),
+      achievements: Math.min(Math.floor(data.achievements || 0), Math.floor(data.achievementsTotal || 200)),
+      achievementsTotal: Math.floor(data.achievementsTotal || 0),
       animals: data.animals || {},
       trust: trustResult.score,
       trustReasons: trustResult.reasons,
@@ -245,6 +246,7 @@ function handleLeaderboardGet(req, res) {
     trust: e.trust,
     playTimeSeconds: e.playTimeSeconds,
     achievements: e.achievements || 0,
+    achievementsTotal: e.achievementsTotal || 0,
   }));
 
   let me = null;
@@ -260,6 +262,7 @@ function handleLeaderboardGet(req, res) {
         trust: e.trust,
         playTimeSeconds: e.playTimeSeconds,
         achievements: e.achievements || 0,
+        achievementsTotal: e.achievementsTotal || 0,
       };
     }
   }
@@ -341,6 +344,12 @@ function serveFile(filePath, res) {
 
 // Load leaderboard data on startup and recalculate trust scores
 loadLeaderboard();
+// Cap achievements to achievementsTotal (or 50 for legacy entries without total)
+leaderboard.forEach(e => {
+  const maxAch = e.achievementsTotal || 50;
+  if (e.achievements > maxAch) e.achievements = maxAch;
+});
+saveLeaderboard();
 recalcTrust();
 
 server.listen(PORT, '0.0.0.0', () => {

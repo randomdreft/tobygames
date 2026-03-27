@@ -1554,6 +1554,7 @@ function submitLeaderboard() {
       totalClicks: Math.floor(state.allTime.totalClicks),
       totalAnimals: Math.floor(state.allTime.totalAnimals),
       achievements: achCount,
+      achievementsTotal: achievementDefs.length,
       timesReset: state.prestige.timesReset,
       animals: animalCounts,
     }),
@@ -1603,16 +1604,17 @@ function renderLeaderboard() {
     html += '<div style="text-align:center;padding:12px;color:var(--text-dim)">Nog geen scores!</div>';
   } else {
     html += '<div class="lb-table">';
-    html += '<div class="lb-header"><span>#</span><span>Dierentuin</span><span>Score</span><span>⭐</span><span>🏆</span><span></span></div>';
+    html += '<div class="lb-header"><span>#</span><span>Dierentuin</span><span>Score</span><span>⭐</span><span data-tip="Prestaties|% van alle achievements behaald">🏆</span><span></span></div>';
     _leaderboardData.top.forEach(function(e) {
       var isMe = _leaderboardData.me && e.rank === _leaderboardData.me.rank;
-      var achPct = achievementDefs.length ? Math.floor((e.achievements || 0) / achievementDefs.length * 100) : 0;
+      var achTotal = e.achievementsTotal || achievementDefs.length;
+      var achPct = achTotal ? Math.floor((e.achievements || 0) / achTotal * 100) : 0;
       html += '<div class="lb-row' + (isMe ? ' lb-me' : '') + '">';
       html += '<span class="lb-rank">' + e.rank + '</span>';
       html += '<span class="lb-name">' + escapeHtml(e.zooName) + '</span>';
       html += '<span class="lb-score">' + formatNumber(e.score) + '</span>';
       html += '<span class="lb-stars">' + e.stars + '</span>';
-      html += '<span class="lb-ach">' + achPct + '%</span>';
+      html += '<span class="lb-ach" data-tip="Prestaties|' + (e.achievements || 0) + '/' + achTotal + ' behaald">' + achPct + '%</span>';
       html += trustBadge(e.trust);
       html += '</div>';
     });
@@ -1623,14 +1625,15 @@ function renderLeaderboard() {
   if (_leaderboardData.me && _leaderboardData.me.rank > 10) {
     html += '<div class="stat-heading">Jouw positie</div>';
     var e = _leaderboardData.me;
-    var achPct = achievementDefs.length ? Math.floor((e.achievements || 0) / achievementDefs.length * 100) : 0;
+    var achTotal = e.achievementsTotal || achievementDefs.length;
+    var achPct = achTotal ? Math.floor((e.achievements || 0) / achTotal * 100) : 0;
     html += '<div class="lb-table">';
     html += '<div class="lb-row lb-me">';
     html += '<span class="lb-rank">' + e.rank + '</span>';
     html += '<span class="lb-name">' + escapeHtml(e.zooName) + '</span>';
     html += '<span class="lb-score">' + formatNumber(e.score) + '</span>';
     html += '<span class="lb-stars">' + e.stars + '</span>';
-    html += '<span class="lb-ach">' + achPct + '%</span>';
+    html += '<span class="lb-ach" data-tip="Prestaties|' + (e.achievements || 0) + '/' + achTotal + ' behaald">' + achPct + '%</span>';
     html += trustBadge(e.trust);
     html += '</div>';
     html += '</div>';
