@@ -244,6 +244,7 @@ function handleLeaderboardGet(req, res) {
     stars: e.stars,
     trust: e.trust,
     playTimeSeconds: e.playTimeSeconds,
+    achievements: e.achievements || 0,
   }));
 
   let me = null;
@@ -258,6 +259,7 @@ function handleLeaderboardGet(req, res) {
         stars: e.stars,
         trust: e.trust,
         playTimeSeconds: e.playTimeSeconds,
+        achievements: e.achievements || 0,
       };
     }
   }

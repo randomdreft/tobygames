@@ -503,7 +503,7 @@ img.emoji {
 /* Leaderboard */
 .lb-table { display: flex; flex-direction: column; gap: 2px; }
 .lb-header, .lb-row {
-  display: grid; grid-template-columns: 28px 1fr auto 32px 24px;
+  display: grid; grid-template-columns: 28px 1fr auto 32px 36px 24px;
   align-items: center; gap: 4px; padding: 4px 6px; font-size: 13px;
 }
 .lb-header {
@@ -516,6 +516,7 @@ img.emoji {
 .lb-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .lb-score { text-align: right; font-weight: 600; }
 .lb-stars { text-align: center; font-size: 12px; }
+.lb-ach { text-align: center; font-size: 11px; color: var(--text-dim); }
 .lb-trust { text-align: center; font-size: 12px; }
 
 /* Right panel: shop */
