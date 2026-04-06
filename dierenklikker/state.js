@@ -206,6 +206,17 @@ function stateToIni() {
   lines.push('');
   lines.push('[wolkendierentuin]');
   lines.push('sterren_verdiend=' + ((state.zoo && state.zoo.starsEarned) || 0));
+  // Save heaven state so it survives refresh
+  if (typeof zooInterval !== 'undefined' && zooInterval) {
+    if (typeof prestigeCache !== 'undefined' && prestigeCache) {
+      lines.push('in_hemel=prestige');
+      lines.push('prestige_nieuwe_sterren=' + (prestigeCache.newStars || 0));
+      lines.push('prestige_totaal_sterren=' + (prestigeCache.totalStars || 0));
+      lines.push('prestige_dierentuin_sterren=' + (prestigeCache.zooStars || 0));
+    } else {
+      lines.push('in_hemel=bezoek');
+    }
+  }
   if (state.zoo && state.zoo.enclosures) {
     ANIMALS.forEach(a => {
       const enc = state.zoo.enclosures[a.id];
@@ -421,6 +432,12 @@ function iniToState(text) {
   // Wolkendierentuin
   const wdt = ini.wolkendierentuin || {};
   s.zoo.starsEarned = safeInt(wdt.sterren_verdiend, 0, 0);
+  s.zoo.inHemel = wdt.in_hemel || '';
+  if (s.zoo.inHemel === 'prestige') {
+    s.zoo.prestigeNewStars = safeInt(wdt.prestige_nieuwe_sterren, 0, 0);
+    s.zoo.prestigeTotalStars = safeInt(wdt.prestige_totaal_sterren, 0, 0);
+    s.zoo.prestigeZooStars = safeInt(wdt.prestige_dierentuin_sterren, 0, 0);
+  }
   ANIMALS.forEach(a => {
     if (wdt[a.id]) {
       const parts = wdt[a.id].split(',');

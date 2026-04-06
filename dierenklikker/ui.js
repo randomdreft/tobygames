@@ -308,6 +308,11 @@ function spawnZooStar(animalId, happiness) {
   enc.food = Math.max(0, (enc.food !== undefined ? enc.food : ZOO_MAX_FOOD) - 1);
   updateZooFoodMeter(animalId, enc.food);
   const isStar = Math.random() < getZooStarChance(happiness);
+  // Immediately count star for diminishing returns (don't wait for click)
+  if (isStar) {
+    if (!state.zoo) state.zoo = { enclosures: {}, starsEarned: 0 };
+    state.zoo.starsEarned = (state.zoo.starsEarned || 0) + 1;
+  }
   const el = document.createElement('div');
   el.className = isStar ? 'zoo-star' : 'zoo-poop';
   el.textContent = isStar ? '\u2b50' : '\ud83d\udca9';
@@ -344,8 +349,6 @@ function collectZooItem(animalId, el) {
       state.prestige.stars++;
     }
     zooCollectedStars++;
-    if (!state.zoo) state.zoo = { enclosures: {}, starsEarned: 0 };
-    state.zoo.starsEarned = (state.zoo.starsEarned || 0) + 1;
     sfxLuckyClick();
   } else {
     sfxClick();
@@ -2293,6 +2296,25 @@ function init() {
   buildShop();
   renderZooName();
   render();
+
+  // Restore heaven state if was in zoo/prestige when last saved
+  if (state.zoo && state.zoo.inHemel) {
+    if (state.zoo.inHemel === 'prestige') {
+      prestigeCache = {
+        newStars: state.zoo.prestigeNewStars || 0,
+        totalStars: state.zoo.prestigeTotalStars || 0,
+        zooStars: state.zoo.prestigeZooStars || 0
+      };
+      showDierenhemel(prestigeCache.newStars);
+    } else {
+      showDierenhemel();
+    }
+    // Clear the restore flags so they don't persist after leaving
+    delete state.zoo.inHemel;
+    delete state.zoo.prestigeNewStars;
+    delete state.zoo.prestigeTotalStars;
+    delete state.zoo.prestigeZooStars;
+  }
 
   // Schedule first lucky bug
   scheduleLucky();
