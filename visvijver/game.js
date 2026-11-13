@@ -272,7 +272,7 @@ const F = {
   state: 'rust',          // rust | werpen | wachten | beet | inhalen | toon
   t: 0, van: new THREE.Vector3(), doel: new THREE.Vector3(), zone: 'open',
   beetT: 0, n1: false, n2: false, dip: 0, venster: 0, ringT: 0, beetP: 0,
-  soort: null, forceer: null, spanning: 0, prog: 0, slap: 0, duur: 0, moe: false, rukT: 0, rukNa: 0, klikT: 0, zwaai: 0,
+  soort: null, forceer: null, lok: false, bonus: 0, spanning: 0, prog: 0, slap: 0, duur: 0, moe: false, rukT: 0, rukNa: 0, klikT: 0, zwaai: 0,
   toon: null, vangst: null,
 };
 let tijd = 20;
@@ -298,7 +298,7 @@ function zetActie(aan) {
 const GROEN = 0.09, GEEL = 0.24;        // afstand tot het midden van de balk
 const beetPos = () => { const p = F.beetP % 2; return p < 1 ? p : 2 - p; };
 // kans dat de haak blijft zitten; in het groen krijg je 20 erbij
-const vangKans = (s, perfect) => save.vangsten < 3 ? 100 : Math.min(100, s.kans + (perfect ? 20 : 0));
+const vangKans = (s, perfect) => save.vangsten < 3 ? 100 : Math.min(100, s.kans + F.bonus + (perfect ? 20 : 0));
 function slaAan() {
   const afstand = Math.abs(beetPos() - 0.5);
   if (afstand > GEEL) {
@@ -326,7 +326,8 @@ function haalIn() {
   rust();
 }
 function rust() {
-  F.state = 'rust'; F.soort = null;
+  F.state = 'rust'; F.soort = null; F.lok = false; F.bonus = 0;
+  if (zwemmer) zwemmer.gelokt = false;
   dobber.visible = false; lijn.visible = false;
   $('meter').classList.add('hidden'); $('banner').classList.add('hidden'); $('beetmeter').classList.add('hidden');
   btnActie.classList.remove('beet');
@@ -431,7 +432,59 @@ function sluitVangst(inEmmer) {
 $('vangst-emmer').addEventListener('click', () => sluitVangst(true));
 $('vangst-terug').addEventListener('click', () => sluitVangst(false));
 
+// ---- af en toe zwemt er een vis zichtbaar rond. Gooi je er vlakbij, dan bijt juist die vis
+// en is je vangkans groter.
+const LOK_BONUS = 25, LOK_AFSTAND = 3;
+let zwemmer = null, zwemT = 12;
+function kiesZwemmer(zone) {
+  const avond = world.eve > 0.5, lijst = []; let totaal = 0;
+  for (const s of SPECIES) {
+    if (!s.w[zone] || !['gewoon', 'zeldzaam', 'legendarisch'].includes(s.cat)) continue;
+    if (save.vangsten < 3 && s.cat !== 'gewoon') continue;
+    if (s.avond === true && !avond) continue;
+    const w = s.w[zone] * (s.cat === 'zeldzaam' ? 1.5 : s.cat === 'legendarisch' ? 2 : 1);
+    totaal += w; lijst.push([s, w]);
+  }
+  let r = Math.random() * totaal;
+  for (const [s, w] of lijst) { r -= w; if (r <= 0) return s; }
+  return null;
+}
+function wegZwemmer() { if (zwemmer) { scene.remove(zwemmer.m); zwemmer = null; zwemT = 18 + Math.random() * 18; } }
+function updateZwemmer(dt) {
+  if (!zwemmer) {
+    zwemT -= dt;
+    if (zwemT > 0 || !gestart) return;
+    zwemT = 4;                                   // mislukt de plek? Dan zo opnieuw proberen
+    const a = Math.random() * 6.28, r = 2 + Math.random() * 8, x = Math.cos(a) * r, z = Math.sin(a) * r;
+    if (!inPond(x, z, 2) || opSteiger(x, z)) return;
+    const s = kiesZwemmer(zoneAt(x, z)); if (!s) return;
+    const m = buildModel(s); m.scale.setScalar(1.2); scene.add(m);
+    zwemmer = { m, s, x, z, a: Math.random() * 6.28, t: 0, duur: 28 + Math.random() * 14, ringT: 0, gelokt: false, f: Math.random() * 6, boven: 0 };
+  }
+  const q = zwemmer; q.t += dt;
+  const draaiNaar = (hoek, snel) => { q.a += Math.atan2(Math.sin(hoek - q.a), Math.cos(hoek - q.a)) * Math.min(1, dt * snel); };
+  let v = 0.9;
+  if (q.gelokt) {
+    const dx = F.doel.x - q.x, dz = F.doel.z - q.z;
+    draaiNaar(Math.atan2(dz, dx), 4); v = Math.hypot(dx, dz) > 0.7 ? 1.4 : 0;
+  } else {
+    q.a += Math.sin(q.t * 0.7 + q.f) * 0.7 * dt;
+    const nx = q.x + Math.cos(q.a) * 2.2, nz = q.z + Math.sin(q.a) * 2.2;
+    if (!inPond(nx, nz, 1.6) || opSteiger(nx, nz)) draaiNaar(Math.atan2(-q.z, -q.x), 2.5);
+  }
+  q.x += Math.cos(q.a) * v * dt; q.z += Math.sin(q.a) * v * dt;
+  // rustig omhoog komen en aan het eind weer wegduiken
+  q.boven = q.gelokt ? Math.min(1, q.boven + dt) : clamp(Math.min(q.t / 2, (q.duur - q.t) / 2), 0, 1);
+  q.m.position.set(q.x, WATER_Y - 0.08 - (1 - q.boven) * 1.1 + Math.sin(tijd * 1.8 + q.f) * 0.02, q.z);
+  q.m.rotation.y = -q.a;
+  animeerModel(q.m, tijd + q.f, v ? 1 : 0.5);
+  q.ringT -= dt;
+  if (q.ringT <= 0 && q.boven > 0.8) { q.ringT = 1.3; world.ripple(q.x, q.z, 0.8, 1); }
+  if (!q.gelokt && q.t > q.duur) wegZwemmer();
+}
+
 function updateVissen(dt) {
+  updateZwemmer(dt);
   const lijnS = LIJNEN[save.lijn].sterkte, stok = HENGELS[save.hengel];
   F.zwaai = Math.max(0, F.zwaai - dt * 2.2);
   let hengelX = -1.0 - Math.sin(F.zwaai * Math.PI) * 0.55;
@@ -451,6 +504,11 @@ function updateVissen(dt) {
       F.state = 'wachten';
       F.beetT = save.vangsten === 0 ? 2.6 : (2.5 + Math.random() * 6) * AAS[save.aas].tijd + 1.3;
       F.n1 = F.n2 = false; F.dip = 0.3;
+      // vlak bij de zwemmende vis gegooid? Dan komt die op je dobber af
+      if (zwemmer && zwemmer.boven > 0.8 && Math.hypot(zwemmer.x - F.doel.x, zwemmer.z - F.doel.z) < LOK_AFSTAND) {
+        zwemmer.gelokt = true; F.lok = true; F.beetT = 2.4 + Math.random() * 1.2;
+        toast(`👀 De vis heeft je dobber gezien! Extra vangkans: +${LOK_BONUS}%`, 3);
+      }
       world.splash(F.doel.x, F.doel.z, 9, 0.8); world.ripple(F.doel.x, F.doel.z, 1.6, 1.2);
       Sound.plons();
     }
@@ -461,9 +519,10 @@ function updateVissen(dt) {
     dobber.position.set(F.doel.x, WATER_Y + 0.03 + Math.sin(tijd * 2.2) * 0.025 - F.dip, F.doel.z);
     dobber.rotation.z = Math.sin(tijd * 1.7) * 0.12;
     if (F.beetT <= 0) {
-      F.soort = kiesVangst(F.zone);
+      if (F.lok && zwemmer) { F.soort = zwemmer.s; F.bonus = LOK_BONUS; wegZwemmer(); }
+      else F.soort = kiesVangst(F.zone);
       F.state = 'beet'; F.venster = 5.5; F.ringT = 0; F.beetP = 0;
-      $('beet-kans').textContent = `🎯 vangkans ${vangKans(F.soort, false)}%`;
+      $('beet-kans').textContent = `🎯 vangkans ${vangKans(F.soort, false)}%` + (F.bonus ? ' 👀' : '');
       $('beet-wijzer').style.left = '0%';
       $('beetmeter').classList.remove('hidden');
       world.splash(F.doel.x, F.doel.z, 14, 1.1); world.ripple(F.doel.x, F.doel.z, 2.2, 1);
@@ -813,6 +872,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     F, speler, world, actie, richt, camera, scene, renderer,
     get save() { return save; },
     stap(sec, dt = 1 / 30) { for (let t = 0; t < sec; t += dt) stap(dt); renderer.render(scene, camera); },
+    get zwemmer() { return zwemmer; }, zwemNu() { zwemT = 0; },
     zetActie, bewaar, hud, bouwAquarium, kanStaan, tijd: v => { tijd = v; },
   };
 }

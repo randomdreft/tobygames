@@ -497,6 +497,7 @@ Hardloopspel in zijaanzicht (canvas), bedacht door Toby. Toegevoegd 13 november 
 
 - **Besturing**: WASD en pijltjes doen hetzelfde (links/rechts = zijwaarts lopen), muis (pointer lock of slepen) kijken, spatie uitgooien/inhalen, E kraampje/aquarium, B visboek, M geluid. Na een vangst blijft de muis vast: spatie of klik = in de emmer, T = teruggooien. Touch: joystick, sleep-kijken en actieknop
 - **Beet-balk** (13 november 2026): bij beet gaat een streepje heen en weer over rood-geel-groen. Rood = mis, geel = vangkans van de soort, groen = vangkans + 20. Sterke vissen laten het streepje sneller gaan. De vangkans per soort staat in `data.js` (`KANS`) en is zichtbaar bij beet, op de vangstkaart en in het visboek. De eerste 3 vangsten lukken altijd (mits niet rood)
+- **Zwemmende vis** (13 november 2026): om de 18 tot 36 seconden zwemt er een halve minuut een zichtbare vis rond (gewoon, zeldzaam of legendarisch, passend bij de plek). Gooi je binnen 3 meter, dan zwemt hij naar de dobber, bijt juist die soort en telt er 25 bij de vangkans op (`LOK_BONUS`, `LOK_AFSTAND` in `game.js`)
 - **Spanningsmeter**: ingedrukt houden haalt in en verhoogt de spanning; te hoog = lijn breekt, te lang te slap = vis ontsnapt. Een vis wordt na een tijdje moe
 - **5 plekken**: open water, diep, riet, waterlelies, onder de steiger; elk met eigen soorten
 - **23 vangsten**: 8 gewone, 4 zeldzame, 3 legendarische (Maanvis bijt vooral in de avond), 5 rare dingen, 3 monsters
