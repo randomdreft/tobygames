@@ -468,6 +468,8 @@ class Game {
             angle: 0, speed: 0,
             w: 40, h: 24, r: 14
         };
+        this.camera.x = startPos.x - this.viewW / 2;
+        this.camera.y = startPos.y - this.viewH / 2;
 
         // Initial police
         this.police = [];

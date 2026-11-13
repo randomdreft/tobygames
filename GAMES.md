@@ -358,7 +358,7 @@ Stadachtervolging vanuit vogelperspectief. Vlucht voor de politie door een proce
 |---------|--------|--------|
 | `style.css` | ~300 | CSS variabelen, glassmorphism overlays, HUD, joystick, responsive |
 | `sound.js` | ~160 | Web Audio API: motor (pitch varieert met snelheid), sirene (afstandsafhankelijk), pickup, crash, waarschuwingspiep, countdown |
-| `renderer.js` | ~1000 | Canvas rendering: stad als gecachete celtegels (asfalt, zebrapaden, stoepen, gebouwen met muren/schaduw/daken, parken met paden en vijvers), gedetailleerde auto's (politie met NL-striping en zwaailichtgloed), jerrycans/batterijen, particles, bandensporen, vignette, minimap, brandstofpijl |
+| `renderer.js` | ~2200 | Canvas rendering in drie lagen: (1) grond als gecachete celtegels (asfalt, rode fietsstroken, zebrapaden, stoepen, tuinen, parken), (2) alles op de grond (remsporen, schaduwen, voetgangers, pickups, auto's), (3) volumes: gebouwen en boomkruinen met hoogte, geprojecteerd vanuit het schermmidden zodat ze meekantelen tijdens het rijden. Verder rook, wolkenschaduwen, vogels, zwevende teksten, minimap, brandstofpijl |
 | `game.js` | ~830 | Game class, input, physics, politie-AI, spawning, collision, pauze, high scores |
 
 ### Wereld
@@ -419,9 +419,13 @@ Stadachtervolging vanuit vogelperspectief. Vlucht voor de politie door een proce
 
 - **Vignette**: rood pulsend bij lage brandstof (< 25), blauw flitsend bij politie dichtbij (< 150px)
 - **Particles**: uitlaatdampen bij rijden, vonken bij crash, glitter bij pickup
-- **Bandensporen**: persistent op het wegdek, langzaam vervagende zwarte markeringen
+- **Bandensporen**: doorlopende lijnen op het wegdek die langzaam vervagen
 - **Jerrycan-animatie**: zwevend/bobbend met glow-effect
 - **Sirene-gloed**: afwisselend rood/blauw op politieauto's
+- **Diepte**: gebouwen (rijtjeshuizen met zadeldak, kantoren, glazen torens, winkels met luifels, flats, loodsen met containers) hebben muren met ramen en kantelen mee met de camera; boomkruinen in parken worden doorzichtig boven de speler of een pickup
+- **Leven in de stad**: voetgangers op de stoep, eenden in de vijver, rokende schoorstenen, vogels en wolkenschaduwen (puur decor, geen botsingen)
+- **Auto's**: voorwielen sturen mee, remlichten gloeien, taxi en bestelbus in het verkeer
+- **Feedback**: zwevende tekst bij pickups (+22, TURBO!, OLIE!, -15), schermschok bij botsing, snelheidsstrepen tijdens turbo; de renderer leidt dit af uit de spelstatus, zonder haken in `game.js`
 - **Minimap**: rechtsbovenhoek, toont wegen, speler (rood/groen), politie (blauw), jerrycans (geel/groen), viewport
 
 ### Brandstofpijl
