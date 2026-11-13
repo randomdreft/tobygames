@@ -1,357 +1,234 @@
 <!DOCTYPE html>
 <html lang="nl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TobyGames.nl - Speel de leukste games!</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            color: #333;
-        }
-        
-        .header {
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
-            padding: 2rem 0;
-            text-align: center;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-        }
-        
-        .header h1 {
-            font-size: 3rem;
-            color: white;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
-            margin-bottom: 0.5rem;
-        }
-        
-        .header p {
-            font-size: 1.2rem;
-            color: rgba(255, 255, 255, 0.9);
-            text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
-        }
-        
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 3rem 2rem;
-        }
-        
-        .games-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-            gap: 2rem;
-            margin-top: 2rem;
-            justify-items: center;
-        }
-        
-        .game-card {
-            background: white;
-            border-radius: 15px;
-            overflow: hidden;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-            position: relative;
-        }
-        
-        .game-card:hover {
-            transform: translateY(-10px);
-            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
-        }
-        
-        .game-preview {
-            height: 200px;
-            background: linear-gradient(45deg, #ff6b6b, #ee5a24);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 4rem;
-            color: white;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
-        }
-        
-        .game-info {
-            padding: 1.5rem;
-        }
-        
-        .game-title {
-            font-size: 1.5rem;
-            font-weight: bold;
-            color: #333;
-            margin-bottom: 0.5rem;
-        }
-        
-        .game-description {
-            color: #666;
-            line-height: 1.6;
-            margin-bottom: 1rem;
-        }
-        
-        .game-features {
-            list-style: none;
-            margin-bottom: 1.5rem;
-        }
-        
-        .game-features li {
-            color: #555;
-            margin-bottom: 0.3rem;
-            padding-left: 1.2rem;
-            position: relative;
-        }
-        
-        .game-features li:before {
-            content: "🎯";
-            position: absolute;
-            left: 0;
-        }
-        
-        .play-button {
-            display: inline-block;
-            background: linear-gradient(45deg, #667eea, #764ba2);
-            color: white;
-            padding: 12px 30px;
-            border-radius: 25px;
-            text-decoration: none;
-            font-weight: bold;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
-        }
-        
-        .play-button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
-            text-decoration: none;
-            color: white;
-        }
-        
-        
-        .status-badge {
-            position: absolute;
-            top: 15px;
-            right: 15px;
-            background: #27ae60;
-            color: white;
-            padding: 5px 12px;
-            border-radius: 15px;
-            font-size: 0.8rem;
-            font-weight: bold;
-        }
-        
-        
-        @media (max-width: 768px) {
-            .header h1 {
-                font-size: 2rem;
-            }
-            
-            .container {
-                padding: 2rem 1rem;
-            }
-            
-            .games-grid {
-                grid-template-columns: 1fr;
-                gap: 1.5rem;
-                padding: 0 1rem;
-            }
-            
-            .game-card {
-                max-width: 100%;
-            }
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#1b1640">
+<title>TobyGames</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎮</text></svg>">
+<style>
+  :root {
+    --bg: #1b1640;
+    --bg2: #2a1f5c;
+    --ink: #ffffff;
+    --soft: rgba(255,255,255,.72);
+    --font: ui-rounded, "SF Pro Rounded", "Arial Rounded MT Bold", "Nunito", system-ui, sans-serif;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: var(--font);
+    color: var(--ink);
+    min-height: 100vh;
+    background:
+      radial-gradient(circle at 15% 10%, #4b2fb0 0, transparent 40%),
+      radial-gradient(circle at 90% 30%, #b0307a 0, transparent 35%),
+      linear-gradient(180deg, var(--bg2), var(--bg));
+    background-attachment: fixed;
+  }
+
+  header {
+    text-align: center;
+    padding: 2.5rem 16px 1.5rem;
+  }
+  .logo {
+    font-size: clamp(2.6rem, 9vw, 4.5rem);
+    font-weight: 900;
+    letter-spacing: -.02em;
+    line-height: 1;
+  }
+  .logo span {
+    background: linear-gradient(90deg, #ffd23f, #ff7eb6, #7ee8fa);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .tagline {
+    margin-top: .6rem;
+    font-size: 1.1rem;
+    color: var(--soft);
+    font-weight: 700;
+  }
+
+  .dobbel {
+    margin-top: 1.4rem;
+    display: inline-flex;
+    align-items: center;
+    gap: .5rem;
+    font: inherit;
+    font-size: 1.15rem;
+    font-weight: 800;
+    color: #1b1640;
+    background: #ffd23f;
+    border: 0;
+    border-radius: 999px;
+    padding: .75rem 1.5rem;
+    cursor: pointer;
+    box-shadow: 0 6px 0 #c99a00;
+    transition: transform .1s, box-shadow .1s;
+  }
+  .dobbel:hover { transform: translateY(-2px); box-shadow: 0 8px 0 #c99a00; }
+  .dobbel:active { transform: translateY(4px); box-shadow: 0 2px 0 #c99a00; }
+  .dobbel.rol .d { animation: rol .6s ease-in-out; }
+  .d { display: inline-block; font-size: 1.4rem; }
+  @keyframes rol { to { transform: rotate(720deg) scale(1.3); } }
+
+  main {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 1rem 16px 3rem;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+    gap: 1.25rem;
+  }
+
+  .game {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    text-decoration: none;
+    color: var(--ink);
+    border-radius: 28px;
+    padding: 1.75rem 1rem 1.4rem;
+    background: var(--c);
+    box-shadow: 0 10px 0 rgba(0,0,0,.25), 0 18px 30px rgba(0,0,0,.25);
+    transition: transform .15s ease, box-shadow .15s ease;
+    outline: none;
+  }
+  .game:hover, .game:focus-visible {
+    transform: translateY(-6px) rotate(-1deg);
+    box-shadow: 0 16px 0 rgba(0,0,0,.25), 0 26px 40px rgba(0,0,0,.3);
+  }
+  .game:focus-visible { outline: 4px solid #ffd23f; outline-offset: 4px; }
+  .game:active { transform: translateY(4px); box-shadow: 0 4px 0 rgba(0,0,0,.25); }
+
+  .icon {
+    font-size: 4.5rem;
+    line-height: 1;
+    filter: drop-shadow(0 6px 6px rgba(0,0,0,.25));
+    transition: transform .2s;
+  }
+  .game:hover .icon { transform: scale(1.15) rotate(6deg); }
+
+  .naam {
+    margin-top: .9rem;
+    font-size: 1.5rem;
+    font-weight: 900;
+    text-shadow: 0 2px 0 rgba(0,0,0,.2);
+  }
+  .wat {
+    margin-top: .25rem;
+    font-size: 1rem;
+    font-weight: 700;
+    opacity: .9;
+  }
+
+  .sticker {
+    position: absolute;
+    top: -10px;
+    right: -6px;
+    background: #ffd23f;
+    color: #1b1640;
+    font-weight: 900;
+    font-size: .85rem;
+    padding: .3rem .7rem;
+    border-radius: 999px;
+    transform: rotate(8deg);
+    box-shadow: 0 3px 0 #c99a00;
+  }
+
+  footer {
+    text-align: center;
+    padding: 0 16px 2.5rem;
+    color: var(--soft);
+    font-weight: 700;
+    font-size: .95rem;
+  }
+
+  @media (max-width: 520px) {
+    main { grid-template-columns: 1fr 1fr; gap: .9rem; }
+    .game { padding: 1.3rem .5rem 1.1rem; border-radius: 22px; }
+    .icon { font-size: 3.3rem; }
+    .naam { font-size: 1.15rem; }
+    .wat { font-size: .85rem; }
+    .sticker { font-size: .75rem; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition: none !important; }
+  }
+</style>
 </head>
 <body>
-    <div class="header">
-        <h1>🎮 TobyGames.nl</h1>
-        <p>Speel de leukste games online - Gratis, veilig en zonder reclame, voor altijd!</p>
-    </div>
-    
-    <div class="container">
-        <div class="games-grid">
-            <!-- SimToren Game -->
-            <div class="game-card">
-                <div class="status-badge" style="background:#e67e22;">Nieuw!</div>
-                <div class="game-preview" style="background: linear-gradient(45deg, #2c3e50, #3498db);">
-                    🏗️🏢
-                </div>
-                <div class="game-info">
-                    <h3 class="game-title">SimToren</h3>
-                    <p class="game-description">
-                        Bouw de hoogste toren van Nederland! Plaats kantoren, appartementen, winkels,
-                        restaurants en meer. Zorg voor liften en trappen zodat iedereen kan komen waar ze moeten zijn.
-                    </p>
-                    <ul class="game-features">
-                        <li>9 kamertypen: kantoor, winkel, hotel en meer</li>
-                        <li>Werkende liften en trappen</li>
-                        <li>Dag/nacht cyclus met veranderende lucht</li>
-                        <li>Sterrensysteem: groei van ⭐ naar ⭐⭐⭐⭐⭐</li>
-                    </ul>
-                    <a href="simtoren.html" class="play-button">🏗️ Speel Nu!</a>
-                </div>
-            </div>
 
-            <!-- TobyTypen Game -->
-            <div class="game-card">
-                <div class="status-badge">Nieuw!</div>
-                <div class="game-preview" style="background: linear-gradient(45deg, #667eea, #764ba2);">
-                    ⌨️🎯
-                </div>
-                <div class="game-info">
-                    <h3 class="game-title">TobyTypen</h3>
-                    <p class="game-description">
-                        Leer typen met deze superleuke typcursus! 28 lessen met boss fights, achievements,
-                        vallende woorden en een Mario-achtige levelkaart. Maximale dopamine, minimale verveling!
-                    </p>
-                    <ul class="game-features">
-                        <li>28 lessen van thuisrij tot snelheidstest</li>
-                        <li>Boss fights met monsters!</li>
-                        <li>XP, levels, sterren en streaks</li>
-                        <li>30+ achievements om te ontgrendelen</li>
-                    </ul>
-                    <a href="typen/index.html" class="play-button">⌨️ Speel Nu!</a>
-                </div>
-            </div>
+<header>
+  <h1 class="logo">🎮 <span>TobyGames</span></h1>
+  <p class="tagline">Kies een spel en speel!</p>
+  <button class="dobbel" id="dobbel" type="button"><span class="d">🎲</span> Verras me!</button>
+</header>
 
-            <!-- Dierenklikker Game -->
-            <div class="game-card">
-                <div class="status-badge">Nieuw!</div>
-                <div class="game-preview" style="background: linear-gradient(45deg, #1a6b3c, #43a047);">
-                    🐜🐌🐸🐔🐱🐕🐴🐘🐋🐉
-                </div>
-                <div class="game-info">
-                    <h3 class="game-title">Dierenklikker</h3>
-                    <p class="game-description">
-                        Klik op dieren om punten te verdienen! Koop nieuwe dieren, ontgrendel upgrades,
-                        speel mini-spelletjes en evolueer je dierentuin. Hoeveel dieren kun jij verzamelen?
-                    </p>
-                    <ul class="game-features">
-                        <li>10 diersoorten om te ontgrendelen</li>
-                        <li>Tientallen upgrades en prestaties</li>
-                        <li>Mini-spelletjes voor bonuspunten</li>
-                        <li>Savegame downloaden en hacken!</li>
-                    </ul>
-                    <a href="dierenklikker.html" class="play-button">🐾 Speel Nu!</a>
-                </div>
-            </div>
+<main>
+  <a class="game" href="dierenklikker.html" style="--c: linear-gradient(160deg,#43c06b,#1a7a45)">
+    <span class="icon">🐾</span>
+    <span class="naam">Dierenklikker</span>
+    <span class="wat">Klik, verzamel, evolueer</span>
+  </a>
 
-            <!-- Neuswormen Game -->
-            <div class="game-card">
-                <div class="status-badge">Nieuw!</div>
-                <div class="game-preview" style="background: linear-gradient(45deg, #E0F0FA, #C8DFF0);">
-                    👃🪱
-                </div>
-                <div class="game-info">
-                    <h3 class="game-title">Neuswormen</h3>
-                    <p class="game-description">
-                        Trek wormpjes uit een gigantische neus met je pincet en gooi ze in de emmer!
-                        Hoe meer wormpjes je vangt, hoe hoger je score. Pas op, ze kronkelen flink tegen!
-                    </p>
-                    <ul class="game-features">
-                        <li>Grappige pincet-besturing</li>
-                        <li>Wormpjes met eigen persoonlijkheid</li>
-                        <li>Realistische worm-fysica</li>
-                        <li>Score systeem met effecten</li>
-                    </ul>
-                    <a href="worms.html" class="play-button">👃 Speel Nu!</a>
-                </div>
-            </div>
+  <a class="game" href="simtoren.html" style="--c: linear-gradient(160deg,#4aa3ff,#2449a8)">
+    <span class="sticker">Nieuw!</span>
+    <span class="icon">🏗️</span>
+    <span class="naam">SimToren</span>
+    <span class="wat">Bouw de hoogste toren</span>
+  </a>
 
-            <!-- Winkeltje Game -->
-            <div class="game-card">
-                <div class="status-badge">Vernieuwd!</div>
-                <div class="game-preview" style="background: linear-gradient(45deg, #D4A574, #8B5E3C);">
-                    🛒🍄🍅🥦🧀
-                </div>
-                <div class="game-info">
-                    <h3 class="game-title">Winkeltje</h3>
-                    <p class="game-description">
-                        Run je eigen supermarkt! Pak producten van de schappen en breng ze naar klanten
-                        bij de kassa. Koop upgrades, level up en ontgrendel nieuwe producten. Overleef zoveel mogelijk dagen!
-                    </p>
-                    <ul class="game-features">
-                        <li>8 producten over 6 levels</li>
-                        <li>Upgrade systeem: snelheid, capaciteit &amp; meer</li>
-                        <li>Dag/nacht cyclus met eindedagoverzicht</li>
-                        <li>Klanten met geduldmeter en bestellingen</li>
-                    </ul>
-                    <a href="winkeltje.html" class="play-button">🛒 Speel Nu!</a>
-                </div>
-            </div>
+  <a class="game" href="typen/index.html" style="--c: linear-gradient(160deg,#a77bff,#5b33c9)">
+    <span class="icon">⌨️</span>
+    <span class="naam">TobyTypen</span>
+    <span class="wat">Leer typen, versla monsters</span>
+  </a>
 
-            <!-- Boter Kaas en Eieren XL Game -->
-            <div class="game-card">
-                <div class="status-badge">Beschikbaar</div>
-                <div class="game-preview" style="background: linear-gradient(45deg, #4ecdc4, #44a08d);">
-                    ⭕❌
-                </div>
-                <div class="game-info">
-                    <h3 class="game-title">Boter Kaas en Eieren XL</h3>
-                    <p class="game-description">
-                        De klassieke strategie game, maar dan op een groter 5x5 bord!
-                        Speel tegen een vriend of daag de computer uit. Vier op een rij wint!
-                    </p>
-                    <ul class="game-features">
-                        <li>5x5 bord voor meer uitdaging</li>
-                        <li>Speel tegen vrienden of computer</li>
-                        <li>Slimme AI tegenstander</li>
-                        <li>Score bijhouden en confetti bij winst</li>
-                    </ul>
-                    <a href="boter-kaas-eieren-xl.html" class="play-button">🎯 Speel Nu!</a>
-                </div>
-            </div>
+  <a class="game" href="politiejacht.html" style="--c: linear-gradient(160deg,#3c4f86,#141d3d)">
+    <span class="icon">🚔</span>
+    <span class="naam">Politiejacht</span>
+    <span class="wat">Ontsnap aan de politie</span>
+  </a>
 
-            <!-- Snake Game -->
-            <div class="game-card">
-                <div class="status-badge">Beschikbaar</div>
-                <div class="game-preview" style="background: linear-gradient(45deg, #1e3c72, #2a5298);">
-                    🐍
-                </div>
-                <div class="game-info">
-                    <h3 class="game-title">Snake</h3>
-                    <p class="game-description">
-                        De klassieke Snake game! Bestuur je slang, eet appels en word steeds langer.
-                        Pas op dat je niet in je eigen staart bijt! Perfect voor alle leeftijden.
-                    </p>
-                    <ul class="game-features">
-                        <li>Klassieke Snake gameplay</li>
-                        <li>Touch controls voor mobiel</li>
-                        <li>Instelbare snelheid en instellingen</li>
-                        <li>High score tracking en confetti</li>
-                    </ul>
-                    <a href="snake.html" class="play-button">🐍 Speel Nu!</a>
-                </div>
-            </div>
+  <a class="game" href="worms.html" style="--c: linear-gradient(160deg,#ff8fb8,#d6457e)">
+    <span class="icon">👃</span>
+    <span class="naam">Neuswormen</span>
+    <span class="wat">Trek wormen uit een neus</span>
+  </a>
 
-            <!-- Politiejacht Game -->
-            <div class="game-card">
-                <div class="status-badge">Vernieuwd!</div>
-                <div class="game-preview" style="background: linear-gradient(45deg, #0f1a2e, #1a2a4e);">
-                    🚔💨
-                </div>
-                <div class="game-info">
-                    <h3 class="game-title">Politiejacht</h3>
-                    <p class="game-description">
-                        Vlucht door de stad en ontsnap aan de politie! Rijden kost brandstof &mdash;
-                        verzamel jerrycans om je tank te vullen. Kies voor benzine of elektrisch!
-                    </p>
-                    <ul class="game-features">
-                        <li>Open stadswereld met scrollende camera</li>
-                        <li>Brandstof-mechanisme: rijden kost, jerrycans vullen bij</li>
-                        <li>Benzine &amp; EV modus met batterijen</li>
-                        <li>Meerdere politieauto's, minimap en geluidseffecten</li>
-                    </ul>
-                    <a href="politiejacht.html" class="play-button">🚔 Speel Nu!</a>
-                </div>
-            </div>
+  <a class="game" href="winkeltje.html" style="--c: linear-gradient(160deg,#ffae5c,#c4621a)">
+    <span class="icon">🛒</span>
+    <span class="naam">Winkeltje</span>
+    <span class="wat">Run je eigen winkel</span>
+  </a>
 
-        </div>
-    </div>
+  <a class="game" href="snake.html" style="--c: linear-gradient(160deg,#2fd3c0,#13807a)">
+    <span class="icon">🐍</span>
+    <span class="naam">Snake</span>
+    <span class="wat">Eet appels, word lang</span>
+  </a>
+
+  <a class="game" href="boter-kaas-eieren-xl.html" style="--c: linear-gradient(160deg,#ff6b6b,#b52a3a)">
+    <span class="icon">❌</span>
+    <span class="naam">Boter Kaas XL</span>
+    <span class="wat">Vier op een rij wint</span>
+  </a>
+</main>
+
+<footer>Gratis · Geen reclame · Voor altijd ❤️</footer>
+
+<script>
+  const knop = document.getElementById('dobbel');
+  knop.addEventListener('click', () => {
+    const games = [...document.querySelectorAll('.game')];
+    const kies = games[Math.floor(Math.random() * games.length)];
+    knop.classList.add('rol');
+    setTimeout(() => { location.href = kies.getAttribute('href'); }, 650);
+  });
+</script>
 </body>
 </html>
