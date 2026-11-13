@@ -791,7 +791,7 @@ class Renderer {
                 }
             }
         } else {
-            // Standard building (original style)
+            // Standard building
             ctx.fillStyle = bldg.roofColor;
             this._roundRect(bx + 6, by + 6, bw - 12, bh - 12, 2);
             const winColor = bldg.lit ? '#ffe87a' : '#556680';

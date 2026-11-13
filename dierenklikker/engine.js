@@ -961,8 +961,6 @@ function buyUpgrade(upgradeId) {
   if (state.currentPoints < u.cost) return;
   // Check requirements for animal upgrades
   if (u.req !== undefined) {
-    const animalId = upgradeId.split('_')[0];
-    // Handle multi-word animal ids
     const animal = ANIMALS.find(a => a.upgrades.some(au => au.id === upgradeId));
     if (animal && (state.animals[animal.id] || 0) < u.req) return;
   }
@@ -972,42 +970,37 @@ function buyUpgrade(upgradeId) {
   sfxBuy();
   // Update only the purchased item instead of rebuilding the whole list
   const el = document.getElementById('upg-' + upgradeId);
-  if (el) {
-    el.className = 'shop-item bought';
-    el.removeAttribute('onclick');
-    const nameDiv = el.querySelector('.shop-name');
-    if (nameDiv) nameDiv.textContent = u.name;
-    const flavorDiv = el.querySelector('.shop-flavor');
-    if (flavorDiv) flavorDiv.style.display = 'none';
-    const priceDiv = el.querySelector('.shop-price');
-    if (priceDiv) { priceDiv.textContent = 'Gekocht!'; priceDiv.id = 'upgprice-' + upgradeId; }
-    const effect = upgradeEffect(u);
-    const tipDesc = escHtml(u.desc + (effect ? ' — Effect: ' + effect : ''));
-    el.dataset.tip = escHtml(u.name) + '|' + tipDesc;
-  }
+  if (!el) return;
+  el.className = 'shop-item bought';
+  el.removeAttribute('onclick');
+  const nameDiv = el.querySelector('.shop-name');
+  if (nameDiv) nameDiv.textContent = u.name;
+  const flavorDiv = el.querySelector('.shop-flavor');
+  if (flavorDiv) flavorDiv.style.display = 'none';
+  const priceDiv = el.querySelector('.shop-price');
+  if (priceDiv) { priceDiv.textContent = 'Gekocht!'; priceDiv.id = 'upgprice-' + upgradeId; }
+  const effect = upgradeEffect(u);
+  const tipDesc = escHtml(u.desc + (effect ? ' — Effect: ' + effect : ''));
+  el.dataset.tip = escHtml(u.name) + '|' + tipDesc;
+
   // Update the category header (progress count + collapse if all done)
-  if (el) {
-    const cat = el.closest('.upgrade-category');
-    if (cat) {
-      const items = cat.querySelectorAll('.shop-item');
-      const boughtCount = cat.querySelectorAll('.shop-item.bought').length;
-      const total = items.length;
-      const h3 = cat.querySelector('h3');
-      if (h3) {
-        const progress = total > 1 ? ' <span style="color:var(--text-dim);font-size:12px">(' + boughtCount + '/' + total + ')</span>' : '';
-        const arrow = '<span class="toggle-arrow">▼</span> ';
-        const titleText = h3.textContent.replace(/▼\s*/, '').replace(/\s*\(\d+\/\d+\)/, '').replace(/\s*✓$/, '');
-        if (boughtCount === total) {
-          h3.innerHTML = arrow + titleText + progress + ' ✓';
-          h3.style.opacity = '0.5';
-          cat.classList.add('collapsed');
-          const btn = cat.querySelector('.buy-all-btn');
-          if (btn) btn.remove();
-        } else {
-          h3.innerHTML = arrow + titleText + progress;
-        }
-      }
-    }
+  const cat = el.closest('.upgrade-category');
+  if (!cat) return;
+  const h3 = cat.querySelector('h3');
+  if (!h3) return;
+  const total = cat.querySelectorAll('.shop-item').length;
+  const boughtCount = cat.querySelectorAll('.shop-item.bought').length;
+  const progress = total > 1 ? ' <span style="color:var(--text-dim);font-size:12px">(' + boughtCount + '/' + total + ')</span>' : '';
+  const arrow = '<span class="toggle-arrow">▼</span> ';
+  const titleText = h3.textContent.replace(/▼\s*/, '').replace(/\s*\(\d+\/\d+\)/, '').replace(/\s*✓$/, '');
+  if (boughtCount === total) {
+    h3.innerHTML = arrow + titleText + progress + ' ✓';
+    h3.style.opacity = '0.5';
+    cat.classList.add('collapsed');
+    const btn = cat.querySelector('.buy-all-btn');
+    if (btn) btn.remove();
+  } else {
+    h3.innerHTML = arrow + titleText + progress;
   }
 }
 

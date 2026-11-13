@@ -39,13 +39,11 @@ function mgSetActive(id, active) {
 
 function cancelMinigame(id) {
   mgSetActive(id, false);
-  // Quiz
   if (id === 'quiz' && quizActive) {
     quizActive = false;
     document.getElementById('quiz-game').style.display = 'none';
     document.getElementById('quiz-btn').disabled = false;
   }
-  // Catcher
   if (id === 'catcher' && catcherActive) {
     catcherActive = false;
     clearInterval(catcherInterval);
@@ -53,13 +51,11 @@ function cancelMinigame(id) {
     document.getElementById('catcher-game').style.display = 'none';
     document.getElementById('catcher-btn').disabled = false;
   }
-  // Math
   if (id === 'math' && mathActive) {
     mathActive = false;
     document.getElementById('math-game').style.display = 'none';
     document.getElementById('math-btn').disabled = false;
   }
-  // Sort
   if (id === 'sort' && sortActive) {
     sortActive = false;
     clearInterval(sortInterval);
@@ -68,48 +64,41 @@ function cancelMinigame(id) {
     document.getElementById('sort-field').innerHTML =
       '<div id="sort-current"></div><div id="sort-name"></div>';
   }
-  // Memory
   if (id === 'memory' && memoryActive) {
     memoryActive = false;
     clearMemoryTimeouts();
     document.getElementById('memory-game').style.display = 'none';
     document.getElementById('memory-btn').disabled = false;
   }
-  // Tellen
   if (id === 'tellen' && tellenActive) {
     tellenActive = false;
     clearTellenTimeouts();
     document.getElementById('tellen-game').style.display = 'none';
     document.getElementById('tellen-btn').disabled = false;
   }
-  // Indringer
   if (id === 'indringer' && indringerActive) {
     indringerActive = false;
     clearInterval(indringerInterval);
     document.getElementById('indringer-game').style.display = 'none';
     document.getElementById('indringer-btn').disabled = false;
   }
-  // Groter
   if (id === 'groter' && groterActive) {
     groterActive = false;
     clearTimeout(groterTimeout);
     document.getElementById('groter-game').style.display = 'none';
     document.getElementById('groter-btn').disabled = false;
   }
-  // Race
   if (id === 'race' && raceActive) {
     raceActive = false;
     clearInterval(raceTimer);
     document.getElementById('race-game').style.display = 'none';
     document.getElementById('race-btn').disabled = false;
   }
-  // Puzzel
   if (id === 'puzzel' && puzzelActive) {
     puzzelActive = false;
     document.getElementById('puzzel-game').style.display = 'none';
     document.getElementById('puzzel-btn').disabled = false;
   }
-  // Voedsel
   if (id === 'voedsel' && voedselActive) {
     voedselActive = false;
     clearTimeout(voedselTimeout);
@@ -389,7 +378,6 @@ function chooseBuff(buffId) {
     state.allTime.totalEarned += bonus;
     showToast(buff.emoji + ' Jackpot! +' + formatNumber(bonus) + ' punten!');
   } else {
-    // Set timed buff
     // Replace existing buff of same type, or add new one
     activeBuffs = activeBuffs.filter(b => Date.now() < b.endsAt && b.type !== buff.id);
     activeBuffs.push({ type: buff.id, endsAt: Date.now() + getBuffDuration(), emoji: buff.emoji, name: buff.name, color: buff.color, desc: typeof buff.desc === 'function' ? buff.desc() : buff.desc });

@@ -661,15 +661,8 @@
             setupEventListeners() {
                 // Keyboard controls
                 document.addEventListener('keydown', (e) => {
-                    // Normalize key input for both arrow keys and WASD
-                    let normalizedKey = e.key.toLowerCase();
-                    
-                    // Map arrow keys to lowercase format
-                    if (e.key === 'ArrowUp') normalizedKey = 'arrowup';
-                    else if (e.key === 'ArrowDown') normalizedKey = 'arrowdown';
-                    else if (e.key === 'ArrowLeft') normalizedKey = 'arrowleft';
-                    else if (e.key === 'ArrowRight') normalizedKey = 'arrowright';
-                    
+                    const normalizedKey = e.key.toLowerCase();
+
                     if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright', 'w', 'a', 's', 'd'].includes(normalizedKey)) {
                         e.preventDefault();
                         this.handleInput(normalizedKey);
@@ -681,19 +674,15 @@
                     }
                 });
                 
-                // Back button
                 document.getElementById('backButton').addEventListener('click', (e) => {
                     e.preventDefault();
-                    // Stuur gebruiker terug naar homepage - pas deze URL aan naar wens
                     window.location.href = '/';
                 });
-                
-                // Pause button
+
                 document.getElementById('pauseButton').addEventListener('click', () => {
                     this.togglePause();
                 });
 
-                // Resume button
                 document.getElementById('resumeButton').addEventListener('click', () => {
                     this.resumeGame();
                 });
@@ -731,7 +720,6 @@
                     this.resetScores();
                 });
                 
-                // Play again button
                 document.getElementById('playAgainButton').addEventListener('click', () => {
                     this.restartGame();
                 });
@@ -877,8 +865,7 @@
                 if (newDirection.x === -this.direction.x && newDirection.y === -this.direction.y) {
                     return;
                 }
-                
-                // Voeg toe aan input buffer
+
                 this.inputBuffer.push(newDirection);
             }
             
@@ -962,11 +949,9 @@
                 if (this.inputBuffer.length > 0) {
                     this.nextDirection = this.inputBuffer.shift();
                 }
-                
-                // Update direction
+
                 this.direction = { ...this.nextDirection };
-                
-                // Bereken nieuwe head positie
+
                 const head = { ...this.snake[0] };
                 head.x += this.direction.x;
                 head.y += this.direction.y;
@@ -975,20 +960,17 @@
                 if (this.settings.wrapAround) {
                     head.x = (head.x + this.tileCount) % this.tileCount;
                     head.y = (head.y + this.tileCount) % this.tileCount;
-                } else {
-                    if (head.x < 0 || head.x >= this.tileCount || head.y < 0 || head.y >= this.tileCount) {
-                        this.endGame();
-                        return;
-                    }
+                } else if (head.x < 0 || head.x >= this.tileCount || head.y < 0 || head.y >= this.tileCount) {
+                    this.endGame();
+                    return;
                 }
-                
+
                 // Check collision met eigen lichaam
                 if (this.isSnakePosition(head)) {
                     this.endGame();
                     return;
                 }
-                
-                // Voeg nieuwe head toe
+
                 this.snake.unshift(head);
                 
                 // Check apple collision
@@ -1008,19 +990,14 @@
             }
             
             draw() {
-                // Clear canvas
                 this.ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
                 this.ctx.fillRect(0, 0, this.canvas.width / (window.devicePixelRatio || 1), this.canvas.height / (window.devicePixelRatio || 1));
-                
-                // Draw grid
+
                 if (this.settings.showGrid) {
                     this.drawGrid();
                 }
-                
-                // Draw apple
+
                 this.drawApple();
-                
-                // Draw snake
                 this.drawSnake();
             }
             
@@ -1053,10 +1030,8 @@
                 const pulse = 1 + Math.sin(Date.now() * 0.005) * 0.15;
                 const fontSize = this.tileSize * 0.8 * pulse;
                 
-                // Save context state
                 this.ctx.save();
-                
-                // Draw apple emoji
+
                 this.ctx.font = `${fontSize}px Arial`;
                 this.ctx.textAlign = 'center';
                 this.ctx.textBaseline = 'middle';
@@ -1066,8 +1041,7 @@
                 this.ctx.shadowBlur = 10;
                 
                 this.ctx.fillText('🍎', centerX, centerY);
-                
-                // Restore context state (resets all properties including font, textAlign, textBaseline, shadow)
+
                 this.ctx.restore();
             }
             
@@ -1281,9 +1255,7 @@
         // SERVICE WORKER REGISTRATIE
         // ===========================================
         
-        // Registreer service worker voor offline functionaliteit
         if ('serviceWorker' in navigator) {
-            // Maak een inline service worker
             const serviceWorkerCode = `
                 self.addEventListener('install', (event) => {
                     event.waitUntil(
@@ -1302,11 +1274,9 @@
                 });
             `;
             
-            // Maak blob URL voor service worker
             const blob = new Blob([serviceWorkerCode], { type: 'application/javascript' });
             const serviceWorkerUrl = URL.createObjectURL(blob);
-            
-            // Registreer service worker
+
             navigator.serviceWorker.register(serviceWorkerUrl).then((registration) => {
                 console.log('Service Worker geregistreerd:', registration);
             }).catch((error) => {
@@ -1317,8 +1287,7 @@
         // ===========================================
         // GAME INITIALISATIE
         // ===========================================
-        
-        // Start het spel wanneer de pagina geladen is
+
         window.addEventListener('load', () => {
             new SnakeGame();
         });

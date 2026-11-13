@@ -22,7 +22,7 @@ const ZOO_MAX_SPAWNS = 3;
 const ZOO_MAX_FOOD = 5;          // max voedselvoorraad per dier
 const ZOO_PET_AMOUNT = 10;
 const ZOO_PET_COOLDOWN = 5000;   // 5 sec
-const ZOO_FEED_AMOUNT = 1;       // +1 voedsel per voerbeurt (was geluk)
+const ZOO_FEED_AMOUNT = 1;       // +1 voedsel per voerbeurt
 const ZOO_FEED_COOLDOWN = 5000;  // 5 sec
 
 const COLOR_THEMES = [

@@ -327,7 +327,6 @@ class Game {
 
     _showJoystick(cx, cy) {
         const base = document.getElementById('joystick-base');
-        if (!base) return;
         base.style.display = 'block';
         base.style.left = (cx - 50) + 'px';
         base.style.top = (cy - 50) + 'px';
@@ -337,13 +336,11 @@ class Game {
 
     _moveJoystickKnob(dx, dy) {
         const knob = document.getElementById('joystick-knob');
-        if (!knob) return;
         knob.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
     }
 
     _hideJoystick() {
-        const base = document.getElementById('joystick-base');
-        if (base) base.style.display = 'none';
+        document.getElementById('joystick-base').style.display = 'none';
     }
 
     setupUI() {
@@ -366,18 +363,15 @@ class Game {
         document.getElementById('restart-btn').addEventListener('click', () => this.restart());
         document.getElementById('resume-btn').addEventListener('click', () => this.unpause());
 
-        const pBtn = document.getElementById('powerup-btn');
-        if (pBtn) pBtn.addEventListener('click', () => this.deployPowerup());
+        document.getElementById('powerup-btn').addEventListener('click', () => this.deployPowerup());
 
         // Car selector
-        const carPrev = document.getElementById('car-prev');
-        const carNext = document.getElementById('car-next');
-        if (carPrev) carPrev.addEventListener('click', () => {
+        document.getElementById('car-prev').addEventListener('click', () => {
             let idx = this.selectedCar - 1;
             if (idx < 0) idx = CARS.length - 1;
             this.selectCar(idx);
         });
-        if (carNext) carNext.addEventListener('click', () => {
+        document.getElementById('car-next').addEventListener('click', () => {
             let idx = this.selectedCar + 1;
             if (idx >= CARS.length) idx = 0;
             this.selectCar(idx);
@@ -385,15 +379,13 @@ class Game {
 
         // Generate car dots
         const dotsEl = document.getElementById('car-dots');
-        if (dotsEl) {
-            dotsEl.innerHTML = CARS.map((c, i) =>
-                `<span class="car-dot${i === 0 ? ' active' : ''}${this.isCarUnlocked(i) ? ' unlocked' : ''}" data-idx="${i}"></span>`
-            ).join('');
-            dotsEl.addEventListener('click', e => {
-                const idx = e.target.dataset.idx;
-                if (idx != null) this.selectCar(parseInt(idx));
-            });
-        }
+        dotsEl.innerHTML = CARS.map((c, i) =>
+            `<span class="car-dot${i === 0 ? ' active' : ''}${this.isCarUnlocked(i) ? ' unlocked' : ''}" data-idx="${i}"></span>`
+        ).join('');
+        dotsEl.addEventListener('click', e => {
+            const idx = e.target.dataset.idx;
+            if (idx != null) this.selectCar(parseInt(idx));
+        });
 
         this._updateModeLabels();
         this._updateCarUI();
@@ -670,9 +662,7 @@ class Game {
     }
 
     _updatePowerupBtn() {
-        const btn = document.getElementById('powerup-btn');
-        if (!btn) return;
-        btn.style.display = this.heldPowerup ? 'flex' : 'none';
+        document.getElementById('powerup-btn').style.display = this.heldPowerup ? 'flex' : 'none';
     }
 
     endGame(reason) {
@@ -699,11 +689,9 @@ class Game {
         document.getElementById('score-value').textContent = score;
 
         // Stats line
-        const statsEl = document.getElementById('gameover-stats');
-        if (statsEl) {
-            const timeStr = this._formatTime(this.time);
-            statsEl.textContent = `${timeStr} gereden \u2022 ${this.collected} ${this.evMode ? '\u{1F50B}' : '\u26FD'} verzameld`;
-        }
+        const timeStr = this._formatTime(this.time);
+        document.getElementById('gameover-stats').textContent =
+            `${timeStr} gereden \u2022 ${this.collected} ${this.evMode ? '\u{1F50B}' : '\u26FD'} verzameld`;
 
         document.getElementById('gameover-screen').style.display = 'flex';
         this._updatePowerupBtn();
@@ -1392,8 +1380,6 @@ class Game {
         return m + ':' + (s < 10 ? '0' : '') + s;
     }
 
-    // === HIGH SCORES ===
-
     // === STATS & CAR SELECTION ===
 
     loadStats() {
@@ -1423,8 +1409,6 @@ class Game {
     }
 
     _updateCarUI() {
-        const card = document.getElementById('car-card');
-        if (!card) return;
         const car = CARS[this.selectedCar];
         const locked = !this.isCarUnlocked(this.selectedCar);
 
@@ -1434,8 +1418,7 @@ class Game {
         // Stat bars
         const stats = { speed: car.speed, fuel: car.fuel, turn: car.turn };
         for (const [key, val] of Object.entries(stats)) {
-            const bar = document.getElementById('stat-' + key);
-            if (bar) bar.style.width = Math.round((val / 1.35) * 100) + '%';
+            document.getElementById('stat-' + key).style.width = Math.round((val / 1.35) * 100) + '%';
         }
 
         // Lock overlay
@@ -1448,10 +1431,8 @@ class Game {
         }
 
         // Color preview
-        const preview = document.getElementById('car-color-preview');
-        if (preview) {
-            preview.style.background = car.color || (this.evMode ? '#2ecc71' : '#e74c3c');
-        }
+        document.getElementById('car-color-preview').style.background =
+            car.color || (this.evMode ? '#2ecc71' : '#e74c3c');
 
         // Nav dots
         const dots = document.querySelectorAll('.car-dot');
@@ -1486,7 +1467,6 @@ class Game {
 
     updateScoreboard() {
         const list = document.getElementById('score-list');
-        if (!list) return;
         if (this.highScores.length === 0) {
             list.innerHTML = '<div class="score-empty">Nog geen scores</div>';
             return;

@@ -54,7 +54,6 @@
     mouse.down = false;
     releaseWorm();
   });
-  // Prevent context menu
   canvas.addEventListener('contextmenu', e => e.preventDefault());
 
   // ===== GAME STATE =====
@@ -230,11 +229,6 @@
 
   function wormHeadPos(worm) {
     const segs = peekSegments(worm);
-    if (segs.length === 0) {
-      const exit = slotExit(worm.side, worm.slot);
-      const shk = shakeOffset();
-      return { x: exit.x + shk.x, y: exit.y + shk.y };
-    }
     return { x: segs[0].x, y: segs[0].y };
   }
 
@@ -254,17 +248,16 @@
         best = w;
       }
     }
-    if (best) {
-      best.state = 'grabbed';
-      const head = wormHeadPos(best);
-      best.headX = head.x;
-      best.headY = head.y;
-      const exit = slotExit(best.side, best.slot);
-      const shk = shakeOffset();
-      best.exitX = exit.x + shk.x;
-      best.exitY = exit.y + shk.y;
-      grabbedWorm = best;
-    }
+    if (!best) return;
+    best.state = 'grabbed';
+    const head = wormHeadPos(best);
+    best.headX = head.x;
+    best.headY = head.y;
+    const exit = slotExit(best.side, best.slot);
+    const shk = shakeOffset();
+    best.exitX = exit.x + shk.x;
+    best.exitY = exit.y + shk.y;
+    grabbedWorm = best;
   }
 
   function releaseWorm() {
@@ -410,13 +403,11 @@
 
         case 'falling':
           w.vy += 700 * dt;
-          if (w.chain) {
-            for (const seg of w.chain) {
-              seg.y += w.vy * dt;
-              seg.x += Math.sin(gameTime * 6 + seg.y * 0.02) * dt * 30;
-            }
+          for (const seg of w.chain) {
+            seg.y += w.vy * dt;
+            seg.x += Math.sin(gameTime * 6 + seg.y * 0.02) * dt * 30;
           }
-          if (w.chain && w.chain[0].y > H + 100) w.state = 'dead';
+          if (w.chain[0].y > H + 100) w.state = 'dead';
           break;
       }
     }
@@ -523,7 +514,7 @@
     ctx.bezierCurveTo(-ns * 0.48, -ns * 0.08, -ns * 0.08, -ns * 0.48, 0, -ns * 0.5);
     ctx.closePath();
 
-    const r = Math.min(255, 255);
+    const r = 255;
     const g = Math.max(170, Math.round(205 - red * 45));
     const b = Math.max(130, Math.round(175 - red * 55));
     const grad = ctx.createRadialGradient(-ns * 0.06, -ns * 0.1, 0, 0, 0, ns * 0.5);
@@ -563,10 +554,7 @@
   function drawWormsInNose() {
     for (const w of worms) {
       if (w.state === 'growing' || w.state === 'idle') {
-        const segs = peekSegments(w);
-        if (segs.length > 0) {
-          drawWormBody(segs, w.color, segRadius(), false);
-        }
+        drawWormBody(peekSegments(w), w.color, segRadius(), false);
       } else if (w.state === 'grabbed') {
         const segs = grabbedSegments(w);
         drawWormBody(segs, w.color, segRadius(), true);
@@ -576,7 +564,7 @@
 
   function drawFreeAndFallingWorms() {
     for (const w of worms) {
-      if ((w.state === 'free' || w.state === 'falling') && w.chain) {
+      if (w.state === 'free' || w.state === 'falling') {
         // Add visual wiggle offset
         const segs = w.chain.map((seg, i) => {
           let perpX = 0, perpY = 0;
@@ -722,7 +710,7 @@
       const alpha = Math.min(1, p.life * 3);
       ctx.globalAlpha = alpha;
       ctx.beginPath();
-      ctx.arc(p.x, p.y, p.radius * (p.life / (p.maxLife || 0.5)), 0, Math.PI * 2);
+      ctx.arc(p.x, p.y, p.radius * (p.life / p.maxLife), 0, Math.PI * 2);
       ctx.fillStyle = p.color;
       ctx.fill();
     }

@@ -78,7 +78,7 @@ const Game = (() => {
 
     function getShelfLayout() {
         const maxLayout = Math.min(state.level, 6);
-        return SHELF_LAYOUTS[maxLayout] || SHELF_LAYOUTS[6];
+        return SHELF_LAYOUTS[maxLayout];
     }
 
     // --- Input ---
@@ -198,7 +198,6 @@ const Game = (() => {
                 if (spaceJustPressed && p.carrying.length < p.maxCarry) {
                     p.carrying.push(shelf.product);
                     addFloatingText(pcx, pcy - 20, PRODUCTS[shelf.product].emoji, '#fff', 18);
-                    spaceJustPressed = false;
                     updateCarrySlots();
                 }
                 break;
@@ -214,7 +213,6 @@ const Game = (() => {
                 if (spaceJustPressed && p.carrying.length > 0) {
                     p.carrying = [];
                     addFloatingText(pcx, pcy - 20, 'Weggegooid!', '#FF5722', 14);
-                    spaceJustPressed = false;
                     updateCarrySlots();
                 }
             }
@@ -228,12 +226,10 @@ const Game = (() => {
                 interactionTarget = { type: 'register' };
                 if (spaceJustPressed && p.carrying.length > 0) {
                     deliverItems();
-                    spaceJustPressed = false;
                 }
             }
         }
 
-        // Consume space
         spaceJustPressed = false;
     }
 
@@ -254,7 +250,6 @@ const Game = (() => {
                 // Patience boost for correct delivery
                 first.patience = Math.min(first.maxPatience, first.patience + first.maxPatience * 0.25);
 
-                // Check if order complete
                 if (first.order.every(o => o.received >= o.quantity)) {
                     completeOrder(first);
                 }
@@ -283,7 +278,6 @@ const Game = (() => {
 
         addFloatingText(state.player.x + 14, state.player.y - 30, `+\u20AC${total}`, '#4CAF50', 20);
 
-        // Remove after short delay
         setTimeout(() => {
             const idx = customers.indexOf(customer);
             if (idx !== -1) {
@@ -314,12 +308,11 @@ const Game = (() => {
         const available = Object.keys(PRODUCTS).filter(p => PRODUCTS[p].unlockLevel <= state.level);
 
         // Order: 1-3 items
-        const numTypes = Math.min(1 + Math.floor(Math.random() * Math.min(3, available.length)), available.length);
+        const numTypes = 1 + Math.floor(Math.random() * Math.min(3, available.length));
         const order = [];
         const used = [];
         for (let i = 0; i < numTypes; i++) {
             const remaining = available.filter(p => !used.includes(p));
-            if (remaining.length === 0) break;
             const item = remaining[Math.floor(Math.random() * remaining.length)];
             used.push(item);
             order.push({
@@ -358,7 +351,6 @@ const Game = (() => {
             if (!c.served && c.queuePosition === 0) {
                 c.patience -= dt;
                 if (c.patience <= 0) {
-                    // Penalty
                     let penalty = 0;
                     c.order.forEach(o => {
                         penalty += PRODUCTS[o.item].price * o.quantity;
@@ -381,8 +373,6 @@ const Game = (() => {
     // --- Day System ---
     function endDay() {
         dayActive = false;
-
-        // Show day complete overlay
         showDaySummary();
     }
 
@@ -407,7 +397,6 @@ const Game = (() => {
         dayActive = true;
         customers = [];
 
-        // Clear remaining carried items
         state.player.carrying = [];
         state.player.x = 380;
         state.player.y = 320;
@@ -528,10 +517,8 @@ const Game = (() => {
 
     function updatePauseBtn() {
         const btn = document.getElementById('pauseBtn');
-        if (btn) {
-            btn.textContent = paused ? 'Hervat' : 'Pauze';
-            btn.classList.toggle('active', paused);
-        }
+        btn.textContent = paused ? 'Hervat' : 'Pauze';
+        btn.classList.toggle('active', paused);
     }
 
     // --- Restart ---
@@ -567,17 +554,14 @@ const Game = (() => {
         Renderer.drawFloor();
         Renderer.drawWalls();
 
-        // Shelves
         shelves.forEach(s => Renderer.drawShelf(s));
 
         // Cash register & trash
         Renderer.drawCashRegister(state.cashRegister);
         Renderer.drawTrashCan(state.trashCan);
 
-        // Customers
         customers.forEach(c => Renderer.drawCustomer(c));
 
-        // Player
         Renderer.drawPlayer(state.player);
 
         // Interaction hints
@@ -592,13 +576,8 @@ const Game = (() => {
             }
         }
 
-        // Floating texts
         Renderer.drawFloatingTexts(floatingTexts);
-
-        // Day timer bar at top
         drawDayTimerBar(ctx);
-
-        // Queue count
         drawQueueCount(ctx);
     }
 
@@ -638,20 +617,14 @@ const Game = (() => {
 
     // --- UI Updates ---
     function updateUI() {
-        const moneyEl = document.getElementById('hudMoney');
-        const servedEl = document.getElementById('hudServed');
-        const levelEl = document.getElementById('hudLevel');
-        const dayEl = document.getElementById('hudDay');
-
-        if (moneyEl) moneyEl.textContent = `\u20AC${state.money}`;
-        if (servedEl) servedEl.textContent = state.customersServed;
-        if (levelEl) levelEl.textContent = state.level;
-        if (dayEl) dayEl.textContent = dayNumber;
+        document.getElementById('hudMoney').textContent = `\u20AC${state.money}`;
+        document.getElementById('hudServed').textContent = state.customersServed;
+        document.getElementById('hudLevel').textContent = state.level;
+        document.getElementById('hudDay').textContent = dayNumber;
     }
 
     function updateCarrySlots() {
         const bar = document.getElementById('carryBar');
-        if (!bar) return;
         bar.innerHTML = '';
         for (let i = 0; i < state.player.maxCarry; i++) {
             const slot = document.createElement('div');

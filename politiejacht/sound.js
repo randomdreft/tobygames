@@ -110,7 +110,7 @@ class SoundManager {
         gain2.gain.value = 0.01 + speedRatio * 0.02;
     }
 
-    // --- Siren (unchanged logic, slightly lower volume) ---
+    // --- Siren ---
 
     startSiren() {
         if (!this.initialized || this.sirenOsc1) return;

@@ -1540,7 +1540,6 @@ function submitLeaderboard() {
   if (now - _lastLeaderboardSubmit < 60000) return;
   _lastLeaderboardSubmit = now;
 
-  const totalAnimals = ANIMALS.reduce((s, a) => s + (state.animals[a.id]||0), 0);
   const achCount = Object.keys(state.achievements).filter(k => state.achievements[k]).length;
   const animalCounts = {};
   ANIMALS.forEach(a => { animalCounts[a.id] = state.animals[a.id] || 0; });

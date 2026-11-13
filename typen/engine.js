@@ -54,25 +54,24 @@ function saveGame() {
 function loadGame() {
     try {
         const raw = localStorage.getItem(SAVE_KEY);
-        if (raw) {
-            const saved = JSON.parse(raw);
-            state = {
-                xp: saved.xp || 0,
-                level: saved.level || 1,
-                lessonStars: saved.lessonStars || {},
-                achievements: saved.achievements || [],
-                dailyDates: saved.dailyDates || [],
-                currentStreak: saved.currentStreak || 0,
-                stats: {
-                    totalLetters: saved.stats?.totalLetters || 0,
-                    totalWords: saved.stats?.totalWords || 0,
-                    accuracy: saved.stats?.accuracy || 100,
-                    fastestWPM: saved.stats?.fastestWPM || 0,
-                    bestCombo: saved.stats?.bestCombo || 0,
-                    perfectLessons: saved.stats?.perfectLessons || 0
-                }
-            };
-        }
+        if (!raw) return;
+        const saved = JSON.parse(raw);
+        state = {
+            xp: saved.xp || 0,
+            level: saved.level || 1,
+            lessonStars: saved.lessonStars || {},
+            achievements: saved.achievements || [],
+            dailyDates: saved.dailyDates || [],
+            currentStreak: saved.currentStreak || 0,
+            stats: {
+                totalLetters: saved.stats?.totalLetters || 0,
+                totalWords: saved.stats?.totalWords || 0,
+                accuracy: saved.stats?.accuracy || 100,
+                fastestWPM: saved.stats?.fastestWPM || 0,
+                bestCombo: saved.stats?.bestCombo || 0,
+                perfectLessons: saved.stats?.perfectLessons || 0
+            }
+        };
     } catch(e) {}
 }
 
@@ -81,21 +80,20 @@ function getTodayStr() { return new Date().toISOString().slice(0,10); }
 
 function updateDailyStreak() {
     const today = getTodayStr();
-    if (!state.dailyDates.includes(today)) {
-        state.dailyDates.push(today);
-        let streak = 1;
-        const sorted = [...state.dailyDates].sort().reverse();
-        for (let i = 1; i < sorted.length; i++) {
-            const prev = new Date(sorted[i-1]);
-            const curr = new Date(sorted[i]);
-            const diff = (prev - curr) / (1000*60*60*24);
-            if (diff <= 1.5) streak++; else break;
-        }
-        state.currentStreak = streak;
-        if (streak === 7) showToast("🔥 7 dagen streak! Weekstrijder!", "streak");
-        if (streak === 30) showToast("🔥🔥 30 dagen streak! Maandkampioen!", "streak");
-        saveGame();
+    if (state.dailyDates.includes(today)) return;
+    state.dailyDates.push(today);
+    let streak = 1;
+    const sorted = [...state.dailyDates].sort().reverse();
+    for (let i = 1; i < sorted.length; i++) {
+        const prev = new Date(sorted[i-1]);
+        const curr = new Date(sorted[i]);
+        const diff = (prev - curr) / (1000*60*60*24);
+        if (diff <= 1.5) streak++; else break;
     }
+    state.currentStreak = streak;
+    if (streak === 7) showToast("🔥 7 dagen streak! Weekstrijder!", "streak");
+    if (streak === 30) showToast("🔥🔥 30 dagen streak! Maandkampioen!", "streak");
+    saveGame();
 }
 
 // ═══ XP & LEVELS ═══
@@ -228,9 +226,7 @@ function getComboMultiplier() {
 function buildKeyboard() {
     const kb = document.getElementById('keyboard');
     kb.innerHTML = '';
-    const allRows = [...KB_ROWS];
-
-    allRows.forEach((row, ri) => {
+    KB_ROWS.forEach((row, ri) => {
         const rowEl = document.createElement('div');
         rowEl.className = 'kb-row';
         if (ri === 3) {
@@ -247,7 +243,7 @@ function buildKeyboard() {
             key.dataset.key = k.toLowerCase();
             if (currentLesson) {
                 const learned = currentLesson.allLetters.map(l=>l.toLowerCase());
-                if (!learned.includes(k.toLowerCase()) && !['shift'].includes(k.toLowerCase())) {
+                if (!learned.includes(k.toLowerCase())) {
                     key.classList.add('inactive');
                 }
             }
@@ -281,11 +277,6 @@ function highlightKey(char) {
         if (k.dataset.key === lower || k.dataset.key === char) k.classList.add('highlight');
         if (needsShift && k.dataset.key === 'shift') k.classList.add('highlight');
     });
-    if (char === ' ') {
-        document.querySelectorAll('.kb-key').forEach(k => {
-            if (k.dataset.key === ' ') k.classList.add('highlight');
-        });
-    }
 }
 
 function flashKey(char, correct) {
@@ -634,8 +625,7 @@ function startBossFight(area) {
     const secsPerHP = currentLesson.num <= 9 ? 15 : currentLesson.num <= 21 ? 13 : 12;
     bossTimer = Math.min(300, boss.hp * secsPerHP);
 
-    const bossWords = generateBossWords();
-    roundWords = bossWords;
+    roundWords = generateBossWords();
     wordIndex = 0;
     charIndex = 0;
 
@@ -668,8 +658,7 @@ function startBossFight(area) {
 
 function generateBossWords() {
     const pool = [...currentLesson.words2, ...currentLesson.words3];
-    const shuffled = pool.sort(() => Math.random() - 0.5);
-    return shuffled.slice(0, Math.min(20, shuffled.length));
+    return pool.sort(() => Math.random() - 0.5).slice(0, 20);
 }
 
 function hitBoss() {
@@ -708,11 +697,6 @@ function handleKeyPress(e) {
     if (currentRound === 0) return;
 
     // Ignore non-character keys
-    if (['Shift','Control','Alt','Meta','Tab','Escape','CapsLock',
-         'ArrowUp','ArrowDown','ArrowLeft','ArrowRight',
-         'Backspace','Delete','Enter','Home','End','PageUp','PageDown',
-         'Insert','F1','F2','F3','F4','F5','F6','F7','F8','F9','F10','F11','F12',
-         'NumLock','ScrollLock','Pause','ContextMenu','PrintScreen'].includes(e.key)) return;
     if (e.key.length > 1 && !e.key.startsWith('Dead')) return;
 
     e.preventDefault();
@@ -863,7 +847,7 @@ function handleFallingInput(key) {
             if (t[i] === ' ') s.style.minWidth = '0.6em';
             display.appendChild(s);
         }
-    } else if (display && !activefallingWord) {
+    } else if (display) {
         display.innerHTML = '<span style="color:rgba(255,255,255,0.3)">Typ het volgende woord...</span>';
     }
 

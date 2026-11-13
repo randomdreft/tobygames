@@ -262,7 +262,7 @@ const Renderer = (() => {
         ctx.arc(cx + 3 + eyeOffX, cy - 7 + eyeOffY, 1.5, 0, Math.PI * 2);
         ctx.fill();
 
-        // Smile (only when not moving down/away)
+        // Smile (not when facing up)
         if (direction !== 'up') {
             ctx.strokeStyle = '#333';
             ctx.lineWidth = 1;
@@ -425,7 +425,6 @@ const Renderer = (() => {
         const w = 36, h = 5;
         const bx = cx - w / 2;
 
-        // Count total order items for positioning
         const remaining = order.filter(o => o.received < o.quantity);
         const bubbleH = remaining.length * 14 + 8;
         const by = y - bubbleH - 10;
@@ -450,7 +449,7 @@ const Renderer = (() => {
         texts.forEach(ft => {
             ctx.save();
             ctx.globalAlpha = ft.opacity;
-            ctx.font = `bold ${ft.size || 16}px "Segoe UI", sans-serif`;
+            ctx.font = `bold ${ft.size}px "Segoe UI", sans-serif`;
             ctx.textAlign = 'center';
 
             // Outline
@@ -459,7 +458,7 @@ const Renderer = (() => {
             ctx.strokeText(ft.text, ft.x, ft.y);
 
             // Fill
-            ctx.fillStyle = ft.color || '#4CAF50';
+            ctx.fillStyle = ft.color;
             ctx.fillText(ft.text, ft.x, ft.y);
             ctx.restore();
         });

@@ -458,8 +458,6 @@
                     currentY: 0
                 };
                 
-                if (!this.joystick.knob) return;
-                
                 // Joystick touch events
                 this.joystick.knob.addEventListener('touchstart', (e) => {
                     e.preventDefault();
@@ -724,19 +722,19 @@
             }
             
             checkStarCollection() {
-                if (!this.star.collected) {
-                    const distance = this.getDistance(this.player.x, this.player.y, this.star.x, this.star.y);
-                    if (distance < (this.player.width + this.star.size) / 2) {
-                        // Sterretje opgepakt!
-                        this.star.collected = true;
-                         this.score += 25;
-                        document.getElementById('score').textContent = this.score;
-                        
-                        // Spawn een nieuw sterretje
-                        setTimeout(() => {
-                            this.spawnStar();
-                        }, 500);
-                    }
+                if (this.star.collected) return;
+                
+                const distance = this.getDistance(this.player.x, this.player.y, this.star.x, this.star.y);
+                if (distance < (this.player.width + this.star.size) / 2) {
+                    // Sterretje opgepakt!
+                    this.star.collected = true;
+                    this.score += 25;
+                    document.getElementById('score').textContent = this.score;
+                    
+                    // Spawn een nieuw sterretje
+                    setTimeout(() => {
+                        this.spawnStar();
+                    }, 500);
                 }
             }
             
@@ -1081,10 +1079,7 @@
         window.addEventListener('load', () => {
             // Toon touch controls alleen op touch devices
             if (isTouchDevice()) {
-                const touchControls = document.querySelector('.touch-controls');
-                if (touchControls) {
-                    touchControls.classList.add('show');
-                }
+                document.querySelector('.touch-controls').classList.add('show');
             }
             
             new Game();

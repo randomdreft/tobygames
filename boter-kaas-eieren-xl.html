@@ -359,7 +359,6 @@
     <div id="confetti" class="confetti"></div>
 
     <script>
-        // Game state
         let gameState = {
             board: Array(25).fill(''),
             currentPlayer: 'X',
@@ -368,7 +367,6 @@
             scores: { X: 0, O: 0 }
         };
 
-        // Initialize game
         function initGame() {
             createBoard();
             updateScoreboard();
@@ -388,7 +386,6 @@
             }
         }
 
-        // Start game with selected mode
         function startGame(mode) {
             gameState.gameMode = mode;
             gameState.board = Array(25).fill('');
@@ -402,7 +399,6 @@
             updateGameInfo();
         }
 
-        // Make a move
         function makeMove(index) {
             if (!gameState.gameActive || gameState.board[index] !== '') {
                 return;
@@ -504,7 +500,6 @@
             return -1;
         }
 
-        // Find immediate block for given player (4 in a row)
         function findImmediateBlock(player) {
             return findImmediateWin(player);
         }
@@ -517,14 +512,8 @@
                 const emptyCount = stones.filter(s => s === '').length;
                 const playerCount = stones.filter(s => s === player).length;
                 
-                if (playerCount === 3 && emptyCount === 1) {
-                    // Check if at least one side is free
-                    if (isWindowOpen(window)) {
-                        const emptyIndex = window.find(i => gameState.board[i] === '');
-                        if (emptyIndex !== undefined) {
-                            return emptyIndex;
-                        }
-                    }
+                if (playerCount === 3 && emptyCount === 1 && isWindowOpen(window)) {
+                    return window.find(i => gameState.board[i] === '');
                 }
             }
             return -1;
@@ -637,7 +626,6 @@
                 scoredMoves.push({ cell, score });
             }
             
-            // Sort by score (highest first)
             scoredMoves.sort((a, b) => b.score - a.score);
             
             if (scoredMoves.length === 0) return -1;
@@ -656,7 +644,6 @@
         function scoreMove(cell) {
             let score = 0;
             
-            // Test the move
             gameState.board[cell] = 'O';
             
             // +1000 if move directly wins
@@ -693,7 +680,6 @@
             // Test player's response
             gameState.board[cell] = 'X';
             
-            // Count player's open-3s and open-2s
             for (let window of windows) {
                 if (window.includes(cell)) {
                     const stones = window.map(i => gameState.board[i]);
@@ -710,13 +696,11 @@
                 }
             }
             
-            // Check for fork creation
             const playerWins = findImmediateWin('X');
             if (playerWins !== -1) {
                 score -= 200; // creates player fork
             }
             
-            // Reset board
             gameState.board[cell] = '';
             
             // Add small noise ±3
@@ -778,7 +762,6 @@
 
         // Check if a window is open (at least one side free within board)
         function isWindowOpen(window) {
-            // Check if window is at board edge (automatically open)
             const minRow = Math.min(...window.map(i => Math.floor(i / 5)));
             const maxRow = Math.max(...window.map(i => Math.floor(i / 5)));
             const minCol = Math.min(...window.map(i => i % 5));
@@ -832,12 +815,10 @@
             return false;
         }
 
-        // Check for draw
         function checkDraw() {
             return gameState.board.every(cell => cell !== '');
         }
 
-        // End game
         function endGame(winner) {
             gameState.gameActive = false;
             
@@ -852,7 +833,6 @@
             updateScoreboard();
         }
 
-        // Show winner message
         function showWinner(winner) {
             const message = document.createElement('div');
             message.className = 'winner-message';
@@ -871,7 +851,6 @@
             }, 3000);
         }
 
-        // Create confetti animation
         function createConfetti() {
             const confetti = document.getElementById('confetti');
             confetti.innerHTML = '';
@@ -893,7 +872,6 @@
             }, 5000);
         }
 
-        // Update board display
         function updateBoard() {
             for (let i = 0; i < 25; i++) {
                 const cell = document.querySelector(`[data-index="${i}"]`);
@@ -907,7 +885,6 @@
             }
         }
 
-        // Update game info
         function updateGameInfo() {
             const info = document.getElementById('gameInfo');
             if (gameState.gameMode === 'ai' && gameState.currentPlayer === 'O') {
@@ -917,13 +894,11 @@
             }
         }
 
-        // Update scoreboard
         function updateScoreboard() {
             document.getElementById('scoreX').textContent = gameState.scores.X;
             document.getElementById('scoreO').textContent = gameState.scores.O;
         }
 
-        // Reset current game
         function resetGame() {
             gameState.board = Array(25).fill('');
             gameState.currentPlayer = 'X';
@@ -933,13 +908,11 @@
             updateGameInfo();
         }
 
-        // Back to start screen
         function backToStart() {
             document.getElementById('startScreen').style.display = 'block';
             document.getElementById('gameScreen').style.display = 'none';
         }
 
-        // Initialize game on load
         document.addEventListener('DOMContentLoaded', initGame);
     </script>
 </body>
