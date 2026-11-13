@@ -283,7 +283,7 @@ const F = {
   state: 'rust',          // rust | werpen | wachten | beet | inhalen | toon
   t: 0, van: new THREE.Vector3(), doel: new THREE.Vector3(), zone: 'open',
   beetT: 0, n1: false, n2: false, dip: 0, venster: 0, ringT: 0, beetP: 0,
-  soort: null, forceer: null, lok: false, bonus: 0, reeksBonus: 0, spanning: 0, prog: 0, slap: 0, duur: 0, moe: false, rukT: 0, rukNa: 0, klikT: 0, zwaai: 0,
+  soort: null, forceer: null, lok: false, bonus: 0, reeksBonus: 0, eind: 0.86, spanning: 0, prog: 0, slap: 0, duur: 0, moe: false, rukT: 0, rukNa: 0, klikT: 0, zwaai: 0,
   toon: null, vangst: null,
 };
 let tijd = 20;
@@ -373,6 +373,12 @@ function kiesVangst(zone) {
 
 function startInhalen() {
   F.state = 'inhalen';
+  // de vis komt naar je toe, maar nooit verder dan de waterkant (ook als je ver op het land staat)
+  F.eind = 0;
+  for (let t = 0.02; t <= 0.86; t += 0.02) {
+    if (!inPond(lerp(F.doel.x, speler.x, t), lerp(F.doel.z, speler.z, t), 0.7)) break;
+    F.eind = t;
+  }
   F.spanning = 0.42; F.prog = 0.12; F.slap = 0; F.duur = 0; F.moe = false; F.rukT = 0; F.rukNa = 1.5 + Math.random() * 2;
   $('banner').classList.add('hidden'); $('beetmeter').classList.add('hidden'); btnActie.classList.remove('beet');
   $('meter').classList.remove('hidden');
@@ -621,12 +627,12 @@ function updateVissen(dt) {
     F.slap = teSlap ? F.slap + dt : Math.max(0, F.slap - dt * 0.5);
 
     // de vis komt dichterbij en zwemt heen en weer
-    const p = clamp(F.prog, 0, 1) * 0.86;
+    const p = clamp(F.prog, 0, 1) * F.eind;
     _v.set(lerp(F.doel.x, speler.x, p), 0, lerp(F.doel.z, speler.z, p));
     const lx = F.doel.z - speler.z, lz = -(F.doel.x - speler.x), ll = Math.hypot(lx, lz) || 1;
     const zw = Math.sin(tijd * (2.5 + f)) * (ruk ? 1.3 : 0.6) * (1 - p * 0.8);
     let bx = _v.x + lx / ll * zw, bz = _v.z + lz / ll * zw;
-    if (!inPond(bx, bz, 0.3)) { bx = _v.x; bz = _v.z; }
+    if (!inPond(bx, bz, 0.5)) { bx = _v.x; bz = _v.z; }
     dobber.position.set(bx, WATER_Y - 0.08 + Math.sin(tijd * 12) * 0.04, bz);
     F.ringT -= dt; if (F.ringT <= 0) { F.ringT = ruk ? 0.2 : 0.5; world.ripple(bx, bz, ruk ? 1.6 : 1, 0.8); }
 

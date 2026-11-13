@@ -502,6 +502,7 @@ Hardloopspel in zijaanzicht (canvas), bedacht door Toby. Toegevoegd 13 november 
 - **Regen**: om de 2,5 tot 4,5 minuut een bui van ongeveer een minuut (strepen, grijze lucht, kringen, ruis). In de regen is de wachttijd op beet 45% korter. `world.regen` (0 tot 1) stuurt het beeld, `updateWeer` in `game.js` de timing
 - **Gezocht**: het kraampje zoekt steeds één soort (`save.gezocht`) en betaalt daar 3× de prijs voor. Na verkoop komt er een nieuwe. Zeldzame soorten pas vanaf 8 vangsten
 - **Reeks**: vanaf 2× achter elkaar in het groen aanslaan is de vangst 10% meer waard per keer, tot +50%. Geel of rood zet de reeks op nul (niet opgeslagen)
+- **Inhalen stopt bij de waterkant**: de vis zwemt naar de speler toe, maar nooit verder dan het laatste punt in het water (`F.eind`), ook als de speler ver op het land staat
 - **Spanningsmeter**: ingedrukt houden haalt in en verhoogt de spanning; te hoog = lijn breekt, te lang te slap = vis ontsnapt. Een vis wordt na een tijdje moe
 - **5 plekken**: open water, diep, riet, waterlelies, onder de steiger; elk met eigen soorten
 - **23 vangsten**: 8 gewone, 4 zeldzame, 3 legendarische (Maanvis bijt vooral in de avond), 5 rare dingen, 3 monsters
