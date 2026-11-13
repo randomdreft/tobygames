@@ -1,9 +1,9 @@
 // Visvijver - hoofdspel: lopen, vissen, spanningsmeter, kraampje, visboek en aquarium
 import * as THREE from './vendor/three.module.min.js';
 import { SPECIES, SOORT, ZONES, CATS, BRIEFJES, HENGELS, LIJNEN, AAS, EMMER_MAX, AQUARIUM_MAX } from './data.js?v=2';
-import { Sound } from './sound.js?v=3';
+import { Sound } from './sound.js?v=4';
 import { buildModel, animeerModel } from './models.js?v=2';
-import { buildWorld, WATER_Y, WERELD_R, pondR, DOCK, STALL, HUT, OBST, inPond, onDock, zoneAt } from './world.js?v=3';
+import { buildWorld, WATER_Y, WERELD_R, pondR, DOCK, STALL, HUT, OBST, inPond, onDock, zoneAt } from './world.js?v=4';
 
 const $ = id => document.getElementById(id);
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
@@ -11,7 +11,7 @@ const lerp = (a, b, t) => a + (b - a) * t;
 
 // ---------------------------------------------------------------- opslaan
 const SAVE_KEY = 'visvijver_save';
-const nieuwSpel = () => ({ v: 1, geld: 0, hengel: 0, lijn: 0, aas: 0, emmer: [], aquarium: [], boek: {}, vangsten: 0, uitleg: false, gezocht: null });
+const nieuwSpel = () => ({ v: 1, geld: 0, hengel: 0, lijn: 0, aas: 0, emmer: [], aquarium: [], boek: {}, vangsten: 0, uitleg: false, gezocht: null, medailles: {}, verdiend: 0, besteReeks: 0, drieSter: false });
 function laad() {
   try {
     const s = JSON.parse(localStorage.getItem(SAVE_KEY));
@@ -23,6 +23,7 @@ function laad() {
       d.lijn = clamp(d.lijn | 0, 0, LIJNEN.length - 1);
       d.aas = clamp(d.aas | 0, 0, AAS.length - 1);
       if (!SOORT[d.gezocht]) d.gezocht = null;
+      if (!d.medailles || typeof d.medailles !== 'object') d.medailles = {};
       return d;
     }
   } catch (e) { /* kapotte of geen opslag: gewoon opnieuw beginnen */ }
@@ -38,6 +39,40 @@ function kiesGezocht() {
 }
 if (!save.gezocht) kiesGezocht();
 const verkoopWaarde = r => r.waarde * (r.id === save.gezocht ? GEZOCHT_KEER : 1);
+// maat van een vangst: 1, 2 of 3 sterren (klein, flink, reusachtig voor zijn soort)
+function sterren(r) {
+  const s = SOORT[r.id], f = (r.kg - s.kg[0]) / ((s.kg[1] - s.kg[0]) || 1);
+  return f < 0.25 ? 1 : f < 0.6 ? 2 : 3;
+}
+const sterTekst = r => '⭐'.repeat(sterren(r)) + '☆'.repeat(3 - sterren(r));
+
+// ---- medailles: doelen met een geldbeloning
+const alleVan = cat => SPECIES.filter(s => s.cat === cat).every(s => save.boek[s.id]);
+const eenVan = cat => SPECIES.some(s => s.cat === cat && save.boek[s.id]);
+const MEDAILLES = [
+  { id: 'eerste',   emoji: '🎣', naam: 'Eerste vangst',     info: 'Vang je eerste vis',                  geld: 10,   ok: () => save.vangsten >= 1 },
+  { id: 'tien',     emoji: '🐟', naam: 'Echte visser',      info: 'Vang 10 keer iets',                   geld: 25,   ok: () => save.vangsten >= 10 },
+  { id: 'vijftig',  emoji: '🐠', naam: 'Meestervisser',     info: 'Vang 50 keer iets',                   geld: 100,  ok: () => save.vangsten >= 50 },
+  { id: 'reus',     emoji: '🏋️', naam: 'Reuzenvis',         info: 'Vang iets van 3 sterren',             geld: 50,   ok: () => save.drieSter },
+  { id: 'reeks',    emoji: '🎯', naam: 'Scherpschutter',    info: '5× achter elkaar in het groen',       geld: 100,  ok: () => save.besteReeks >= 5 },
+  { id: 'gewoon',   emoji: '📗', naam: 'Vijverkenner',      info: 'Ontdek alle gewone vissen',           geld: 75,   ok: () => alleVan('gewoon') },
+  { id: 'zeldzaam', emoji: '📘', naam: 'Zeldzaamheden',     info: 'Ontdek alle zeldzame vissen',         geld: 200,  ok: () => alleVan('zeldzaam') },
+  { id: 'rommel',   emoji: '🧹', naam: 'Opruimer',          info: 'Vis alle rare dingen op',             geld: 100,  ok: () => alleVan('rommel') },
+  { id: 'legende',  emoji: '✨', naam: 'Legende',           info: 'Vang een legendarische vis',          geld: 150,  ok: () => eenVan('legendarisch') },
+  { id: 'monster',  emoji: '🐙', naam: 'Monsterjager',      info: 'Vang een monster',                    geld: 250,  ok: () => eenVan('monster') },
+  { id: 'rijk',     emoji: '💰', naam: 'Spaarpot',          info: 'Verdien €1000 bij het kraampje',      geld: 150,  ok: () => save.verdiend >= 1000 },
+  { id: 'aquarium', emoji: '🐡', naam: 'Aquariumbaas',      info: 'Maak je aquarium helemaal vol',       geld: 100,  ok: () => save.aquarium.length >= AQUARIUM_MAX },
+  { id: 'compleet', emoji: '👑', naam: 'Visboek compleet',  info: 'Ontdek alle soorten',                 geld: 1000, ok: () => SPECIES.every(s => save.boek[s.id]) },
+];
+function checkMedailles() {
+  const nieuw = MEDAILLES.filter(m => !save.medailles[m.id] && m.ok());
+  if (!nieuw.length) return;
+  let som = 0;
+  for (const m of nieuw) { save.medailles[m.id] = true; som += m.geld; }
+  save.geld += som; bewaar(); hud(); plop('geld-display');
+  toast(`🏅 Medaille${nieuw.length > 1 ? 's' : ''} behaald: ${nieuw.map(m => m.emoji + ' ' + m.naam).join(', ')}! Beloning: €${som}`, 6);
+  setTimeout(() => Sound.fanfare(), 700);
+}
 const besteplek = s => ZONES[Object.keys(s.w).sort((a, c) => s.w[c] - s.w[a])[0]].naam.toLowerCase();
 function bewaar() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch (e) { /* geen opslag */ } }
 
@@ -324,6 +359,7 @@ function slaAan() {
     Sound.ontsnapt(); world.splash(F.doel.x, F.doel.z, 8, 1); rust(); return;
   }
   reeks = perfect ? reeks + 1 : 0;
+  if (reeks > save.besteReeks) { save.besteReeks = reeks; bewaar(); checkMedailles(); }
   F.reeksBonus = Math.min(reeks - 1, 5) * 10;        // vanaf 2x perfect op rij: +10% waarde per keer, tot +50%
   if (F.reeksBonus > 0) toast(`🔥 ${reeks}× perfect op rij! Deze vangst is ${F.reeksBonus}% meer waard.`, 2.5);
   else if (perfect) toast('🎯 Perfect! Hij zit goed vast.', 1.8);
@@ -408,6 +444,7 @@ function vang() {
   if (!b) save.boek[s.id] = { n: 1, kg: rec.kg, cm: rec.cm };
   else { b.n++; if (rec.kg > b.kg) { b.kg = rec.kg; b.cm = rec.cm; } }
   save.vangsten++;
+  if (sterren(rec) === 3) save.drieSter = true;
   bewaar();
 
   F.state = 'toon'; F.vangst = rec; F.t = 0;
@@ -426,7 +463,7 @@ function vang() {
   $('vangst-cat').textContent = `${cat.naam} · 🎯 vangkans ${s.kans}%`; $('vangst-cat').style.background = cat.kleur;
   $('vangstkaart').style.borderColor = cat.kleur;
   $('vangst-naam').textContent = s.naam;
-  $('vangst-maten').textContent = `${fmtMaten(rec)} · €${rec.waarde}` + (F.reeksBonus > 0 ? ` (🔥 +${F.reeksBonus}%)` : '') + (record ? ' · 🏆 Nieuw record!' : '')
+  $('vangst-maten').textContent = `${sterTekst(rec)} ${fmtMaten(rec)} · €${rec.waarde}` + (F.reeksBonus > 0 ? ` (🔥 +${F.reeksBonus}%)` : '') + (record ? ' · 🏆 Nieuw record!' : '')
     + (s.id === save.gezocht ? ` · ⭐ Gezocht: ${GEZOCHT_KEER}× waard bij het kraampje!` : '');
   $('vangst-info').textContent = s.id === 'fles' ? `Op het briefje staat: ${BRIEFJES[rec.briefje]}` : s.info;
   const vol = save.emmer.length >= EMMER_MAX;
@@ -434,6 +471,7 @@ function vang() {
   $('vangst-emmer').innerHTML = vol ? '🪣 Emmer is vol!' : '🪣 In de emmer <span class="desk">(spatie)</span>';
   $('vangstkaart').classList.remove('hidden');
   hud();
+  checkMedailles();
 }
 
 function sluitVangst(inEmmer) {
@@ -509,6 +547,7 @@ function updateZwemmer(dt) {
 }
 
 // ---- springende vissen: af en toe springt er echt een vis uit het water
+world.onKwaak = hard => { if (gestart) Sound.kwaak(hard); };
 const springers = [];
 world.onSpring = (x, z) => {
   if (springers.length > 2 || (zwemmer && Math.hypot(zwemmer.x - x, zwemmer.z - z) < 2)) return;
@@ -575,6 +614,7 @@ function updateVissen(dt) {
         toast(`👀 De vis heeft je dobber gezien! Extra vangkans: +${LOK_BONUS}%`, 3);
       }
       world.splash(F.doel.x, F.doel.z, 9, 0.8); world.ripple(F.doel.x, F.doel.z, 1.6, 1.2);
+      world.schrik(F.doel.x, F.doel.z);
       Sound.plons();
     }
   } else if (F.state === 'wachten') {
@@ -772,7 +812,7 @@ const plaatje = id => plaatjes[id] ? `<img src="${plaatjes[id]}" alt="">` : '';
 function rijVangst(rec, knoppen) {
   const s = SOORT[rec.id];
   const ster = rec.id === save.gezocht;
-  return `<div class="rij${ster ? ' ster' : ''}">${plaatje(rec.id)}<div class="tekst"><b>${ster ? '⭐ ' : ''}${s.naam}</b><small>${fmtMaten(rec)}</small></div><span class="prijs">€${paneelOpen === 'kraam' ? verkoopWaarde(rec) : rec.waarde}${ster && paneelOpen === 'kraam' ? ` <small>(${GEZOCHT_KEER}×)</small>` : ''}</span>${knoppen}</div>`;
+  return `<div class="rij${ster ? ' ster' : ''}">${plaatje(rec.id)}<div class="tekst"><b>${ster ? '⭐ ' : ''}${s.naam}</b><small>${fmtMaten(rec)} · ${sterTekst(rec)}</small></div><span class="prijs">€${paneelOpen === 'kraam' ? verkoopWaarde(rec) : rec.waarde}${ster && paneelOpen === 'kraam' ? ` <small>(${GEZOCHT_KEER}×)</small>` : ''}</span>${knoppen}</div>`;
 }
 function winkelDeel(titel, soort, lijst, eigenschap) {
   let h = `<h3>${titel}</h3>`;
@@ -826,11 +866,18 @@ function tekenPaneel() {
     h += `<div class="boek-kop">Ontdekt: ${aantal} van de ${SPECIES.length} soorten · ${save.vangsten}× iets gevangen</div><div class="boek-grid">`;
     for (const s of SPECIES) {
       const b = save.boek[s.id], kleur = CATS[s.cat].kleur;
-      if (b) h += `<div class="boek-kaart" style="border-color:${kleur}">${plaatje(s.id)}<b>${s.naam}</b><small>${b.n}× gevangen</small><small>Grootste: ${fmtMaten(b)}</small><small class="kans">🎯 Vangkans ${s.kans}%</small></div>`;
+      if (b) h += `<div class="boek-kaart" style="border-color:${kleur}">${plaatje(s.id)}<b>${s.naam}</b><small>${b.n}× gevangen</small><small>Grootste: ${fmtMaten(b)}</small><small>${sterTekst({ id: s.id, kg: b.kg })}</small><small class="kans">🎯 Vangkans ${s.kans}%</small></div>`;
       else {
         const plek = Object.keys(s.w).sort((a, c) => s.w[c] - s.w[a])[0];
         h += `<div class="boek-kaart onbekend" style="border-color:${kleur}">${plaatje(s.id)}<b>???</b><small>${CATS[s.cat].naam}</small><small>Tip: ${ZONES[plek].naam.toLowerCase()}${s.avond === true ? ', ’s avonds' : ''}</small><small class="kans">🎯 Vangkans ${s.kans}%</small></div>`;
       }
+    }
+    h += `</div>`;
+    const behaald = MEDAILLES.filter(m => save.medailles[m.id]).length;
+    h += `<h3>🏅 Medailles (${behaald} van de ${MEDAILLES.length})</h3><div class="boek-grid">`;
+    for (const m of MEDAILLES) {
+      const heb = save.medailles[m.id];
+      h += `<div class="boek-kaart medaille${heb ? '' : ' onbekend'}"><span class="med-emoji">${m.emoji}</span><b>${m.naam}</b><small>${m.info}</small><small class="kans">${heb ? '✔️ Behaald' : 'Beloning: €' + m.geld}</small></div>`;
     }
     h += `</div>`;
   }
@@ -864,11 +911,11 @@ $('paneel-inhoud').addEventListener('click', e => {
   const i = +b.dataset.i, a = b.dataset.actie;
   if (a === 'verkoop' && save.emmer[i]) {
     const r = save.emmer[i], ster = r.id === save.gezocht;
-    save.geld += verkoopWaarde(r); save.emmer.splice(i, 1); Sound.munt(); plop('geld-display');
+    save.geld += verkoopWaarde(r); save.verdiend += verkoopWaarde(r); save.emmer.splice(i, 1); Sound.munt(); plop('geld-display');
     if (ster) { toast(`⭐ Gezocht-bonus! €${verkoopWaarde(r)} voor je ${SOORT[r.id].naam}.`, 4); kiesGezocht(); Sound.koop(); }
   } else if (a === 'allesverkopen' && save.emmer.length) {
     const som = save.emmer.reduce((t, r) => t + verkoopWaarde(r), 0), ster = save.emmer.some(r => r.id === save.gezocht);
-    save.geld += som; save.emmer = []; Sound.munt(); setTimeout(() => Sound.munt(), 120); plop('geld-display');
+    save.geld += som; save.verdiend += som; save.emmer = []; Sound.munt(); setTimeout(() => Sound.munt(), 120); plop('geld-display');
     toast(ster ? `⭐ Verkocht voor €${som}, met gezocht-bonus!` : `💰 Verkocht voor €${som}!`);
     if (ster) kiesGezocht();
   } else if (a === 'koop') {
@@ -884,7 +931,7 @@ $('paneel-inhoud').addEventListener('click', e => {
   } else if (a === 'uitaquarium' && save.aquarium[i] && save.emmer.length < EMMER_MAX) {
     save.emmer.push(save.aquarium.splice(i, 1)[0]); Sound.tik(); bouwAquarium();
   } else return;
-  bewaar(); hud(); tekenPaneel();
+  bewaar(); hud(); checkMedailles(); tekenPaneel();
 });
 
 // ---------------------------------------------------------------- start en uitleg
@@ -901,6 +948,7 @@ function start() {
   $('start-screen').classList.add('hidden');
   gestart = true;
   vergrendel();
+  checkMedailles();
   if (!save.uitleg) { save.uitleg = true; bewaar(); toast('Welkom! Loop naar het water, kijk naar een plek en gooi je hengel uit. 🎣', 6); }
   Sound.tik();
 }

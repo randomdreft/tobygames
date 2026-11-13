@@ -358,6 +358,18 @@ export function buildWorld(scene) {
     const p = new THREE.Mesh(CIL, houtD); p.position.set(x, -0.35, z); p.scale.set(0.22, 1.9, 0.22); steiger.add(p);
   }
   box(steiger, houtD, 0, 0.05, DOCK.z1 + 0.5, 2.3, 0.1, 1.2).rotation.x = 0.22;   // oprit
+  // lantaarns: gaan aan als het avond wordt
+  const lampMat = new THREE.MeshLambertMaterial({ color: 0xfff1c0, emissive: 0xffc04a, emissiveIntensity: 0.1 });
+  const lampen = [];
+  const lantaarn = (ouder, x, y0, z, hoog) => {
+    box(ouder, houtD, x, y0 + hoog / 2, z, 0.09, hoog, 0.09);              // paal, staat in de steigerpaal of toonbank
+    box(ouder, M(0x33363d), x, y0 + hoog + 0.02, z, 0.3, 0.08, 0.3);
+    box(ouder, lampMat, x, y0 + hoog + 0.2, z, 0.22, 0.32, 0.22);
+    box(ouder, M(0x33363d), x, y0 + hoog + 0.39, z, 0.34, 0.07, 0.34);
+    const licht = new THREE.PointLight(0xffc878, 0, 12, 1.3);
+    licht.position.set(x, y0 + hoog + 0.2, z); ouder.add(licht); lampen.push(licht);
+  };
+  lantaarn(steiger, -1.05, 0.5, DOCK.z0 + 0.3, 1.5);
   scene.add(steiger);
 
   // ---------- kraampje ----------
@@ -379,6 +391,7 @@ export function buildWorld(scene) {
   // spulletjes op de toonbank
   box(kraam, M(0x9ad0ff), -1.1, 1.3, 0.6, 0.6, 0.25, 0.5); box(kraam, M(0xff8a3c), -1.1, 1.45, 0.6, 0.4, 0.08, 0.14);
   box(kraam, M(0x8a623a), 1.1, 1.3, 0.6, 0.5, 0.25, 0.5); box(kraam, M(0xffd633), 1.1, 1.46, 0.6, 0.3, 0.08, 0.3);
+  lantaarn(kraam, 1.55, 1.1, 1.0, 0.45);
   kraam.position.set(STALL.x, 0, STALL.z); kraam.lookAt(0, 0, 0);
   scene.add(kraam);
 
@@ -410,6 +423,36 @@ export function buildWorld(scene) {
     o.receiveShadow = true;
     o.castShadow = !o.userData.geenSchaduw && o !== grond && o !== bodem;
   });
+
+  // ---------- eenden: zwemmen rond en schrikken als je dobber vlakbij plonst ----------
+  const maakEend = (lijf, kop, vleugel) => {
+    const g = new THREE.Group();
+    const deel = (geo, mat, x, y, z, sx, sy, sz, rz = 0) => { const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); m.scale.set(sx, sy, sz); m.rotation.z = rz; g.add(m); };
+    deel(BOL, M(lijf), 0, 0.1, 0, 0.6, 0.32, 0.38);
+    deel(BOL, M(lijf), 0.2, 0.24, 0, 0.16, 0.26, 0.16);                                        // nek, steekt in lijf en kop
+    deel(BOL, M(kop), 0.24, 0.38, 0, 0.21, 0.2, 0.2);
+    deel(new THREE.ConeGeometry(0.5, 1, 6), M(0xf2a21f), 0.37, 0.36, 0, 0.09, 0.14, 0.13, -Math.PI / 2);   // snavel
+    deel(new THREE.ConeGeometry(0.5, 1, 5), M(lijf), -0.3, 0.2, 0, 0.16, 0.2, 0.2, 0.9);                   // staartje
+    for (const k of [-1, 1]) {
+      deel(BOL, M(0x111111), 0.3, 0.41, k * 0.085, 0.04, 0.04, 0.04);
+      deel(BOL, M(vleugel), -0.02, 0.14, k * 0.17, 0.4, 0.2, 0.08);
+    }
+    return g;
+  };
+  const eenden = [[0xb9b4a8, 0x1f6b3a, 0x7d7468], [0x9a7a55, 0x8a6a48, 0x6b5238], [0xffffff, 0xffffff, 0xe6e6e6]].map(([l, k, v], i) => {
+    const m = maakEend(l, k, v); scene.add(m);
+    const a = 1.2 + i * 2.1;
+    return { m, x: Math.cos(a) * 7, z: Math.sin(a) * 7, a: a + 1.6, f: i * 2.3, schrik: 0, ringT: i, kwaakT: 6 + i * 7 };
+  });
+  W.schrik = (x, z) => {
+    let geschrokken = false;
+    for (const q of eenden) {
+      if (Math.hypot(q.x - x, q.z - z) > 3.8) continue;
+      q.schrik = 1.6; q.a = Math.atan2(q.z - z, q.x - x); geschrokken = true;
+      W.splash(q.x, q.z, 5, 0.7);
+    }
+    if (geschrokken && W.onKwaak) W.onKwaak(true);
+  };
 
   // ---------- vuurvliegjes ----------
   const vvPos = new Float32Array(40 * 3), vv = [];
@@ -566,6 +609,20 @@ export function buildWorld(scene) {
       const a = Math.random() * 6.28, r = Math.random() * 8;
       const x = Math.cos(a) * r, z = Math.sin(a) * r;
       if (!onDock(x, z, -0.5)) { W.splash(x, z, 4, 0.6); W.ripple(x, z, 1.4, 1.6); W.onSpring && W.onSpring(x, z); }
+    }
+    lampMat.emissiveIntensity = 0.1 + e * 1.7;
+    for (const l of lampen) l.intensity = e * 16 * (0.94 + Math.sin(t * 9) * 0.04);
+    for (const q of eenden) {
+      q.schrik = Math.max(0, q.schrik - dt);
+      const v = q.schrik > 0 ? 3.2 : 0.45;
+      if (q.schrik <= 0) q.a += Math.sin(t * 0.5 + q.f) * 0.5 * dt;
+      const nx = q.x + Math.cos(q.a) * 2, nz = q.z + Math.sin(q.a) * 2;
+      if (!inPond(nx, nz, 1.6) || onDock(nx, nz, -0.9)) { const h = Math.atan2(-q.z, -q.x); q.a += Math.atan2(Math.sin(h - q.a), Math.cos(h - q.a)) * Math.min(1, dt * 3); }
+      q.x += Math.cos(q.a) * v * dt; q.z += Math.sin(q.a) * v * dt;
+      q.m.position.set(q.x, WATER_Y - 0.04 + Math.sin(t * 2 + q.f) * 0.02, q.z);
+      q.m.rotation.set(0, -q.a, Math.sin(t * 2.4 + q.f) * 0.05);
+      q.ringT -= dt; if (q.ringT <= 0) { q.ringT = q.schrik > 0 ? 0.25 : 1.8; W.ripple(q.x, q.z, 0.7, 1); }
+      q.kwaakT -= dt; if (q.kwaakT <= 0) { q.kwaakT = 14 + Math.random() * 22; if (W.onKwaak) W.onKwaak(false); }
     }
     verkoper.rotation.y = Math.sin(t * 0.7) * 0.25; snor.rotation.z = Math.sin(t * 3) * 0.05;
   };

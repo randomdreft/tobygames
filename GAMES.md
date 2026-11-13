@@ -503,6 +503,10 @@ Hardloopspel in zijaanzicht (canvas), bedacht door Toby. Toegevoegd 13 november 
 - **Gezocht**: het kraampje zoekt steeds één soort (`save.gezocht`) en betaalt daar 3× de prijs voor. Na verkoop komt er een nieuwe. Zeldzame soorten pas vanaf 8 vangsten
 - **Reeks**: vanaf 2× achter elkaar in het groen aanslaan is de vangst 10% meer waard per keer, tot +50%. Geel of rood zet de reeks op nul (niet opgeslagen)
 - **Inhalen stopt bij de waterkant**: de vis zwemt naar de speler toe, maar nooit verder dan het laatste punt in het water (`F.eind`), ook als de speler ver op het land staat
+- **Maat-sterren**: elke vangst krijgt 1 tot 3 sterren naar gewicht binnen zijn soort (vangstkaart, emmer, visboek)
+- **Medailles**: 13 doelen met geldbeloning (`MEDAILLES` in `game.js`), zichtbaar onderaan het visboek. Opslag: `save.medailles`, plus tellers `verdiend`, `besteReeks`, `drieSter`. Oude saves krijgen al behaalde medailles bij de eerste start
+- **Eenden**: drie eenden zwemmen rond; plonst de dobber binnen 3,8 meter, dan schrikken ze en zwemmen kwakend weg (`world.schrik`)
+- **Lantaarns**: op de steiger en het kraampje, gaan aan in de avond
 - **Spanningsmeter**: ingedrukt houden haalt in en verhoogt de spanning; te hoog = lijn breekt, te lang te slap = vis ontsnapt. Een vis wordt na een tijdje moe
 - **5 plekken**: open water, diep, riet, waterlelies, onder de steiger; elk met eigen soorten
 - **23 vangsten**: 8 gewone, 4 zeldzame, 3 legendarische (Maanvis bijt vooral in de avond), 5 rare dingen, 3 monsters

@@ -74,6 +74,7 @@ export const Sound = {
   fout()    { tone(200, 0.18, 'sawtooth', 0.12, 0, 140); },
   tik()     { tone(700, 0.04, 'sine', 0.08); },
   regen(k = 1) { noise(0.6, 0.03 * k, 'highpass', 2600); },
+  kwaak(hard) { const v = hard ? 0.09 : 0.04; tone(430, 0.09, 'sawtooth', v, 0, 320); tone(410, 0.13, 'sawtooth', v, 0.13, 290); if (hard) tone(400, 0.13, 'sawtooth', v, 0.3, 280); },
   stap()    { noise(0.06, 0.05, 'lowpass', 500); },
   vogel()   { const b = 2200 + Math.random() * 1200; tone(b, 0.08, 'sine', 0.05, 0, b * 1.3); tone(b * 1.2, 0.08, 'sine', 0.05, 0.12, b * 0.9); tone(b, 0.1, 'sine', 0.05, 0.24, b * 1.4); },
   krekel()  { for (let i = 0; i < 4; i++) tone(4200, 0.03, 'square', 0.015, i * 0.06); },
