@@ -427,7 +427,7 @@ export function buildWorld(scene) {
   }
   const ringen = [];
   const ringGeo = new THREE.RingGeometry(0.86, 1, 28).rotateX(-Math.PI / 2);
-  for (let i = 0; i < 14; i++) {
+  for (let i = 0; i < 30; i++) {
     const m = new THREE.Mesh(ringGeo, new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0, depthWrite: false }));
     m.visible = false; m.position.y = WATER_Y + 0.06; scene.add(m);
     ringen.push({ m, t: 0, duur: 1, max: 1, actief: false });
@@ -455,7 +455,17 @@ export function buildWorld(scene) {
   const nacht = { lucht: K(0x2a3a7a), boven: K(0x0a1238), hemi: K(0x7f92d8), zon: K(0x9db4ff), water: K(0x1d4a8a) };
   const heuvelKleur = K(0x5f9a72);
   const gloed = K(0xff9a62);
-  const tmp = new THREE.Color();
+  const tmp = new THREE.Color(), tmp2 = new THREE.Color();
+
+  // ---------- regen: strepen die vallen, grijzere lucht en kringetjes op het water ----------
+  const REGEN_N = 1300, regenPos = new Float32Array(REGEN_N * 6), regenD = [];
+  for (let i = 0; i < REGEN_N; i++) { const a = R() * 6.28, r = Math.sqrt(R()) * 30; regenD.push({ x: Math.cos(a) * r, z: Math.sin(a) * r, y: R() * 16, v: 16 + R() * 8 }); }
+  const regenGeo = new THREE.BufferGeometry(); regenGeo.setAttribute('position', new THREE.BufferAttribute(regenPos, 3));
+  const regenMat = new THREE.LineBasicMaterial({ color: 0xd6e8ff, transparent: true, opacity: 0, depthWrite: false });
+  const regenLijnen = new THREE.LineSegments(regenGeo, regenMat);
+  regenLijnen.frustumCulled = false; regenLijnen.visible = false; scene.add(regenLijnen);
+  const grijs = { lucht: K(0x93a4b3), boven: K(0x6c7f93), wolk: K(0xaab4c0) };
+  W.regen = 0;          // 0 = droog, 1 = volop regen (het spel zet dit)
   let springT = 6;
 
   W.update = (t, dt) => {
@@ -465,8 +475,8 @@ export function buildWorld(scene) {
     if (c > 150 && c < 180) e = (c - 150) / 30; else if (c >= 180 && c < 265) e = 1; else if (c >= 265 && c < 295) e = 1 - (c - 265) / 30;
     e = e * e * (3 - 2 * e);
     W.eve = e;
-    const s = 4 * e * (1 - e);
-    tmp.copy(dag.lucht).lerp(nacht.lucht, e).lerp(gloed, s * 0.55);
+    const s = 4 * e * (1 - e), rg = W.regen, donker = 1 - 0.65 * e;
+    tmp.copy(dag.lucht).lerp(nacht.lucht, e).lerp(gloed, s * 0.55).lerp(tmp2.copy(grijs.lucht).multiplyScalar(donker), rg * 0.75);
     scene.background.copy(tmp); scene.fog.color.copy(tmp);
     koepelMat.uniforms.horizon.value.copy(tmp);
     heuvelMat.color.copy(tmp).lerp(heuvelKleur, 0.45 - e * 0.2);
@@ -477,12 +487,33 @@ export function buildWorld(scene) {
     waterMat.color.copy(dag.water).lerp(nacht.water, e).lerp(gloed, s * 0.25);
     zonBol.position.set(70, 62 - e * 85, -60); zonBol.material.color.set(0xfff3a0).lerp(gloed, Math.min(1, e * 2));
     maanBol.position.set(-60, -25 + e * 80, -70);
-    zonHalo.position.copy(zonBol.position); zonHalo.material.color.copy(zonBol.material.color); zonHalo.material.opacity = 0.9;
+    zonHalo.position.copy(zonBol.position); zonHalo.material.color.copy(zonBol.material.color); zonHalo.material.opacity = 0.9 * (1 - rg);
     maanHalo.position.copy(maanBol.position); maanHalo.material.opacity = e * 0.8;
     sterren.material.opacity = Math.max(0, e - 0.3) * 1.3;
     vliegjes.material.opacity = e * 0.95;
     wolkMat.color.set(0xffffff).lerp(nacht.lucht, e * 0.7).lerp(gloed, s * 0.5);
     wolkOnder.color.set(0xe4ecf6).lerp(nacht.lucht, e * 0.8).lerp(gloed, s * 0.6);
+    if (rg > 0) {
+      koepelMat.uniforms.boven.value.lerp(tmp2.copy(grijs.boven).multiplyScalar(donker), rg * 0.85);
+      wolkMat.color.lerp(tmp2.copy(grijs.wolk).multiplyScalar(donker), rg * 0.8);
+      wolkOnder.color.lerp(tmp2.copy(grijs.wolk).multiplyScalar(donker * 0.8), rg * 0.85);
+      hemi.intensity *= 1 - 0.2 * rg; zon.intensity *= 1 - 0.55 * rg;
+    }
+    regenLijnen.visible = rg > 0.02;
+    if (regenLijnen.visible) {
+      regenMat.opacity = 0.5 * rg;
+      for (let i = 0; i < REGEN_N; i++) {
+        const d = regenD[i], k = i * 6;
+        d.y -= d.v * dt; if (d.y < -0.2) d.y += 16;
+        regenPos[k] = d.x; regenPos[k + 1] = d.y; regenPos[k + 2] = d.z;
+        regenPos[k + 3] = d.x + 0.06; regenPos[k + 4] = d.y + 0.55; regenPos[k + 5] = d.z;
+      }
+      regenGeo.attributes.position.needsUpdate = true;
+      if (Math.random() < rg * dt * 16 && ringen.filter(q => !q.actief).length > 8) {
+        const a = Math.random() * 6.28, r = Math.sqrt(Math.random()) * 13;
+        W.ripple(Math.cos(a) * r, Math.sin(a) * r, 0.45, 0.6);
+      }
+    }
 
     // golfjes
     const arr = wp.array;
