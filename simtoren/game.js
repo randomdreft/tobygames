@@ -26,7 +26,7 @@ const T = {
   shop:       { name: 'Winkel', w: 4, cost: 15000, star: 1, pop: 2, pay: 250, open: [9, 20],
                 desc: 'Klanten verdelen zich over al je winkels. Meer inwoners = meer klanten.' },
   stairs:     { name: 'Trap', w: 2, cost: 1500, star: 1, pop: 0, transport: true,
-                desc: 'Naar één verdieping hoger. Mag ook over kamers heen.' },
+                desc: 'Naar één verdieping hoger. Zet ze boven elkaar: sportieve mensen lopen zo een paar verdiepingen.' },
   lift:       { name: 'Lift', w: 2, cost: 2500, shaft: 5000, star: 1, pop: 0, transport: true, lift: true, speed: 4.5, cap: 8,
                 desc: 'Sleep omhoog om hem langer te maken. Klik erop voor extra cabines.' },
   restaurant: { name: 'Restaurant', w: 8, cost: 40000, star: 2, pop: 4, pay: 300, open: [11, 22],
@@ -321,8 +321,14 @@ function doUndo() {
 }
 
 // ───────────────────────── 4. Mensen en routes ─────────────────────────
-function distTo(dest) {
-  let d = distCache.get(dest);
+// Niet iedereen is even dol op traplopen. fit 0 = neemt de trap alleen voor 1 verdieping,
+// 1 = tot een verdieping of 3, 2 = sportief, tot een verdieping of 5. Daarboven kiezen ze de lift.
+const STAIR_COST = [12, 6, 4], STAIR_OK = [2, 4, 6];
+const ec = (e, fit) => e.k === 'stairs' ? STAIR_COST[fit] : e.c;
+
+function distTo(dest, fit = 0) {
+  const ck = dest * 3 + fit;
+  let d = distCache.get(ck);
   if (d) return d;
   const n = adj.length;
   d = new Array(n).fill(Infinity); d[dest] = 0;
@@ -332,16 +338,16 @@ function distTo(dest) {
     for (let i = 0; i < n; i++) if (!done[i] && d[i] < Infinity && (u < 0 || d[i] < d[u])) u = i;
     if (u < 0) break;
     done[u] = true;
-    for (const e of adj[u]) if (d[u] + e.c < d[e.n]) d[e.n] = d[u] + e.c;
+    for (const e of adj[u]) { const c = ec(e, fit); if (d[u] + c < d[e.n]) d[e.n] = d[u] + c; }
   }
-  distCache.set(dest, d);
+  distCache.set(ck, d);
   return d;
 }
 
 // Geschatte moeite van één stap: reistijd + loopafstand + drukte van de hele lift
 // (wachtenden en meerijders, gedeeld door wat de cabines samen aankunnen).
 function legCost(p, e, d) {
-  let c = e.c + d[e.n] + 0.2 * Math.abs(e.x - p.x);
+  let c = ec(e, p.fit) + d[e.n] + 0.2 * Math.abs(e.x - p.x);
   if (e.sh) {
     const s = e.sh, riders = s.cars.reduce((n, k) => n + k.pass.length, 0);
     c += 25 * (s.queue.length + 0.5 * riders) / (s.cars.length * T[s.type].cap);
@@ -350,7 +356,7 @@ function legCost(p, e, d) {
 }
 
 function nextLeg(p, here, dest) {
-  const d = distTo(dest);
+  const d = distTo(dest, p.fit);
   let best = null, bc = Infinity;
   for (const e of adj[here]) {
     if (!(d[e.n] < d[here])) continue;
@@ -367,14 +373,15 @@ function reconsider(p) {
   if (here === undefined) return;
   const destN = room ? nodeOf(room.f, room.x) : 0, alt = nextLeg(p, here, destN);
   if (!alt || alt.sh === p.leg.sh) return;
-  if (alt.cost + 5 < legCost(p, p.leg, distTo(destN))) {
+  if (alt.cost + 5 < legCost(p, p.leg, distTo(destN, p.fit))) {
     p.leg.sh.queue = p.leg.sh.queue.filter(q => q !== p);
     p.car = null; p.st = 'go'; p.leg = alt;
   }
 }
 
 function mkPerson(kind, home) {
-  const p = { kind, home, st: 'out', at: null, f: 0, x: -6, dir: 1, stress: 0, sS: 0, flights: 0,
+  const fr = rnd();
+  const p = { kind, home, fit: fr < 0.4 ? 0 : fr < 0.8 ? 1 : 2, st: 'out', at: null, f: 0, x: -6, dir: 1, stress: 0, sS: 0, flights: 0,
               dest: null, leg: null, climb: 0, tt: 0, plan: [], stay: null, slot: rnd(), exitX: -6 };
   people.push(p);
   return p;
@@ -518,7 +525,7 @@ function updPerson(p, dt) {
       p.dir = leg.up ? 1 : -1;
       if (p.climb >= 1) {
         p.f = leg.to; p.climb = 0; p.leg = null; p.flights++;
-        if (p.flights > 2) { p.stress += 5; p.sS += 5; }
+        if (p.flights > STAIR_OK[p.fit]) { p.stress += 5; p.sS += 5; }
       }
     }
     return;
