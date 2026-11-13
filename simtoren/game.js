@@ -26,9 +26,9 @@ const T = {
   shop:       { name: 'Winkel', w: 4, cost: 15000, star: 1, pop: 2, pay: 250, open: [9, 20],
                 desc: 'Elke klant betaalt. Op de begane grond komen de meeste klanten.' },
   stairs:     { name: 'Trap', w: 2, cost: 1500, star: 1, pop: 0, transport: true,
-                desc: 'Naar één verdieping hoger. Goed voor korte stukjes.' },
+                desc: 'Naar één verdieping hoger. Mag ook over kamers heen.' },
   lift:       { name: 'Lift', w: 2, cost: 2500, shaft: 5000, star: 1, pop: 0, transport: true, lift: true, speed: 3.5, cap: 6,
-                desc: 'Sleep omhoog of omlaag om hem langer te maken.' },
+                desc: 'Sleep omhoog om hem langer te maken. Klik erop voor extra cabines.' },
   restaurant: { name: 'Restaurant', w: 8, cost: 40000, star: 2, pop: 4, pay: 300, open: [11, 22],
                 desc: 'Druk met lunch en avondeten.' },
   hotel:      { name: 'Hotelkamer', w: 3, cost: 14000, star: 3, pop: 2, pay: 4500,
@@ -50,7 +50,7 @@ const MISSIONS = [
   { t: 'Bouw een winkel', h: 'Op de begane grond komen de meeste klanten.', tool: 'shop', n: () => cnt('shop'), g: 1, r: 5000 },
   { t: 'Haal 40 inwoners', h: 'Bouw meer kantoren en appartementen. Je krijgt dan je 2e ster.', n: () => pop, g: 40, r: 20000 },
   { t: 'Bouw een restaurant', h: 'Werknemers en bewoners komen er eten.', tool: 'restaurant', n: () => cnt('restaurant'), g: 1, r: 15000 },
-  { t: 'Maak iedereen blij: 85% tevreden', h: 'Rode poppetjes wachten te lang. Bouw extra liften.', n: () => mood, g: 85, r: 20000 },
+  { t: 'Maak iedereen blij: 85% tevreden', h: 'Rode poppetjes wachten te lang. Klik op een lift en koop een extra cabine.', n: () => mood, g: 85, r: 20000 },
   { t: 'Haal 120 inwoners', h: 'Je mag nu tot verdieping 14 bouwen.', n: () => pop, g: 120, r: 40000 },
   { t: 'Bouw 5 hotelkamers', h: 'Hotelgasten betalen goed.', tool: 'hotel', n: () => cnt('hotel'), g: 5, r: 30000 },
   { t: 'Bouw een snellift van 10 verdiepingen', h: 'Een snellift is ideaal voor hoge torens.', tool: 'xlift', n: () => maxShaft('xlift'), g: 10, r: 40000 },
@@ -70,7 +70,8 @@ const stars = n => '⭐'.repeat(n);
 
 // ───────────────────────── 2. Spelstand ─────────────────────────
 let G = null;                    // wat wordt opgeslagen
-let grid = new Map(), byId = new Map(), segs = new Map(), adj = [];
+// grid = kamers, tgrid = trappen en liften. Die laatste mogen over kamers heen staan.
+let grid = new Map(), tgrid = new Map(), byId = new Map(), segs = new Map(), adj = [];
 let shafts = [], reach = new Set(), distCache = new Map();
 let people = [], floats = [];
 let pop = 0, mood = 100, active = 0;
@@ -90,7 +91,7 @@ function save() {
   if (!G) return;
   try {
     localStorage.setItem(SAVE_KEY, JSON.stringify({ ...G,
-      rooms: G.rooms.map(r => ({ id: r.id, type: r.type, f: r.f, x: r.x, rating: Math.round(r.rating), earned: r.earned })),
+      rooms: G.rooms.map(r => ({ id: r.id, type: r.type, f: r.f, x: r.x, rating: Math.round(r.rating), earned: r.earned, cars: r.cars })),
       speedIdx, muted }));
   } catch (e) { /* opslag vol of geblokkeerd: spel werkt gewoon door */ }
 }
@@ -123,6 +124,8 @@ function nodeOf(f, x) {
   const n = segs.get(key(f, x));
   return n !== undefined ? n : segs.get(key(f, x - 1)) !== undefined ? segs.get(key(f, x - 1)) : segs.get(key(f, x + 1));
 }
+const layer = type => T[type].transport ? tgrid : grid;
+const pick = h => h ? (tgrid.get(key(h.f, h.u)) || grid.get(key(h.f, h.u))) : null;
 const ok = r => reach.has(nodeOf(r.f, r.x));
 
 // ───────────────────────── 3. Bouwen en slopen ─────────────────────────
@@ -134,10 +137,10 @@ function addRoom(r) {
 }
 
 function rebuild() {
-  grid.clear(); byId.clear(); segs.clear();
+  grid.clear(); tgrid.clear(); byId.clear(); segs.clear();
   for (const r of G.rooms) {
     byId.set(r.id, r);
-    for (let i = 0; i < T[r.type].w; i++) grid.set(key(r.f, r.x + i), r);
+    for (let i = 0; i < T[r.type].w; i++) layer(r.type).set(key(r.f, r.x + i), r);
   }
   rebuildShafts();
   let n = 1;
@@ -174,19 +177,24 @@ function rebuild() {
 function rebuildShafts() {
   const old = shafts; shafts = [];
   for (const s of old) {
-    for (const p of s.car.pass) { p.st = 'go'; p.leg = null; p.f = Math.round(s.car.y); p.x = s.x + 1; }
-    for (const p of s.queue) { p.st = 'go'; p.leg = null; }
+    for (const c of s.cars) for (const p of c.pass) { p.st = 'go'; p.leg = null; p.f = Math.round(c.y); p.x = s.x + 1; }
+    for (const p of s.queue) { p.st = 'go'; p.leg = null; p.car = null; }
   }
   const cells = G.rooms.filter(r => T[r.type].lift)
     .sort((a, b) => a.x - b.x || a.type.localeCompare(b.type) || a.f - b.f);
   let cur = null;
   for (const c of cells) {
-    if (cur && cur.x === c.x && cur.type === c.type && c.f === cur.top + 1) cur.top = c.f;
-    else { cur = { x: c.x, type: c.type, bot: c.f, top: c.f, queue: [], car: null }; shafts.push(cur); }
+    if (cur && cur.x === c.x && cur.type === c.type && c.f === cur.top + 1) { cur.top = c.f; cur.cells.push(c); }
+    else { cur = { x: c.x, type: c.type, bot: c.f, top: c.f, queue: [], cars: [], cells: [c] }; shafts.push(cur); }
   }
   for (const s of shafts) {
+    const n = clamp(Math.max(...s.cells.map(c => c.cars || 1)), 1, maxCars(s));
+    s.cells.forEach((c, i) => { if (i === 0 && n > 1) c.cars = n; else delete c.cars; });
     const o = old.find(o => o.x === s.x && o.type === s.type && o.bot <= s.top && o.top >= s.bot);
-    s.car = { y: o ? clamp(Math.round(o.car.y), s.bot, s.top) : s.bot, dir: 0, door: 0, pass: [] };
+    for (let i = 0; i < n; i++) {
+      const y = o && o.cars[i] ? Math.round(o.cars[i].y) : s.bot + Math.round(i * (s.top - s.bot) / n);
+      s.cars.push({ y: clamp(y, s.bot, s.top), dir: 0, door: 0, pass: [] });
+    }
   }
 }
 
@@ -194,7 +202,7 @@ function rebuildShafts() {
 function costOf(type, f, x) {
   const t = T[type];
   if (!t.lift) return t.cost;
-  const joins = [f - 1, f + 1].some(g => { const r = grid.get(key(g, x)); return r && r.type === type && r.x === x; });
+  const joins = [f - 1, f + 1].some(g => { const r = tgrid.get(key(g, x)); return r && r.type === type && r.x === x; });
   return t.cost + (joins ? 0 : t.shaft);
 }
 
@@ -207,12 +215,12 @@ function whyNot(type, f, x) {
   if (f < FMIN) return 'Dieper dan kelder 2 kan niet';
   if (f > maxFloor() || (type === 'stairs' && f + 1 > maxFloor()))
     return G.stars < 4 ? 'Zo hoog mag pas met ' + stars(G.stars + 1) : 'Dit is de hoogste verdieping';
-  for (let i = 0; i < t.w; i++) if (grid.has(key(f, x + i))) return 'Hier staat al iets';
+  for (let i = 0; i < t.w; i++) if (layer(type).has(key(f, x + i))) return t.transport ? 'Hier zit al een trap of lift' : 'Hier staat al iets';
   if (f > 0) { for (let i = 0; i < t.w; i++) if (!G.slabs[key(f - 1, x + i)]) return 'Bouw eerst iets op de verdieping eronder'; }
   if (f < -1) { for (let i = 0; i < t.w; i++) if (!G.slabs[key(f + 1, x + i)]) return 'Bouw eerst de kelder erboven'; }
   if (t.lift) {
     for (const g of [f - 1, f + 1]) {
-      const r = grid.get(key(g, x)) || grid.get(key(g, x + 1));
+      const r = tgrid.get(key(g, x)) || tgrid.get(key(g, x + 1));
       if (r && T[r.type].lift && (r.type !== type || r.x !== x)) return 'Hier zit al een andere lift tegenaan';
     }
   }
@@ -248,7 +256,7 @@ function removeRoom(r) {
       p.exitX = p.x < W / 2 ? -6 : W + 6;
     } else if (p.dest && p.dest.room === r.id) p.dest = { out: true };
   }
-  for (const s of shafts) { s.queue = s.queue.filter(p => !p.dead); s.car.pass = s.car.pass.filter(p => !p.dead); }
+  for (const s of shafts) { s.queue = s.queue.filter(p => !p.dead); for (const c of s.cars) c.pass = c.pass.filter(p => !p.dead); }
   people = people.filter(p => !p.dead);
   if (selected === r) select(null);
   rebuild();
@@ -264,7 +272,7 @@ function demolish(list) {
     floatAt(r, '+' + euro(v), '#b9f5c8');
     removeRoom(r);
   }
-  undo.push({ k: 'demo', rooms: list.map(r => ({ id: r.id, type: r.type, f: r.f, x: r.x, rating: r.rating, earned: r.earned })), refund });
+  undo.push({ k: 'demo', rooms: list.map(r => ({ id: r.id, type: r.type, f: r.f, x: r.x, rating: r.rating, earned: r.earned, cars: r.cars })), refund });
   sfx('demo'); save();
 }
 
@@ -279,7 +287,7 @@ function doUndo() {
     let n = 0;
     for (const r of u.rooms) {
       let free = true;
-      for (let i = 0; i < T[r.type].w; i++) if (grid.has(key(r.f, r.x + i))) free = false;
+      for (let i = 0; i < T[r.type].w; i++) if (layer(r.type).has(key(r.f, r.x + i))) free = false;
       if (!free) continue;
       addRoom(r); rebuild(); occupants(r, 'load'); n++;
     }
@@ -521,50 +529,68 @@ function newDay() {
 }
 
 // ───────────────────────── 5. Liften ─────────────────────────
-function shouldStop(s, f) {
-  const c = s.car, full = c.pass.length >= T[s.type].cap;
+// Een schacht kan meerdere cabines hebben. Elke wachtende krijgt de cabine die er het snelst kan zijn.
+const MAX_CARS = 4;
+const maxCars = s => clamp(s.top - s.bot, 1, MAX_CARS);
+
+function assign(s) {
+  const cap = T[s.type].cap;
+  for (const p of s.queue) {
+    let best = null, bc = Infinity;
+    for (const c of s.cars) {
+      const dy = p.f - c.y;
+      let cost = Math.abs(dy) + c.pass.length * 0.5;
+      if (c.pass.length >= cap) cost += 20;
+      if (c.dir !== 0 && dy * c.dir < 0) cost += 10;
+      if (c === p.car) cost -= 0.5;
+      if (cost < bc) { bc = cost; best = c; }
+    }
+    p.car = best;
+  }
+}
+
+function shouldStop(s, c, f) {
+  const full = c.pass.length >= T[s.type].cap;
   if (c.pass.some(p => p.leg.to === f)) return true;
   const ahead = g => (g - f) * c.dir > 0;
-  const more = c.pass.some(p => ahead(p.leg.to)) || (!full && s.queue.some(p => ahead(p.f)));
+  const more = c.pass.some(p => ahead(p.leg.to)) || (!full && s.queue.some(p => p.car === c && ahead(p.f)));
   if (!more) return true;
   return !full && s.queue.some(p => p.f === f && Math.sign(p.leg.to - f) === c.dir);
 }
 
-function doStop(s, f) {
-  const c = s.car, cap = T[s.type].cap;
+function doStop(s, c, f) {
+  const cap = T[s.type].cap;
   let moved = false;
   c.y = f;
   for (const p of c.pass) if (p.leg.to === f) { p.f = f; p.x = s.x + 1; p.leg = null; p.st = 'go'; moved = true; }
   c.pass = c.pass.filter(p => p.st === 'ride');
   const ahead = g => (g - f) * c.dir > 0;
-  const here = s.queue.filter(p => p.f === f);
+  const here = s.queue.filter(p => p.f === f), mine = s.queue.filter(p => p.car === c);
   const full = c.pass.length >= cap;
-  const more = c.dir !== 0 && (c.pass.some(p => ahead(p.leg.to)) || (!full && s.queue.some(p => ahead(p.f))));
+  const more = c.dir !== 0 && (c.pass.some(p => ahead(p.leg.to)) || (!full && mine.some(p => ahead(p.f))));
   if (!more) {
     if (c.pass.length) c.dir = Math.sign(c.pass[0].leg.to - f);
     else if (here.length) c.dir = Math.sign(here[0].leg.to - f);
-    else if (s.queue.length) c.dir = Math.sign(s.queue[0].f - f);
+    else if (mine.length) c.dir = Math.sign(mine[0].f - f);
     else c.dir = 0;
   }
   for (const p of here) {
     if (c.pass.length >= cap) break;
     if (Math.sign(p.leg.to - f) !== c.dir) continue;
-    p.st = 'ride'; c.pass.push(p); moved = true;
+    p.st = 'ride'; p.car = null; c.pass.push(p); moved = true;
   }
   s.queue = s.queue.filter(p => p.st === 'wait');
   if (moved) c.door = 0.8;
 }
 
-function updShaft(s, dt) {
-  const c = s.car;
-  if (s.top === s.bot) return;
+function updCar(s, c, dt) {
   if (c.door > 0) { c.door -= dt; if (c.door > 0) return; }
   if (c.dir === 0) {
-    if (!c.pass.length && !s.queue.length) return;
     let best = null, bd = Infinity;
     for (const p of c.pass) { const d = Math.abs(p.leg.to - c.y); if (d < bd) { bd = d; best = p.leg.to; } }
-    for (const p of s.queue) { const d = Math.abs(p.f - c.y); if (d < bd) { bd = d; best = p.f; } }
-    if (bd < 1e-6) { doStop(s, Math.round(c.y)); if (c.dir === 0 || c.door > 0) return; }
+    for (const p of s.queue) { if (p.car !== c) continue; const d = Math.abs(p.f - c.y); if (d < bd) { bd = d; best = p.f; } }
+    if (best === null) return;
+    if (bd < 1e-6) { doStop(s, c, Math.round(c.y)); if (c.dir === 0 || c.door > 0) return; }
     else c.dir = best > c.y ? 1 : -1;
   }
   const ny = c.y + c.dir * T[s.type].speed * dt;
@@ -572,8 +598,27 @@ function updShaft(s, dt) {
   if (nf < s.bot || nf > s.top) { c.dir = 0; return; }
   if ((c.dir > 0 && ny >= nf) || (c.dir < 0 && ny <= nf)) {
     c.y = nf;
-    if (shouldStop(s, nf)) doStop(s, nf);
+    if (shouldStop(s, c, nf)) doStop(s, c, nf);
   } else c.y = ny;
+}
+
+function updShaft(s, dt) {
+  if (s.top === s.bot) return;
+  if (s.cars.length > 1) assign(s); else for (const p of s.queue) p.car = s.cars[0];
+  for (const c of s.cars) updCar(s, c, dt);
+}
+
+// Cabine erbij (d = 1) of eraf (d = -1). Het aantal staat op het onderste liftstuk.
+function changeCars(s, d) {
+  const cell = G.rooms.find(r => r.type === s.type && r.x === s.x && r.f === s.bot), price = T[s.type].shaft;
+  const n = s.cars.length + d;
+  if (n < 1 || n > maxCars(s)) return;
+  if (d > 0) {
+    if (G.money < price) { sfx('error'); toast('⛔ Te weinig geld: een cabine kost ' + euro(price), 'bad'); return; }
+    G.money -= price; floatAt(cell, '-' + euro(price), '#ffb3b3'); sfx('build');
+  } else { G.money += price / 2; floatAt(cell, '+' + euro(price / 2), '#b9f5c8'); sfx('demo'); }
+  cell.cars = n;
+  rebuild(); save();
 }
 
 // ───────────────────────── 6. Tekenen ─────────────────────────
@@ -680,8 +725,8 @@ const ART = {
     for (let i = 0; i < 9; i++) { const dx = x + 30 + i * 17, dy = y + h - 9 - i * 1.6; R(c, '#c1272d', dx, dy, 11, 7); R(c, '#8f1d22', dx + 9, dy - 4, 3, 11); R(c, '#1f1d2b', dx - 2, dy + 7, 17, 9); }
     R(c, '#555', x + w - 12, y + 7, 7, 4);
   },
-  stairs(c, x, y, w, h) {
-    base(c, '#dedee6', x, y, w, h);
+  stairs(c, x, y, w, h, lit, over) {
+    if (over) R(c, 'rgba(255,255,255,.45)', x, y + 3, w, h - 3); else base(c, '#dedee6', x, y, w, h);
     c.fillStyle = '#8d99ae'; c.beginPath(); c.moveTo(x + 2, y + h);
     for (let i = 0; i < 6; i++) { c.lineTo(x + 2 + i * 4.6, y + h - (i + 1) * 6); c.lineTo(x + 2 + (i + 1) * 4.6, y + h - (i + 1) * 6); }
     c.lineTo(x + w - 2, y + h); c.fill();
@@ -698,12 +743,15 @@ const ART = {
   },
 };
 
-function drawCar(c, x, y, type, n, open) {
-  R(c, type === 'xlift' ? '#fde68a' : '#e5e7eb', x + 3, y + 6, 2 * U - 6, FH - 7);
-  R(c, 'rgba(0,0,0,.25)', x + 3, y + 6, 2 * U - 6, 2);
-  if (open) R(c, '#1f2937', x + 6, y + 10, 2 * U - 12, FH - 12);
-  else R(c, 'rgba(0,0,0,.3)', x + U - 0.5, y + 8, 1, FH - 9);
-  if (n) { c.fillStyle = open ? '#fff' : '#111'; c.font = 'bold 11px system-ui'; c.textAlign = 'center'; c.fillText(n, x + U, y + FH - 9); }
+// slot/of: meerdere cabines staan naast elkaar in dezelfde schacht
+function drawCar(c, x, y, type, n, open, slot = 0, of = 1) {
+  const w = (2 * U - 6 - (of - 1)) / of, cx = x + 3 + slot * (w + 1);
+  R(c, type === 'xlift' ? '#fde68a' : '#e5e7eb', cx, y + 6, w, FH - 7);
+  R(c, 'rgba(0,0,0,.25)', cx, y + 6, w, 2);
+  if (open) R(c, '#1f2937', cx + 1.5, y + 10, w - 3, FH - 12);
+  else if (of === 1) R(c, 'rgba(0,0,0,.3)', cx + w / 2 - 0.5, y + 8, 1, FH - 9);
+  if (n && of <= 2) { c.fillStyle = open ? '#fff' : '#111'; c.font = 'bold ' + (of === 1 ? 11 : 9) + 'px system-ui'; c.textAlign = 'center'; c.fillText(n, cx + w / 2, y + FH - 9); }
+  else if (n && !open) R(c, '#111', cx + w / 2 - 1, y + FH - 14, 2, 6);
 }
 
 function drawPerson(c, px, py, col) {
@@ -728,7 +776,7 @@ function ghostFor(h) {
   if (t.lift) {
     if (stroke && stroke.x !== null) x = stroke.x;
     else for (const g of [f - 1, f + 1]) for (const dx of [0, -1, 1]) {
-      const r = grid.get(key(g, x + dx)); if (r && r.type === tool && r.x === x + dx) { x = r.x; break; }
+      const r = tgrid.get(key(g, x + dx)); if (r && r.type === tool && r.x === x + dx) { x = r.x; break; }
     }
   } else if (!(stroke && stroke.ids.length)) {
     // klik je net naast een vrije plek, dan schuift het stuk er vanzelf in
@@ -777,15 +825,15 @@ function draw() {
   // lege vloeren, kamers
   const lo = Math.floor(-vy1 / FH) - 1, hi = Math.floor(-vy0 / FH) + 1;
   for (const k in G.slabs) {
-    if (grid.has(k)) continue;
+    if (grid.has(k) || tgrid.has(k)) continue;
     const i = k.indexOf(','), f = +k.slice(0, i), x = +k.slice(i + 1);
     if (f < lo || f > hi) continue;
     ART.empty(ctx, x * U, -(f + 1) * FH, U, FH);
   }
-  for (const r of G.rooms) {
-    if (r.f < lo || r.f > hi) continue;
+  const vis = G.rooms.filter(r => r.f >= lo && r.f <= hi).sort((a, b) => !!T[a.type].transport - !!T[b.type].transport);
+  for (const r of vis) {
     const t = T[r.type], x = r.x * U, y = -(r.f + 1) * FH, w = t.w * U;
-    ART[r.type](ctx, x, y, w, FH, night ? (r.inside > 0 || r.type === 'lobby' ? 2 : 1) : 0);
+    ART[r.type](ctx, x, y, w, FH, night ? (r.inside > 0 || r.type === 'lobby' ? 2 : 1) : 0, grid.has(key(r.f, r.x)) || grid.has(key(r.f, r.x + 1)));
     if (!t.transport) {
       const n = Math.min(r.inside, Math.floor(w / 9));
       for (let i = 0; i < n; i++) drawPerson(ctx, x + (i + 0.5) * w / n + ((i * 7) % 5) - 2, y + FH - 1, '#3b4252');
@@ -806,7 +854,7 @@ function draw() {
     if (s.top === s.bot) {
       ctx.fillStyle = '#e03131'; ctx.beginPath(); ctx.arc(s.x * U + U, -(s.bot + 1) * FH + 12, 7, 0, 7); ctx.fill();
       ctx.fillStyle = '#fff'; ctx.font = 'bold 11px system-ui'; ctx.textAlign = 'center'; ctx.fillText('!', s.x * U + U, -(s.bot + 1) * FH + 16);
-    } else drawCar(ctx, s.x * U, -(s.car.y + 1) * FH, s.type, s.car.pass.length, s.car.door > 0);
+    } else s.cars.forEach((c, i) => drawCar(ctx, s.x * U, -(c.y + 1) * FH, s.type, c.pass.length, c.door > 0, i, s.cars.length));
   }
 
   // mensen
@@ -829,7 +877,7 @@ function draw() {
     ctx.strokeStyle = g.why ? '#e03131' : '#2b8a3e'; ctx.lineWidth = 2; ctx.strokeRect(x, y, w, FH);
   }
   if (tool === 'demolish' && hover) {
-    const r = grid.get(key(hover.f, hover.u));
+    const r = pick(hover);
     if (r && r.type !== 'lobby') { ctx.fillStyle = 'rgba(224,49,49,.45)'; ctx.fillRect(r.x * U, -(r.f + 1) * FH, T[r.type].w * U, FH); }
   }
 
@@ -914,10 +962,10 @@ function buildToolbar() {
 function updHint() {
   const el = $('hint'); let txt, bad = false;
   if (tool === 'select') {
-    const r = hover && grid.get(key(hover.f, hover.u));
+    const r = pick(hover);
     txt = r ? T[r.type].name + ' · ' + floorName(r.f) + ' · klik voor info' : 'Sleep om rond te kijken · scroll of knijp om te zoomen · klik op een kamer voor info';
   } else if (tool === 'demolish') {
-    const r = hover && grid.get(key(hover.f, hover.u));
+    const r = pick(hover);
     if (r && r.type === 'lobby') { txt = 'De lobby kun je niet slopen'; bad = true; }
     else txt = r ? '🔨 ' + T[r.type].name + ' slopen: je krijgt ' + euro(T[r.type].cost / 2) + ' terug' : '🔨 Klik op iets om het te slopen. Vergist? Druk op ↩️';
   } else {
@@ -942,8 +990,14 @@ function updInfo() {
   if (t.lift) {
     const s = shafts.find(s => s.x === r.x && s.type === r.type && r.f >= s.bot && r.f <= s.top);
     if (s.top === s.bot) h += '<p class="warn">⚠️ Deze lift is maar 1 verdieping hoog en gaat dus nergens heen. Kies ' + t.name + ' en klik erboven of eronder.</p>';
-    else h += '<p>Rijdt van ' + floorName(s.bot) + ' tot ' + floorName(s.top) + '.</p><p>👥 In de lift: ' + s.car.pass.length + ' van ' + t.cap + '</p><p>⏳ Wachtend: ' + s.queue.length + '</p>' +
-      (s.queue.length > t.cap * 2 ? '<p class="warn">Het is hier te druk. Bouw er een lift naast.</p>' : '');
+    else {
+      const n = s.cars.length, mx = maxCars(s);
+      h += '<p>Rijdt van ' + floorName(s.bot) + ' tot ' + floorName(s.top) + '.</p><p>🛗 Cabines: <b>' + n + '</b> van ' + mx + ' (elk ' + t.cap + ' mensen)</p>' +
+        '<p>👥 In de lift: ' + s.cars.reduce((a, c) => a + c.pass.length, 0) + '</p><p>⏳ Wachtend: ' + s.queue.length + '</p>' +
+        (s.queue.length > t.cap * n * 2 ? '<p class="warn">Het is hier te druk. ' + (n < mx ? 'Koop een extra cabine.' : 'Bouw er een lift naast.') + '</p>' : '') +
+        '<div class="act">' + (n < mx ? '<button class="btn green" data-a="car+">➕ Extra cabine (' + euro(t.shaft) + ')</button>' : mx < MAX_CARS ? '<p>Maak de lift langer voor meer cabines.</p>' : '') +
+        (n > 1 ? '<button class="btn" data-a="car-">➖ Cabine weghalen (+' + euro(t.shaft / 2) + ')</button>' : '') + '</div>';
+    }
     h += '<div class="act"><button class="btn red" data-a="demo">🔨 Dit stuk slopen</button><button class="btn red" data-a="demoall">🔨 Hele lift slopen</button></div>';
   } else {
     if (r.type === 'stairs') h += '<p>Verbindt ' + floorName(r.f) + ' met ' + floorName(r.f + 1) + '.</p>';
@@ -952,7 +1006,7 @@ function updInfo() {
     else {
       const face = r.rating >= 75 ? '😀' : r.rating >= 45 ? '😐' : '😡';
       h += '<p>' + face + ' Tevreden: <b>' + Math.round(r.rating) + '%</b></p>';
-      if (r.rating < 75) h += '<p class="warn">' + (r.cause === 'stairs' ? 'Mensen moeten te veel trappen lopen. Bouw een lift.' : 'Mensen wachten te lang op de lift. Bouw een lift erbij of een snellift.') + '</p>';
+      if (r.rating < 75) h += '<p class="warn">' + (r.cause === 'stairs' ? 'Mensen moeten te veel trappen lopen. Bouw een lift.' : 'Mensen wachten te lang op de lift. Klik op de lift voor een extra cabine, of bouw een lift erbij.') + '</p>';
       h += '<p>' + t.desc + '</p>';
       if (t.open) h += '<p>🕗 Open van ' + t.open[0] + ' tot ' + t.open[1] + ' uur' + (isOpen(r) ? '' : ' (nu dicht)') + '</p>';
       h += '<p>👥 Nu binnen: ' + r.inside + '</p><p>💰 Vandaag verdiend: ' + euro(r.earned) + '</p>';
@@ -967,6 +1021,7 @@ $('info').addEventListener('click', e => {
   if (!a || !r) return;
   if (a === 'close') select(null);
   if (a === 'demo') demolish([r]);
+  if (a === 'car+' || a === 'car-') { const s = shafts.find(s => s.x === r.x && s.type === r.type && r.f >= s.bot && r.f <= s.top); if (s) changeCars(s, a === 'car+' ? 1 : -1); }
   if (a === 'demoall') demolish(G.rooms.filter(q => q.type === r.type && q.x === r.x && shafts.some(s => s.x === r.x && s.type === r.type && r.f >= s.bot && r.f <= s.top && q.f >= s.bot && q.f <= s.top)));
 });
 
@@ -1021,9 +1076,9 @@ function closeModal() { $('overlay').classList.add('hidden'); }
 
 const HELP = '<ul>' +
   '<li>🏗️ <b>Bouwen:</b> kies iets in de balk onderaan en klik in de toren. Sleep om meer achter elkaar te bouwen.</li>' +
-  '<li>🪜 <b>Omhoog:</b> elke verdieping heeft een trap of lift nodig. Een lift maak je langer door omhoog te slepen.</li>' +
+  '<li>🪜 <b>Omhoog:</b> elke verdieping heeft een trap of lift nodig. Een lift maak je langer door omhoog te slepen. Trappen en liften mogen over kamers heen.</li>' +
   '<li>💰 <b>Geld:</b> mensen betalen als ze aankomen. Blije mensen betalen het meest.</li>' +
-  '<li>🔴 <b>Rode poppetjes</b> wachten te lang. Bouw dan een extra lift.</li>' +
+  '<li>🔴 <b>Rode poppetjes</b> wachten te lang. Klik op de lift voor een extra cabine, of bouw een lift erbij.</li>' +
   '<li>⭐ <b>Sterren:</b> meer inwoners geeft sterren. Daarmee mag je hoger bouwen en krijg je nieuwe kamers.</li>' +
   '<li>↩️ <b>Vergist?</b> Druk op de pijl of Ctrl+Z. Rondkijken: slepen met Kijken, of met de rechtermuisknop.</li></ul>';
 
@@ -1078,11 +1133,11 @@ function endStroke() {
 function clickAt() {
   if (!hover) return;
   if (tool === 'demolish') {
-    const r = grid.get(key(hover.f, hover.u));
+    const r = pick(hover);
     if (r && r.type === 'lobby') { sfx('error'); toast('De lobby kun je niet slopen', 'bad'); }
     else if (r) demolish([r]);
   } else if (tool === 'select') {
-    const r = grid.get(key(hover.f, hover.u));
+    const r = pick(hover);
     select(r || null); if (r) sfx('click');
   } else { stroke = { ids: [], cost: 0, x: null, lastF: 0 }; tryPlace(true); endStroke(); }
 }
