@@ -4,64 +4,52 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>SimToren - TobyGames</title>
-  <link rel="stylesheet" href="simtoren/style.css?v=1">
+  <link rel="stylesheet" href="simtoren/style.css?v=14">
 </head>
 <body>
-  <a href="index.html" class="back-btn">&larr; TobyGames</a>
+  <canvas id="cv"></canvas>
 
-  <div id="game-container">
-    <canvas id="gameCanvas"></canvas>
-
-    <div id="hud">
-      <div id="money-display">&euro;500.000</div>
-      <div id="income-display">+&euro;0/u</div>
-      <div id="population-display">&#x1f465; 0</div>
-      <div id="star-display">&#x2b50;</div>
-      <div id="time-display">Dag 1 - 08:00</div>
-      <div id="speed-controls">
-        <button class="speed-btn" data-speed="0">&#x23f8;</button>
-        <button class="speed-btn" data-speed="1">&#x25b6;</button>
-        <button class="speed-btn active" data-speed="2">&#x25b6;&#x25b6;</button>
-        <button class="speed-btn" data-speed="3">&#x25b6;&#x25b6;&#x25b6;</button>
-      </div>
+  <div id="top">
+    <a class="pill back" href="index.html" title="Terug naar TobyGames">&larr;</a>
+    <div class="pill" title="Geld">💰 <b id="s-money">€0</b> <small id="s-today"></small></div>
+    <div class="pill" title="Dag en tijd">🕗 <b id="s-time"></b></div>
+    <div class="pill" id="s-starbox" title="Sterren: meer inwoners = meer sterren">
+      <b id="s-stars">⭐</b>
+      <span class="bar"><i id="s-bar"></i></span>
+      <small id="s-pop"></small>
     </div>
-
-    <div id="build-menu">
-      <h3>&#x1f3d7;&#xfe0f; Bouwen</h3>
-      <div id="build-buttons"></div>
-      <button id="demolish-btn" class="tool-btn">&#x1f528; Slopen</button>
+    <div class="pill" title="Tevredenheid van je toren"><span id="s-face">😀</span> <b id="s-mood">100%</b></div>
+    <div class="pill speed" title="Snelheid (spatiebalk = pauze)">
+      <button data-speed="0">⏸</button>
+      <button data-speed="1">▶</button>
+      <button data-speed="2">▶▶</button>
+      <button data-speed="3">▶▶▶</button>
     </div>
-
-    <div id="info-panel" class="hidden">
-      <button id="info-close">&#x2715;</button>
-      <h3 id="info-title"></h3>
-      <div id="info-content"></div>
-      <button id="info-demolish" class="danger-btn">&#x1f5d1;&#xfe0f; Slopen</button>
+    <div class="pill btns">
+      <button id="b-undo" title="Ongedaan maken (Ctrl+Z)">↩️</button>
+      <button id="b-sound" title="Geluid aan/uit">🔊</button>
+      <button id="b-help" title="Uitleg">❓</button>
+      <button id="b-menu" title="Menu">☰</button>
     </div>
-
-    <div id="start-screen" class="overlay">
-      <h1>&#x1f3d7;&#xfe0f; SimToren</h1>
-      <p>Bouw de hoogste toren van Nederland!</p>
-      <p class="subtitle">
-        Plaats kantoren, appartementen, winkels en meer.<br>
-        Zorg voor liften en trappen zodat iedereen kan komen waar ze moeten zijn.<br><br>
-        &#x1f5b1;&#xfe0f; Scroll om te navigeren &middot; Klik op kamers voor info<br>
-        &#x2328;&#xfe0f; 1-4 voor snelheid &middot; Esc om te deselecteren
-      </p>
-      <button id="new-game-btn" class="primary-btn">Nieuw Spel</button>
-      <button id="continue-btn" class="primary-btn hidden">Doorgaan</button>
-    </div>
-
-    <div id="floor-indicator">Begane grond</div>
   </div>
 
-  <script src="simtoren/config.js?v=1"></script>
-  <script src="simtoren/state.js?v=1"></script>
-  <script src="simtoren/world.js?v=2"></script>
-  <script src="simtoren/people.js?v=1"></script>
-  <script src="simtoren/elevator.js?v=1"></script>
-  <script src="simtoren/renderer.js?v=2"></script>
-  <script src="simtoren/sound.js?v=1"></script>
-  <script src="simtoren/ui.js?v=1"></script>
+  <div id="mission"></div>
+  <div id="info" class="hidden"></div>
+
+  <div id="zoom">
+    <button id="z-in" title="Inzoomen">＋</button>
+    <button id="z-out" title="Uitzoomen">－</button>
+    <button id="z-home" title="Hele toren in beeld">⌂</button>
+  </div>
+
+  <div id="bottom">
+    <div id="hint"></div>
+    <div id="tools"></div>
+  </div>
+
+  <div id="toasts"></div>
+  <div id="overlay" class="hidden"><div id="modal"></div></div>
+
+  <script src="simtoren/game.js?v=14"></script>
 </body>
 </html>
