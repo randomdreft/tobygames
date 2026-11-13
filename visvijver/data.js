@@ -161,5 +161,10 @@ export const AAS = [
   { naam: 'Glitteraas',   prijs: 700, geluk: 3, tijd: 0.5,  info: 'Lokt legendarische vissen en monsters!' },
 ];
 
-export const EMMER_MAX = 12;
+export const EMMERS = [
+  { naam: 'Emmertje',    prijs: 0,    plek: 12, info: 'Je eerste emmer.' },
+  { naam: 'Grote emmer', prijs: 120,  plek: 16, info: 'Past meer in.' },
+  { naam: 'Viston',      prijs: 450,  plek: 22, info: 'Een hele ton vol vis!' },
+  { naam: 'Kruiwagen',   prijs: 1200, plek: 30, info: 'Voor de echte grootvanger.' },
+];
 export const AQUARIUM_MAX = 8;

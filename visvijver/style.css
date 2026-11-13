@@ -194,6 +194,7 @@ kbd { display: inline-block; background: #fff; color: #333; border-radius: 4px; 
 .boek-kaart.medaille.onbekend .med-emoji { filter: grayscale(1); opacity: 0.4; }
 .gezocht { display: flex; align-items: center; gap: 10px; background: #fff3c4; border: 2px dashed #e0a800; border-radius: 12px; padding: 6px 10px; margin-bottom: 6px; }
 .gezocht img { width: 84px; height: 58px; object-fit: contain; }
+.gezocht > div { flex: 1; }
 .gezocht small { display: block; color: #6b5a1a; }
 .rij.ster { background: #fff6d6; }
 .boek-kop { font-weight: 700; margin-bottom: 8px; }

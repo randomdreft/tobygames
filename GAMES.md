@@ -507,11 +507,15 @@ Hardloopspel in zijaanzicht (canvas), bedacht door Toby. Toegevoegd 13 november 
 - **Medailles**: 13 doelen met geldbeloning (`MEDAILLES` in `game.js`), zichtbaar onderaan het visboek. Opslag: `save.medailles`, plus tellers `verdiend`, `besteReeks`, `drieSter`. Oude saves krijgen al behaalde medailles bij de eerste start
 - **Eenden**: drie eenden zwemmen rond; plonst de dobber binnen 3,8 meter, dan schrikken ze en zwemmen kwakend weg (`world.schrik`)
 - **Lantaarns**: op de steiger en het kraampje, gaan aan in de avond
+- **Schim aan de lijn**: tijdens het inhalen zwemt er een donkere schaduw onder de dobber, zo groot als de soort gemiddeld is
+- **Aquarium-kassa**: bezoekers betalen entree zolang je speelt: per vis 2% van zijn waarde per minuut (minimaal €0,50). De kassa (`save.kassa`) loopt vol tot 10 minuten opbrengst en moet bij het aquarium geleegd worden
+- **Regenboog**: na elke bui staat er ongeveer een minuut een regenboog; dan bijt de Regenboogvis 6× zo vaak (`world.boog`)
+- **Vlinders**: tien vlinders fladderen overdag rond de bloemen (niet bij regen of in de avond)
 - **Spanningsmeter**: ingedrukt houden haalt in en verhoogt de spanning; te hoog = lijn breekt, te lang te slap = vis ontsnapt. Een vis wordt na een tijdje moe
 - **5 plekken**: open water, diep, riet, waterlelies, onder de steiger; elk met eigen soorten
 - **23 vangsten**: 8 gewone, 4 zeldzame, 3 legendarische (Maanvis bijt vooral in de avond), 5 rare dingen, 3 monsters
 - **Makkelijk begin**: de eerste 3 vangsten zijn altijd gewone vis
-- **Winkel**: 4 hengels, 4 lijnen, 4 soorten aas. Emmer 12 plekken, aquarium 8
+- **Winkel**: 4 hengels, 4 lijnen, 4 soorten aas, 4 emmers (12, 16, 22 of 30 plekken; `EMMERS` in `data.js`, `save.emmerNiv`). Aquarium 8
 - **Dag/avond-cyclus** van 5 minuten
 - `?debug` in de URL zet een testhulpje op `window.__vv`
 - Bij wijzigingen: verhoog `?v=` in `visvijver.html` én in de imports van `game.js` en `world.js` (de server cachet js een uur)

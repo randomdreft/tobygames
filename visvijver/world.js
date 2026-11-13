@@ -369,7 +369,7 @@ export function buildWorld(scene) {
     const licht = new THREE.PointLight(0xffc878, 0, 12, 1.3);
     licht.position.set(x, y0 + hoog + 0.2, z); ouder.add(licht); lampen.push(licht);
   };
-  lantaarn(steiger, -1.05, 0.5, DOCK.z0 + 0.3, 1.5);
+  lantaarn(steiger, -1.05, 0.5, 11.6, 1.5);       // bij het begin van de steiger, zodat hij niet in beeld staat tijdens het vissen
   scene.add(steiger);
 
   // ---------- kraampje ----------
@@ -423,6 +423,29 @@ export function buildWorld(scene) {
     o.receiveShadow = true;
     o.castShadow = !o.userData.geenSchaduw && o !== grond && o !== bodem;
   });
+
+  // ---------- regenboog (na een bui) ----------
+  const boog = new THREE.Group(), boogMats = [];
+  [0xff4d4d, 0xff9a3c, 0xffe14d, 0x5bd65b, 0x4da6ff, 0xa45bff].forEach((kleur, i) => {
+    const mat = new THREE.MeshBasicMaterial({ color: kleur, transparent: true, opacity: 0, depthWrite: false, fog: false, side: THREE.DoubleSide });
+    boogMats.push(mat);
+    boog.add(new THREE.Mesh(new THREE.RingGeometry(62 - i * 1.5, 63.5 - i * 1.5, 56, 1, 0, Math.PI), mat));
+  });
+  boog.position.set(-45, -8, -115); boog.lookAt(0, -8, 0); boog.visible = false; scene.add(boog);
+  W.boog = 0;           // 0 = geen regenboog, 1 = volop (het spel zet dit)
+
+  // ---------- vlinders: fladderen overdag rond de bloemen ----------
+  const vleugelGeo = new THREE.PlaneGeometry(0.13, 0.16).translate(0.065, 0, 0).rotateX(-Math.PI / 2);
+  const vlinders = [];
+  for (let i = 0; i < 10 && bloemen.length; i++) {
+    const thuis = bloemen[(R() * bloemen.length) | 0], g = new THREE.Group();
+    const mat = new THREE.MeshBasicMaterial({ color: [0xff8a3c, 0xffffff, 0x6fb7ff, 0xffe14d, 0xff6b9d][i % 5], side: THREE.DoubleSide });
+    const links = new THREE.Mesh(vleugelGeo, mat), rechts = new THREE.Mesh(vleugelGeo, mat);
+    rechts.scale.x = -1;
+    const lijfje = new THREE.Mesh(BOX, M(0x2a2a2a)); lijfje.scale.set(0.025, 0.025, 0.15);   // de vleugels zitten er aan vast
+    g.add(links, rechts, lijfje); scene.add(g);
+    vlinders.push({ g, links, rechts, x: thuis.x, z: thuis.z, f: R() * 6.28, r: 0.8 + R() * 1.4 });
+  }
 
   // ---------- eenden: zwemmen rond en schrikken als je dobber vlakbij plonst ----------
   const maakEend = (lijf, kop, vleugel) => {
@@ -612,6 +635,18 @@ export function buildWorld(scene) {
     }
     lampMat.emissiveIntensity = 0.1 + e * 1.7;
     for (const l of lampen) l.intensity = e * 16 * (0.94 + Math.sin(t * 9) * 0.04);
+    boog.visible = W.boog > 0.01 && e < 0.9;
+    if (boog.visible) boogMats.forEach(m => { m.opacity = W.boog * 0.5 * (1 - e); });
+    const vliegt = (1 - e) * (1 - rg) > 0.3;
+    for (const v of vlinders) {
+      v.g.visible = vliegt;
+      if (!vliegt) continue;
+      const px = v.x + Math.sin(t * 0.6 + v.f) * v.r, pz = v.z + Math.cos(t * 0.45 + v.f * 2) * v.r;
+      v.g.rotation.y = Math.atan2(px - v.g.position.x, pz - v.g.position.z);
+      v.g.position.set(px, 0.7 + Math.sin(t * 1.3 + v.f) * 0.25, pz);
+      const klap = Math.sin(t * 16 + v.f) * 0.9;
+      v.links.rotation.z = klap; v.rechts.rotation.z = -klap;
+    }
     for (const q of eenden) {
       q.schrik = Math.max(0, q.schrik - dt);
       const v = q.schrik > 0 ? 3.2 : 0.45;

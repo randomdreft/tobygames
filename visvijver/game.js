@@ -1,9 +1,9 @@
 // Visvijver - hoofdspel: lopen, vissen, spanningsmeter, kraampje, visboek en aquarium
 import * as THREE from './vendor/three.module.min.js';
-import { SPECIES, SOORT, ZONES, CATS, BRIEFJES, HENGELS, LIJNEN, AAS, EMMER_MAX, AQUARIUM_MAX } from './data.js?v=2';
+import { SPECIES, SOORT, ZONES, CATS, BRIEFJES, HENGELS, LIJNEN, AAS, EMMERS, AQUARIUM_MAX } from './data.js?v=3';
 import { Sound } from './sound.js?v=4';
 import { buildModel, animeerModel } from './models.js?v=2';
-import { buildWorld, WATER_Y, WERELD_R, pondR, DOCK, STALL, HUT, OBST, inPond, onDock, zoneAt } from './world.js?v=4';
+import { buildWorld, WATER_Y, WERELD_R, pondR, DOCK, STALL, HUT, OBST, inPond, onDock, zoneAt } from './world.js?v=5';
 
 const $ = id => document.getElementById(id);
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
@@ -11,7 +11,7 @@ const lerp = (a, b, t) => a + (b - a) * t;
 
 // ---------------------------------------------------------------- opslaan
 const SAVE_KEY = 'visvijver_save';
-const nieuwSpel = () => ({ v: 1, geld: 0, hengel: 0, lijn: 0, aas: 0, emmer: [], aquarium: [], boek: {}, vangsten: 0, uitleg: false, gezocht: null, medailles: {}, verdiend: 0, besteReeks: 0, drieSter: false });
+const nieuwSpel = () => ({ v: 1, geld: 0, hengel: 0, lijn: 0, aas: 0, emmer: [], aquarium: [], boek: {}, vangsten: 0, uitleg: false, gezocht: null, medailles: {}, verdiend: 0, besteReeks: 0, drieSter: false, emmerNiv: 0, kassa: 0 });
 function laad() {
   try {
     const s = JSON.parse(localStorage.getItem(SAVE_KEY));
@@ -22,6 +22,8 @@ function laad() {
       d.hengel = clamp(d.hengel | 0, 0, HENGELS.length - 1);
       d.lijn = clamp(d.lijn | 0, 0, LIJNEN.length - 1);
       d.aas = clamp(d.aas | 0, 0, AAS.length - 1);
+      d.emmerNiv = clamp(d.emmerNiv | 0, 0, EMMERS.length - 1);
+      d.kassa = Math.max(0, +d.kassa || 0);
       if (!SOORT[d.gezocht]) d.gezocht = null;
       if (!d.medailles || typeof d.medailles !== 'object') d.medailles = {};
       return d;
@@ -30,6 +32,7 @@ function laad() {
   return nieuwSpel();
 }
 let save = laad();
+const emmerMax = () => EMMERS[save.emmerNiv].plek;
 
 // ---- "Gezocht": het kraampje zoekt steeds één vissoort en betaalt daar 3x zoveel voor
 const GEZOCHT_KEER = 3;
@@ -335,7 +338,7 @@ function zetActie(aan) {
     if (F.beetT > 1.3) haalIn();
   } else if (F.state === 'beet') slaAan();
   else if (F.state === 'toon' && F.t >= 1) {
-    if (save.emmer.length < EMMER_MAX) sluitVangst(true);
+    if (save.emmer.length < emmerMax()) sluitVangst(true);
     else { toast(isTouch ? 'Je emmer is vol! Gooi hem terug.' : 'Je emmer is vol! Druk op T om hem terug te gooien.'); Sound.fout(); }
   }
 }
@@ -400,6 +403,7 @@ function kiesVangst(zone) {
     if (s.avond === true) w *= avond ? 4 : 0.15;
     if (s.avond === 'bonus' && avond) w *= 2.5;
     if (s.cat === 'monster' && avond) w *= 1.5;
+    if (s.id === 'regenboogvis' && world.boog > 0.5) w *= 6;
     totaal += w; lijst.push([s, w]);
   }
   let r = Math.random() * totaal;
@@ -466,7 +470,7 @@ function vang() {
   $('vangst-maten').textContent = `${sterTekst(rec)} ${fmtMaten(rec)} · €${rec.waarde}` + (F.reeksBonus > 0 ? ` (🔥 +${F.reeksBonus}%)` : '') + (record ? ' · 🏆 Nieuw record!' : '')
     + (s.id === save.gezocht ? ` · ⭐ Gezocht: ${GEZOCHT_KEER}× waard bij het kraampje!` : '');
   $('vangst-info').textContent = s.id === 'fles' ? `Op het briefje staat: ${BRIEFJES[rec.briefje]}` : s.info;
-  const vol = save.emmer.length >= EMMER_MAX;
+  const vol = save.emmer.length >= emmerMax();
   $('vangst-emmer').disabled = vol;
   $('vangst-emmer').innerHTML = vol ? '🪣 Emmer is vol!' : '🪣 In de emmer <span class="desk">(spatie)</span>';
   $('vangstkaart').classList.remove('hidden');
@@ -477,10 +481,10 @@ function vang() {
 function sluitVangst(inEmmer) {
   if (F.state !== 'toon') return;
   const rec = F.vangst;
-  if (inEmmer && save.emmer.length < EMMER_MAX) {
+  if (inEmmer && save.emmer.length < emmerMax()) {
     save.emmer.push(rec); Sound.tik(); plop('btn-emmer');
     if (save.emmer.length === 1 && !save.geld && save.hengel + save.lijn + save.aas === 0) toast('Top! Breng je vangst naar het kraampje 🛒 om te verkopen.', 5);
-    else if (save.emmer.length >= EMMER_MAX) toast('Je emmer zit vol! Ga naar het kraampje 🛒 of het aquarium 🐠.', 5);
+    else if (save.emmer.length >= emmerMax()) toast('Je emmer zit vol! Ga naar het kraampje 🛒 of het aquarium 🐠.', 5);
   } else {
     Sound.plons(0.8); world.splash(F.doel.x, F.doel.z, 10, 1); world.ripple(F.doel.x, F.doel.z, 2, 1.3);
     toast(SOORT[rec.id].cat === 'rommel' ? 'Hup, terug de vijver in…' : 'Dag vis! Zwem maar lekker verder. 👋');
@@ -505,7 +509,7 @@ function kiesZwemmer(zone) {
     if (!s.w[zone] || !['gewoon', 'zeldzaam', 'legendarisch'].includes(s.cat)) continue;
     if (save.vangsten < 3 && s.cat !== 'gewoon') continue;
     if (s.avond === true && !avond) continue;
-    const w = s.w[zone] * (s.cat === 'zeldzaam' ? 1.5 : s.cat === 'legendarisch' ? 2 : 1);
+    const w = s.w[zone] * (s.cat === 'zeldzaam' ? 1.5 : s.cat === 'legendarisch' ? 2 : 1) * (s.id === 'regenboogvis' && world.boog > 0.5 ? 6 : 1);
     totaal += w; lijst.push([s, w]);
   }
   let r = Math.random() * totaal;
@@ -546,6 +550,35 @@ function updateZwemmer(dt) {
   if (!q.gelokt && q.t > q.duur) wegZwemmer();
 }
 
+// ---- schim: tijdens het inhalen zie je de schaduw van wat er aan je haak zit (groot of klein!)
+const schim = new THREE.Mesh(new THREE.SphereGeometry(0.5, 14, 8),
+  new THREE.MeshBasicMaterial({ color: 0x0a2233, transparent: true, opacity: 0.4, depthWrite: false }));
+schim.visible = false; schim.renderOrder = 1; scene.add(schim);       // vlak boven het wateroppervlak, net als de kringen
+const schimVorige = new THREE.Vector3();
+function updateSchim() {
+  schim.visible = F.state === 'inhalen' && !!F.soort;
+  if (!schim.visible) return;
+  const s = F.soort, vis = s.model.type === 'vis' || s.model.type === 'paling';
+  const L = clamp((s.cm[0] + s.cm[1]) / 200 * 1.3, 0.35, 2.8);
+  schim.scale.set(L, 0.01, vis ? L * 0.32 : L * 0.7);
+  const dx = dobber.position.x - schimVorige.x, dz = dobber.position.z - schimVorige.z;
+  if (Math.hypot(dx, dz) > 0.002) schim.rotation.y = lerp(schim.rotation.y, Math.atan2(-dz, dx), 0.15);
+  schimVorige.copy(dobber.position);
+  schim.position.set(dobber.position.x, WATER_Y + 0.09, dobber.position.z);
+}
+
+// ---- kassa: bezoekers van je aquarium betalen entree. Hoe mooier de vissen, hoe meer.
+const kassaPerMinuut = () => save.aquarium.reduce((t, r) => t + Math.max(0.5, r.waarde * 0.02), 0);
+const kassaMax = () => Math.max(20, Math.ceil(kassaPerMinuut() * 10));
+let kassaBewaarT = 20, kassaVolGemeld = false;
+function updateKassa(dt) {
+  if (!gestart || !save.aquarium.length) return;
+  const max = kassaMax();
+  if (save.kassa < max) { save.kassa = Math.min(max, save.kassa + kassaPerMinuut() * dt / 60); kassaVolGemeld = false; }
+  else if (!kassaVolGemeld && !paneelOpen && F.state === 'rust') { kassaVolGemeld = true; toast('🎟️ De kassa van je aquarium zit vol! Ga hem legen bij het aquarium.', 5); }
+  kassaBewaarT -= dt; if (kassaBewaarT <= 0) { kassaBewaarT = 20; bewaar(); }
+}
+
 // ---- springende vissen: af en toe springt er echt een vis uit het water
 world.onKwaak = hard => { if (gestart) Sound.kwaak(hard); };
 const springers = [];
@@ -571,7 +604,7 @@ function updateSpringers(dt) {
 }
 
 // ---- weer: af en toe een regenbui. In de regen bijten vissen sneller.
-let weerT = 70 + Math.random() * 60, regent = false, regenGeluidT = 0;
+let weerT = 70 + Math.random() * 60, regent = false, regenGeluidT = 0, boogT = 0, boogGemeld = false;
 function updateWeer(dt) {
   if (gestart) {
     weerT -= dt;
@@ -579,8 +612,13 @@ function updateWeer(dt) {
       regent = !regent;
       weerT = regent ? 50 + Math.random() * 35 : 150 + Math.random() * 120;
       toast(regent ? '🌧️ Het gaat regenen… Vissen bijten nu sneller!' : '🌤️ Het is weer droog.', 4);
+      if (!regent) { boogT = 55; boogGemeld = false; }
     }
   }
+  // na de bui staat er een tijdje een regenboog: dan laat de Regenboogvis zich vaker zien
+  boogT = Math.max(0, boogT - dt);
+  world.boog = clamp(world.boog + (boogT > 0 && world.regen < 0.4 ? dt : -dt) / 5, 0, 1);
+  if (world.boog > 0.5 && !boogGemeld) { boogGemeld = true; if (world.eve < 0.6) toast('🌈 Kijk, een regenboog! De Regenboogvis laat zich nu vaker zien…', 5); }
   world.regen = clamp(world.regen + (regent ? dt : -dt) / 4, 0, 1);
   if (world.regen > 0.2 && gestart) { regenGeluidT -= dt; if (regenGeluidT <= 0) { regenGeluidT = 0.35; Sound.regen(world.regen); } }
 }
@@ -589,6 +627,7 @@ function updateVissen(dt) {
   updateZwemmer(dt);
   updateSpringers(dt);
   updateWeer(dt);
+  updateKassa(dt);
   const lijnS = LIJNEN[save.lijn].sterkte, stok = HENGELS[save.hengel];
   F.zwaai = Math.max(0, F.zwaai - dt * 2.2);
   let hengelX = -1.0 - Math.sin(F.zwaai * Math.PI) * 0.55;
@@ -707,6 +746,7 @@ function updateVissen(dt) {
     toonLicht.intensity = e * (0.6 + world.eve * 1.6);
   }
 
+  updateSchim();
   hengel.rotation.x = lerp(hengel.rotation.x, hengelX, Math.min(1, dt * 14));
   hengel.visible = F.state !== 'toon';
 
@@ -760,7 +800,7 @@ function toast(tekst, sec = 3) {
 function plop(id) { const el = $(id); el.classList.remove('plop'); void el.offsetWidth; el.classList.add('plop'); }
 function hud() {
   $('geld').textContent = '€' + save.geld;
-  $('emmer').textContent = `${save.emmer.length}/${EMMER_MAX}`;
+  $('emmer').textContent = `${save.emmer.length}/${emmerMax()}`;
   $('btn-mute').textContent = Sound.isMuted() ? '🔇' : '🔊';
   stokMat.color.set(HENGELS[save.hengel].kleur);
 }
@@ -846,16 +886,19 @@ function tekenPaneel() {
     h += winkelDeel('🎣 Hengels', 'hengel', HENGELS, it => `(gooit ${it.bereik} meter)`);
     h += winkelDeel('🧵 Lijnen', 'lijn', LIJNEN, () => '');
     h += winkelDeel('🪱 Aas', 'aas', AAS, () => '');
+    h += winkelDeel('🪣 Emmers', 'emmerNiv', EMMERS, it => `(${it.plek} plekken)`);
   } else if (paneelOpen === 'emmer') {
-    titel = `🪣 Je emmer (${save.emmer.length}/${EMMER_MAX})`;
+    titel = `🪣 Je emmer (${save.emmer.length}/${emmerMax()})`;
     if (!save.emmer.length) h += `<div class="leeg">Nog leeg. Gooi je hengel uit!</div>`;
     save.emmer.forEach((r, i) => { h += rijVangst(r, `<button class="action-btn grijs klein" data-actie="weg" data-i="${i}">🌊 Terug</button>`); });
     h += `<div class="leeg">Verkopen kan bij het kraampje 🛒. Bewaren kan in het aquarium 🐠.<br>⭐ Gezocht bij het kraampje: <b>${SOORT[save.gezocht].naam}</b> (${GEZOCHT_KEER}× de prijs).</div>`;
   } else if (paneelOpen === 'aquarium') {
     titel = `🐠 Jouw aquarium (${save.aquarium.length}/${AQUARIUM_MAX})`;
+    const kas = Math.floor(save.kassa), pm = kassaPerMinuut();
+    h += `<div class="gezocht"><span class="med-emoji">🎟️</span><div><b>Kassa: €${kas}</b><small>${save.aquarium.length ? `Bezoekers komen naar je vissen kijken. Dat levert ongeveer €${pm < 10 ? pm.toFixed(1).replace('.', ',') : Math.round(pm)} per minuut op (er past €${kassaMax()} in de kassa). Mooiere vissen = meer bezoekers!` : 'Zet vissen in je aquarium, dan komen er bezoekers die entree betalen.'}</small></div><button class="action-btn goud klein" data-actie="kassa" ${kas < 1 ? 'disabled' : ''}>Legen</button></div>`;
     h += `<h3>In het aquarium</h3>`;
     if (!save.aquarium.length) h += `<div class="leeg">Nog leeg. Zet hier je mooiste vissen in!</div>`;
-    save.aquarium.forEach((r, i) => { h += rijVangst(r, `<button class="action-btn grijs klein" data-actie="uitaquarium" data-i="${i}" ${save.emmer.length >= EMMER_MAX ? 'disabled' : ''}>🪣 Naar emmer</button>`); });
+    save.aquarium.forEach((r, i) => { h += rijVangst(r, `<button class="action-btn grijs klein" data-actie="uitaquarium" data-i="${i}" ${save.emmer.length >= emmerMax() ? 'disabled' : ''}>🪣 Naar emmer</button>`); });
     h += `<h3>In je emmer</h3>`;
     const vissen = save.emmer.map((r, i) => [r, i]).filter(([r]) => SOORT[r.id].cat !== 'rommel');
     if (!vissen.length) h += `<div class="leeg">Geen vissen in je emmer. (Rare dingen kunnen niet in het aquarium.)</div>`;
@@ -919,16 +962,20 @@ $('paneel-inhoud').addEventListener('click', e => {
     toast(ster ? `⭐ Verkocht voor €${som}, met gezocht-bonus!` : `💰 Verkocht voor €${som}!`);
     if (ster) kiesGezocht();
   } else if (a === 'koop') {
-    const soort = b.dataset.soort, lijst = { hengel: HENGELS, lijn: LIJNEN, aas: AAS }[soort];
+    const soort = b.dataset.soort, lijst = { hengel: HENGELS, lijn: LIJNEN, aas: AAS, emmerNiv: EMMERS }[soort];
     const it = lijst && lijst[save[soort] + 1];
     if (!it || save.geld < it.prijs) { Sound.fout(); return; }
     save.geld -= it.prijs; save[soort]++; Sound.koop();
     toast(`🎉 Gekocht: ${it.naam}!`);
+  } else if (a === 'kassa' && save.kassa >= 1) {
+    const kas = Math.floor(save.kassa);
+    save.geld += kas; save.verdiend += kas; save.kassa -= kas; Sound.munt(); setTimeout(() => Sound.munt(), 120); plop('geld-display');
+    toast(`🎟️ €${kas} uit de kassa gehaald!`);
   } else if (a === 'weg' && save.emmer[i]) {
     save.emmer.splice(i, 1); Sound.plons(0.7);
   } else if (a === 'inaquarium' && save.emmer[i] && save.aquarium.length < AQUARIUM_MAX) {
     save.aquarium.push(save.emmer.splice(i, 1)[0]); Sound.plons(0.7); bouwAquarium();
-  } else if (a === 'uitaquarium' && save.aquarium[i] && save.emmer.length < EMMER_MAX) {
+  } else if (a === 'uitaquarium' && save.aquarium[i] && save.emmer.length < emmerMax()) {
     save.emmer.push(save.aquarium.splice(i, 1)[0]); Sound.tik(); bouwAquarium();
   } else return;
   bewaar(); hud(); checkMedailles(); tekenPaneel();
@@ -992,7 +1039,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     F, speler, world, actie, richt, camera, scene, renderer,
     get save() { return save; },
     stap(sec, dt = 1 / 30) { for (let t = 0; t < sec; t += dt) stap(dt); renderer.render(scene, camera); },
-    get zwemmer() { return zwemmer; }, zwemNu() { zwemT = 0; }, weerNu() { weerT = 0; }, springers, get reeks() { return reeks; },
+    get zwemmer() { return zwemmer; }, zwemNu() { zwemT = 0; }, weerNu() { weerT = 0; }, schim, springers, get reeks() { return reeks; },
     zetActie, bewaar, hud, bouwAquarium, kanStaan, tijd: v => { tijd = v; },
   };
 }
