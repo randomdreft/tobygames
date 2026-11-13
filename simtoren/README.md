@@ -18,6 +18,12 @@ Torenbouwspel voor TobyGames.nl. Volledig herbouwd op 13 november 2026 (de eerst
 
 - **Bezoekers:** per soort (winkel, restaurant, bioscoop) één stroom voor de hele toren die zich over de zaken verdeelt (`demand`, `CAP`, `spawnVisitors`).
 
+- **Kelder:** verdieping -1 t/m -6. Parkeergarage en metro kunnen alleen daar; kantoor, appartement en hotel alleen boven de grond (`under`, `above`).
+- **Parkeren en metro:** `assignPark` geeft vaste gebruikers een plek (+25% inkomsten); `gate` bepaalt waar iemand in en uit gaat.
+- **Schoonmaak:** hotelkamers worden `dirty` bij vertrek; schoonmakers (`cleanerIdle`) maken ze schoon.
+- **Onderhoud:** elke cabine kost per dag `upkeep` (`newDay`).
+- **Opdrachten:** hebben een `id`; `G.done` onthoudt welke gehaald zijn.
+
 ## Afstellen
 
 Prijzen, inkomsten en liftsnelheden staan in de tabel `T` bovenaan `game.js`.

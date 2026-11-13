@@ -9,7 +9,7 @@
 'use strict';
 
 // ───────────────────────── 1. Instellingen ─────────────────────────
-const U = 16, FH = 36, W = 40, FMIN = -2, TOP = 30;
+const U = 16, FH = 36, W = 40, FMIN = -6, TOP = 30;
 const MAXF = [8, 14, 22, 30, 30];          // bouwhoogte per ster
 const STAR_POP = [0, 40, 120, 250, 450];   // inwoners nodig per ster
 const MIN_PER_SEC = 2;                     // spelminuten per seconde op snelheid 1
@@ -19,46 +19,62 @@ const START_MONEY = 150000;
 
 const T = {
   lobby:      { name: 'Lobby', w: 8, cost: 0, star: 1, pop: 0, desc: 'De ingang van je toren.' },
-  office:     { name: 'Kantoor', w: 6, cost: 12000, star: 1, pop: 4, pay: 1800,
+  office:     { name: 'Kantoor', w: 6, above: true, cost: 12000, star: 1, pop: 4, pay: 1800,
                 desc: '4 werknemers. Betalen als ze ’s ochtends aankomen.' },
-  apartment:  { name: 'Appartement', w: 4, cost: 10000, star: 1, pop: 3, pay: 1500,
+  apartment:  { name: 'Appartement', w: 4, above: true, cost: 10000, star: 1, pop: 3, pay: 1500,
                 desc: '3 bewoners. Betalen als ze thuiskomen.' },
   shop:       { name: 'Winkel', w: 4, cost: 15000, star: 1, pop: 2, pay: 250, open: [9, 20],
                 desc: 'Klanten verdelen zich over al je winkels. Meer inwoners = meer klanten.' },
   stairs:     { name: 'Trap', w: 2, cost: 1500, star: 1, pop: 0, transport: true,
                 desc: 'Naar één verdieping hoger. Zet ze boven elkaar: sportieve mensen lopen zo een paar verdiepingen.' },
-  lift:       { name: 'Lift', w: 2, cost: 2500, shaft: 5000, star: 1, pop: 0, transport: true, lift: true, speed: 4.5, cap: 8,
+  lift:       { name: 'Lift', w: 2, cost: 2500, shaft: 5000, star: 1, pop: 0, transport: true, lift: true, speed: 4.5, cap: 8, upkeep: 400,
                 desc: 'Sleep omhoog om hem langer te maken. Klik erop voor extra cabines.' },
   restaurant: { name: 'Restaurant', w: 8, cost: 40000, star: 2, pop: 4, pay: 300, open: [11, 22],
                 desc: 'Druk met lunch en avondeten. Gasten verdelen zich over je restaurants.' },
-  hotel:      { name: 'Hotelkamer', w: 3, cost: 14000, star: 3, pop: 2, pay: 4500,
+  hotel:      { name: 'Hotelkamer', w: 3, above: true, cost: 14000, star: 3, pop: 2, pay: 4500,
                 desc: 'Gasten komen ’s avonds en betalen per nacht.' },
-  xlift:      { name: 'Snellift', w: 2, cost: 5000, shaft: 15000, star: 3, pop: 0, transport: true, lift: true, speed: 10, cap: 16,
+  xlift:      { name: 'Snellift', w: 2, cost: 5000, shaft: 15000, star: 3, pop: 0, transport: true, lift: true, speed: 10, cap: 16, upkeep: 1200,
                 desc: 'Ruim twee keer zo snel en twee keer zo groot.' },
   cinema:     { name: 'Bioscoop', w: 12, cost: 120000, star: 4, pop: 6, pay: 200, open: [13, 22],
                 desc: 'Films om 14, 17 en 20 uur. Heel veel bezoekers tegelijk! Eén bioscoop is vaak genoeg.' },
+  vend:       { name: 'Automaat', w: 1, cost: 2000, star: 1, pop: 0, util: true, hourly: 50,
+                desc: 'Past in elk gaatje. Levert elk uur overdag een beetje op.' },
+  garage:     { name: 'Parkeergarage', w: 8, cost: 30000, star: 2, pop: 0, util: true, under: true, spots: 12,
+                desc: 'Alleen onder de grond. 12 mensen komen met de auto en betalen 25% meer.' },
+  clean:      { name: 'Schoonmaak', w: 4, cost: 20000, star: 3, pop: 3,
+                desc: '3 schoonmakers maken hotelkamers schoon. Een vieze kamer krijgt geen gasten.' },
+  metro:      { name: 'Metrostation', w: 14, cost: 500000, star: 4, pop: 0, util: true, under: true, max: 1,
+                desc: 'Alleen onder de grond. Brengt de helft meer bezoekers naar je winkels en restaurants.' },
   deck:       { name: 'Uitkijkpunt', w: 10, cost: 400000, star: 5, pop: 0, pay: 100, open: [10, 20], floor: TOP,
                 desc: 'Alleen op verdieping 30. Hiermee is je toren af!' },
 };
-const TOOLS = ['office', 'apartment', 'shop', 'stairs', 'lift', 'restaurant', 'hotel', 'xlift', 'cinema', 'deck'];
+const TOOLS = ['office', 'apartment', 'shop', 'stairs', 'lift', 'vend', 'restaurant', 'garage', 'hotel', 'clean', 'xlift', 'cinema', 'metro', 'deck'];
 
+// Opdrachten hebben een vaste naam (id); G.done onthoudt welke gehaald zijn. Zo kunnen er later
+// opdrachten tussen gezet worden zonder dat oude spelstanden in de war raken.
 const MISSIONS = [
-  { t: 'Bouw 2 kantoren', h: 'Kies Kantoor in de balk onderaan en klik naast de lobby.', tool: 'office', n: () => cnt('office'), g: 2, r: 5000 },
-  { t: 'Bouw een trap', h: 'Zet een trap op de begane grond. Dan kunnen mensen naar verdieping 1.', tool: 'stairs', n: () => cnt('stairs'), g: 1, r: 3000 },
-  { t: 'Bouw 3 appartementen op verdieping 1', h: 'Bouwen kan alleen bovenop iets anders. Sleep om er meer naast elkaar te zetten.', tool: 'apartment', n: () => cnt('apartment'), g: 3, r: 8000 },
-  { t: 'Bouw een lift van 4 verdiepingen', h: 'Kies Lift, klik op de begane grond en sleep omhoog.', tool: 'lift', n: () => maxShaft(), g: 4, r: 10000 },
-  { t: 'Bouw een winkel', h: 'Op de begane grond komen de meeste klanten. Te veel winkels heeft geen zin: ze delen de klanten.', tool: 'shop', n: () => cnt('shop'), g: 1, r: 5000 },
-  { t: 'Haal 40 inwoners', h: 'Bouw meer kantoren en appartementen. Je krijgt dan je 2e ster.', n: () => pop, g: 40, r: 20000 },
-  { t: 'Bouw een restaurant', h: 'Werknemers en bewoners komen er eten.', tool: 'restaurant', n: () => cnt('restaurant'), g: 1, r: 15000 },
-  { t: 'Maak iedereen blij: 85% tevreden', h: 'Rode poppetjes wachten te lang. Klik op een lift en koop een extra cabine.', n: () => mood, g: 85, r: 20000 },
-  { t: 'Haal 120 inwoners', h: 'Je mag nu tot verdieping 14 bouwen.', n: () => pop, g: 120, r: 40000 },
-  { t: 'Bouw 5 hotelkamers', h: 'Hotelgasten betalen goed.', tool: 'hotel', n: () => cnt('hotel'), g: 5, r: 30000 },
-  { t: 'Bouw een snellift van 10 verdiepingen', h: 'Een snellift is ideaal voor hoge torens.', tool: 'xlift', n: () => maxShaft('xlift'), g: 10, r: 40000 },
-  { t: 'Haal 250 inwoners', h: 'Hoger en hoger! Vergeet de liften niet.', n: () => pop, g: 250, r: 80000 },
-  { t: 'Bouw een bioscoop', h: 'Let op: er komen veel mensen tegelijk.', tool: 'cinema', n: () => cnt('cinema'), g: 1, r: 50000 },
-  { t: 'Haal 450 inwoners', h: 'Nog één ster te gaan.', n: () => pop, g: 450, r: 150000 },
-  { t: 'Bouw het Uitkijkpunt op verdieping 30', h: 'Het hoogste punt van Nederland!', tool: 'deck', n: () => cnt('deck'), g: 1, r: 0 },
+  { id: 'office', t: 'Bouw 2 kantoren', h: 'Kies Kantoor in de balk onderaan en klik naast de lobby.', tool: 'office', n: () => cnt('office'), g: 2, r: 5000 },
+  { id: 'stairs', t: 'Bouw een trap', h: 'Zet een trap op de begane grond. Dan kunnen mensen naar verdieping 1.', tool: 'stairs', n: () => cnt('stairs'), g: 1, r: 3000 },
+  { id: 'apartment', t: 'Bouw 3 appartementen op verdieping 1', h: 'Bouwen kan alleen bovenop iets anders. Sleep om er meer naast elkaar te zetten.', tool: 'apartment', n: () => cnt('apartment'), g: 3, r: 8000 },
+  { id: 'lift', t: 'Bouw een lift van 4 verdiepingen', h: 'Kies Lift, klik op de begane grond en sleep omhoog.', tool: 'lift', n: () => maxShaft(), g: 4, r: 10000 },
+  { id: 'shop', t: 'Bouw een winkel', h: 'Op de begane grond komen de meeste klanten. Te veel winkels heeft geen zin: ze delen de klanten.', tool: 'shop', n: () => cnt('shop'), g: 1, r: 5000 },
+  { id: 'pop40', t: 'Haal 40 inwoners', h: 'Bouw meer kantoren en appartementen. Je krijgt dan je 2e ster.', n: () => pop, g: 40, r: 20000 },
+  { id: 'restaurant', t: 'Bouw een restaurant', h: 'Werknemers en bewoners komen er eten.', tool: 'restaurant', n: () => cnt('restaurant'), g: 1, r: 15000 },
+  { id: 'garage', t: 'Bouw een parkeergarage in de kelder', h: 'Scroll omlaag en bouw onder de grond. Zet er een lift of trap naartoe.', tool: 'garage', n: () => G.rooms.some(r => r.type === 'garage' && ok(r)) ? 1 : 0, g: 1, r: 20000 },
+  { id: 'mood85', t: 'Maak iedereen blij: 85% tevreden', h: 'Rode poppetjes wachten te lang. Klik op een lift en koop een extra cabine.', n: () => mood, g: 85, r: 20000 },
+  { id: 'pop120', t: 'Haal 120 inwoners', h: 'Je mag nu tot verdieping 14 bouwen.', n: () => pop, g: 120, r: 40000 },
+  { id: 'hotel', t: 'Bouw 5 hotelkamers', h: 'Hotelgasten betalen goed.', tool: 'hotel', n: () => cnt('hotel'), g: 5, r: 30000 },
+  { id: 'clean', t: 'Bouw een schoonmaakdienst', h: 'Na elke gast is een hotelkamer vies. Schoonmakers lossen dat op.', tool: 'clean', n: () => cnt('clean'), g: 1, r: 20000 },
+  { id: 'xlift', t: 'Bouw een snellift van 10 verdiepingen', h: 'Een snellift is ideaal voor hoge torens.', tool: 'xlift', n: () => maxShaft('xlift'), g: 10, r: 40000 },
+  { id: 'pop250', t: 'Haal 250 inwoners', h: 'Hoger en hoger! Vergeet de liften niet.', n: () => pop, g: 250, r: 80000 },
+  { id: 'cinema', t: 'Bouw een bioscoop', h: 'Let op: er komen veel mensen tegelijk.', tool: 'cinema', n: () => cnt('cinema'), g: 1, r: 50000 },
+  { id: 'metro', t: 'Bouw een metrostation', h: 'Diep onder de grond. Bezoekers komen dan ook met de metro.', tool: 'metro', n: () => cnt('metro'), g: 1, r: 100000 },
+  { id: 'pop450', t: 'Haal 450 inwoners', h: 'Nog één ster te gaan.', n: () => pop, g: 450, r: 150000 },
+  { id: 'deck', t: 'Bouw het Uitkijkpunt op verdieping 30', h: 'Het hoogste punt van Nederland!', tool: 'deck', n: () => cnt('deck'), g: 1, r: 0 },
+  { id: 'deep', t: 'Graaf tot in kelder 4', h: 'Wie weet wat je daar beneden vindt...', n: () => -Math.min(0, ...G.rooms.map(r => r.f)), g: 4, r: 50000 },
+  { id: 'rich', t: 'Verdien €400.000 op één dag', h: 'Een goede mix van kamers, een metro en parkeerplekken helpen.', n: () => G.best || 0, g: 400000, r: 250000, euro: true },
 ];
+const OLD_MISSIONS = ['office', 'stairs', 'apartment', 'lift', 'shop', 'pop40', 'restaurant', 'mood85', 'pop120', 'hotel', 'xlift', 'pop250', 'cinema', 'pop450', 'deck'];
 
 const $ = id => document.getElementById(id);
 const euro = n => '€' + Math.round(n).toLocaleString('nl-NL');
@@ -80,7 +96,7 @@ let speedIdx = 1, muted = false, running = false, lastWarn = -1e9;
 const cam = { x: W * U / 2, y: -3 * FH, z: 1 };
 
 function newGame() {
-  G = { v: 2, money: START_MONEY, day: 1, min: 7 * 60, stars: 1, mission: 0, won: false,
+  G = { v: 2, money: START_MONEY, day: 1, min: 7 * 60, stars: 1, done: [], won: false,
         nextId: 1, rooms: [], slabs: {}, today: 0 };
   people = []; shafts = []; floats = []; undo = []; selected = null;
   addRoom({ id: G.nextId++, type: 'lobby', f: 0, x: 16, rating: 100, earned: 0 });
@@ -91,7 +107,7 @@ function save() {
   if (!G) return;
   try {
     localStorage.setItem(SAVE_KEY, JSON.stringify({ ...G,
-      rooms: G.rooms.map(r => ({ id: r.id, type: r.type, f: r.f, x: r.x, rating: Math.round(r.rating), earned: r.earned, cars: r.cars })),
+      rooms: G.rooms.map(r => ({ id: r.id, type: r.type, f: r.f, x: r.x, rating: Math.round(r.rating), earned: r.earned, cars: r.cars, dirty: r.dirty })),
       speedIdx, muted }));
   } catch (e) { /* opslag vol of geblokkeerd: spel werkt gewoon door */ }
 }
@@ -103,12 +119,14 @@ function load() {
     speedIdx = d.speedIdx || 1; muted = !!d.muted;
     delete d.speedIdx; delete d.muted;
     G = d;
+    if (!G.done) { G.done = OLD_MISSIONS.slice(0, G.mission || 0); delete G.mission; }   // spelstand van vóór de vaste opdrachtnamen
     G.rooms = G.rooms.filter(r => T[r.type]);
     for (const r of G.rooms) { r.inside = 0; r.acc = 0; }
     people = []; shafts = []; floats = []; undo = []; selected = null;
     for (let f = FMIN; f <= TOP; f++) fillGaps(f);
     rebuild();
     for (const r of G.rooms) occupants(r, 'load');
+    assignPark();
     return true;
   } catch (e) { return false; }
 }
@@ -187,6 +205,8 @@ function rebuild() {
   pop = 0;
   for (const r of G.rooms) if (ok(r)) pop += T[r.type].pop;
   for (const p of people) if (p.st === 'go' && !(p.climb > 0)) p.leg = null;
+  metroRoom = G.rooms.find(r => r.type === 'metro') || null;
+  assignPark();
 }
 
 function rebuildShafts() {
@@ -236,7 +256,10 @@ function whyNot(type, f, x) {
   if (t.star > G.stars) return 'Dit komt vrij bij ' + stars(t.star);
   if (x < 0 || x + t.w > W) return 'Dit valt buiten je bouwterrein';
   if (t.floor !== undefined && f !== t.floor) return 'Het uitkijkpunt kan alleen op verdieping ' + t.floor;
-  if (f < FMIN) return 'Dieper dan kelder 2 kan niet';
+  if (f < FMIN) return 'Dieper dan kelder ' + (-FMIN) + ' kan niet';
+  if (t.under && f >= 0) return 'Dit kan alleen onder de grond';
+  if (t.above && f < 0) return 'Dit heeft daglicht nodig: bouw het boven de grond';
+  if (t.max && cnt(type) >= t.max) return 'Je hebt al een ' + t.name.toLowerCase();
   if (f > maxFloor() || (type === 'stairs' && f + 1 > maxFloor()))
     return G.stars < 4 ? 'Zo hoog mag pas met ' + stars(G.stars + 1) : 'Dit is de hoogste verdieping';
   for (let i = 0; i < t.w; i++) if (layer(type).has(key(f, x + i))) return t.transport ? 'Hier zit al een trap of lift' : 'Hier staat al iets';
@@ -260,6 +283,10 @@ function place(type, f, x) {
   addRoom(r); rebuild(); occupants(r, 'new');
   floatAt(r, '-' + euro(c), '#ffb3b3');
   sfx('build');
+  if (f <= -4 && !G.gold) {
+    G.gold = true; G.money += 100000; sfx('star');
+    toast('💰 Bij het graven vind je een oude schatkist! +' + euro(100000), 'star');
+  }
   if ((T[type].pop || T[type].pay) && !ok(r) && performance.now() - lastWarn > 8000) {
     lastWarn = performance.now();
     toast('⚠️ Hier kan nog niemand komen. Zet een trap of lift vast aan dit stuk vloer.', 'bad');
@@ -277,8 +304,8 @@ function removeRoom(r) {
     } else if (p.at === r.id) {
       p.at = null; p.stay = null; p.st = 'go'; p.tt = 0; p.f = r.f; p.x = r.x + w / 2; p.leg = null; p.climb = 0;
       p.dest = p.kind === 'visitor' ? { out: true } : { room: p.home };
-      p.exitX = p.x < W / 2 ? -6 : W + 6;
-    } else if (p.dest && p.dest.room === r.id) p.dest = { out: true };
+      p.exitX = p.x < W / 2 ? -6 : W + 6; p.exit = null;
+    } else if (p.dest && p.dest.room === r.id) { p.dest = { out: true }; p.exit = null; }
   }
   for (const s of shafts) { s.queue = s.queue.filter(p => !p.dead); for (const c of s.cars) c.pass = c.pass.filter(p => !p.dead); }
   people = people.filter(p => !p.dead);
@@ -371,7 +398,7 @@ function nextLeg(p, here, dest) {
 function reconsider(p) {
   const here = nodeOf(p.f, p.x), room = p.dest.room && byId.get(p.dest.room);
   if (here === undefined) return;
-  const destN = room ? nodeOf(room.f, room.x) : 0, alt = nextLeg(p, here, destN);
+  const destN = room ? nodeOf(room.f, room.x) : p.exit ? nodeOf(p.exit.f, p.exit.x) : 0, alt = nextLeg(p, here, destN);
   if (!alt || alt.sh === p.leg.sh) return;
   if (alt.cost + 5 < legCost(p, p.leg, distTo(destN, p.fit))) {
     p.leg.sh.queue = p.leg.sh.queue.filter(q => q !== p);
@@ -387,12 +414,56 @@ function mkPerson(kind, home) {
   return p;
 }
 
+// Parkeerplekken verdelen over vaste gebruikers (werknemers, bewoners, hotelgasten).
+let metroRoom = null, warnedClean = false;
+function assignPark() {
+  const gs = [];
+  for (const r of G.rooms) if (r.type === 'garage') { r.used = 0; if (ok(r)) gs.push(r); }
+  let i = 0;
+  for (const p of people) {
+    if (p.kind === 'visitor' || p.kind === 'cleaner') continue;
+    p.park = null;
+    while (i < gs.length && gs[i].used >= T.garage.spots) i++;
+    if (i < gs.length) { p.park = gs[i].id; gs[i].used++; }
+  }
+}
+
+// Waar iemand het gebouw in of uit gaat: eigen parkeerplek, de metro, of (null) gewoon de straat.
+function gate(p) {
+  if (p.park) { const g = byId.get(p.park); if (g && ok(g)) return { f: g.f, x: g.x + 0.7 + p.slot * (T.garage.w - 1.4) }; }
+  if (metroRoom && ok(metroRoom) && rnd() < 0.5) return { f: metroRoom.f, x: metroRoom.x + 1 + rnd() * (T.metro.w - 2) };
+  return null;
+}
+
+function markDirty(r) {
+  r.dirty = true;
+  if (!warnedClean && !cnt('clean')) {
+    warnedClean = true;
+    toast('🧹 Hotelkamers zijn vies als de gast vertrekt. Bouw een Schoonmaak, anders komen er geen nieuwe gasten.', 'bad');
+  }
+}
+
+function cleanerIdle(p) {
+  const now = absNow();
+  if (p.st === 'out') { go(p, { room: p.home }); return; }
+  if (p.stay !== null) {
+    if (now < p.stay) return;
+    const r = byId.get(p.at);
+    if (r && r.type === 'hotel') { r.dirty = false; r.claim = 0; floatAt(r, '✨', '#fff'); }
+    p.stay = null;
+  }
+  const job = G.rooms.find(r => r.type === 'hotel' && r.dirty && ok(r) && !(r.claim && now - r.claim < 240));
+  if (job) { job.claim = now; go(p, { room: job.id, stay: 25 }); }
+  else if (p.at !== p.home) go(p, { room: p.home });
+}
+
 function putIn(p, r) { p.st = 'in'; p.at = r.id; r.inside++; }
 
 // Vaste bewoners van een kamer aanmaken. mode: 'new' (net gebouwd) of 'load'.
 function occupants(r, mode) {
-  const n = r.type === 'office' ? 4 : r.type === 'apartment' ? 3 : r.type === 'hotel' ? 1 : 0;
-  const kind = r.type === 'office' ? 'worker' : r.type === 'apartment' ? 'resident' : 'guest';
+  const who = { office: [4, 'worker'], apartment: [3, 'resident'], hotel: [1, 'guest'], clean: [3, 'cleaner'] }[r.type];
+  if (!who) return;
+  const [n, kind] = who;
   for (let i = 0; i < n; i++) {
     const p = mkPerson(kind, r.id);
     p.slot = (i + 0.5) / n;
@@ -404,6 +475,7 @@ function occupants(r, mode) {
 function dayPlan(p, mode) {
   const now = G.min, base = G.day * 1440, ev = [], home = byId.get(p.home);
   const at = (m, a) => ev.push({ t: base + m, a });
+  if (p.kind === 'cleaner') { if (mode !== 'day' && p.st === 'out') putIn(p, home); return ev; }
   if (p.kind === 'worker') {
     let arr = 450 + rnd() * 150;
     const leave = 1020 + rnd() * 90;
@@ -426,7 +498,7 @@ function dayPlan(p, mode) {
     if (mode === 'load' && (now < 420 || now > 1260) && rnd() < 0.7) putIn(p, home);
     if (p.st === 'in' && now < 600) at(Math.max(now, 420 + rnd() * 180), 'out');
     const ci = Math.max(now, 900 + rnd() * 360);
-    if (ci < 1320 && p.st !== 'in' && rnd() < 0.5 + home.rating / 200) at(ci, 'home');
+    if (ci < 1320 && rnd() < 0.5 + home.rating / 200) at(ci, 'home');   // ook als de vorige gast er nog zit: die vertrekt 's ochtends
   }
   return ev.sort((a, b) => a.t - b.t);
 }
@@ -440,6 +512,7 @@ function pickVenue() {
 
 function go(p, dest) {
   let f = 0, x = rnd() < 0.5 ? -6 : W + 6;
+  if (p.st !== 'in') { const g = gate(p); if (g) { f = g.f; x = g.x; } }
   if (p.st === 'in') {
     const r = byId.get(p.at);
     if (r) { r.inside--; f = r.f; x = r.x + 0.5 + p.slot * (T[r.type].w - 1); }
@@ -451,7 +524,7 @@ function go(p, dest) {
     return;
   }
   Object.assign(p, { st: 'go', dest, f, x, tt: 0, leg: null, climb: 0, stress: 0, sS: 0, flights: 0, stay: null,
-                     exitX: x < W / 2 ? -6 : W + 6 });
+                     exitX: x < W / 2 ? -6 : W + 6, exit: dest.out ? gate(p) : null });
 }
 
 function walk(p, tx, dt) {
@@ -471,7 +544,7 @@ function rate(r, p) {
 }
 
 function earn(r, p) {
-  const v = Math.round(T[r.type].pay * rate(r, p));
+  const v = Math.round(T[r.type].pay * rate(r, p) * (p.park && r.id === p.home ? 1.25 : 1));
   G.money += v; G.today += v; r.earned += v;
   floatAt(r, '+' + euro(v), moodOf(p) === 1 ? '#8df0a5' : moodOf(p) === 0.7 ? '#ffe08a' : '#ff9d9d');
   sfx('coin');
@@ -481,11 +554,12 @@ function arrive(p) {
   if (p.dest.out) { p.st = 'out'; if (p.kind === 'visitor') p.dead = true; return; }
   const r = byId.get(p.dest.room);
   putIn(p, r);
-  if (p.dest.pay) earn(r, p); else rate(r, p);
+  if (p.dest.pay) earn(r, p); else if (p.kind !== 'cleaner') rate(r, p);
   if (p.dest.stay) p.stay = absNow() + p.dest.stay;
 }
 
 function idle(p) {
+  if (p.kind === 'cleaner') { cleanerIdle(p); return; }
   const now = absNow();
   if (p.st === 'in' && p.stay !== null && now >= p.stay) {
     go(p, p.kind === 'visitor' ? { out: true } : { room: p.home });
@@ -494,8 +568,12 @@ function idle(p) {
   if (p.kind === 'visitor') return;
   if (p.plan.length && now >= p.plan[0].t) {
     const e = p.plan.shift();
-    if (e.a === 'home') { if (!(p.st === 'in' && p.at === p.home)) go(p, { room: p.home, pay: true }); }
-    else if (e.a === 'out') { if (p.st === 'in') go(p, { out: true }); }
+    const home = byId.get(p.home);
+    if (e.a === 'home') {
+      if (p.kind === 'guest' && home && home.dirty) { if (G.min < 1320) p.plan.unshift({ t: now + 30, a: 'home' }); }   // kamer nog vies: straks opnieuw proberen
+      else if (!(p.st === 'in' && p.at === p.home)) go(p, { room: p.home, pay: true });
+    }
+    else if (e.a === 'out') { if (p.st === 'in') { if (p.kind === 'guest' && home && p.at === p.home) markDirty(home); go(p, { out: true }); } }
     else if (p.st === 'in') { const v = pickVenue(); if (v) go(p, { room: v.id, pay: true, stay: 35 + rnd() * 20 }); }
   }
 }
@@ -536,9 +614,10 @@ function updPerson(p, dt) {
   }
   let room = null;
   if (p.dest.room) { room = byId.get(p.dest.room); if (!room) p.dest = { out: true }; }
-  const here = nodeOf(p.f, p.x), destN = room ? nodeOf(room.f, room.x) : 0;
+  const ex = room ? null : p.exit;
+  const here = nodeOf(p.f, p.x), destN = room ? nodeOf(room.f, room.x) : ex ? nodeOf(ex.f, ex.x) : 0;
   if (here === destN) {
-    const tx = room ? room.x + 0.5 + p.slot * (T[room.type].w - 1) : p.exitX;
+    const tx = room ? room.x + 0.5 + p.slot * (T[room.type].w - 1) : ex ? ex.x : p.exitX;
     if (walk(p, tx, dt)) arrive(p);
     return;
   }
@@ -549,7 +628,8 @@ function updPerson(p, dt) {
 // Bezoekers van buiten. Per soort is er één stroom bezoekers voor de hele toren (groeit met het aantal
 // inwoners); die verdeelt zich over alle open zaken van die soort. Meer winkels = minder klanten per winkel.
 const CAP = { shop: 4, restaurant: 10, cinema: 48, deck: 8 };        // max bezoekers per uur per zaak
-function demand(type) {
+function demand(type) { return rawDemand(type) * (metroRoom && ok(metroRoom) ? 1.5 : 1); }
+function rawDemand(type) {
   const h = G.min / 60;
   switch (type) {
     case 'shop': return 2 + pop / 15;
@@ -581,10 +661,13 @@ function spawnVisitors(dmin) {
 }
 
 function newDay() {
-  if (G.today > 0) toast('🌙 Dag ' + (G.day - 1) + ' voorbij: ' + euro(G.today) + ' verdiend');
+  const upkeep = shafts.reduce((n, s) => n + s.cars.length * T[s.type].upkeep, 0);
+  G.money -= upkeep;
+  if (G.today > 0 || upkeep) toast('🌙 Dag ' + (G.day - 1) + ' voorbij: ' + euro(G.today) + ' verdiend' + (upkeep ? ', ' + euro(upkeep) + ' liftonderhoud' : ''));
   G.today = 0;
   for (const r of G.rooms) r.earned = 0;
   for (const p of people) if (p.kind !== 'visitor') p.plan = dayPlan(p, 'day');
+  assignPark();
   save();
 }
 
@@ -694,16 +777,16 @@ function resize() {
 function clampCam() {
   cam.z = clamp(cam.z, 0.35, 2.5);
   cam.x = clamp(cam.x, -150, W * U + 150);
-  cam.y = clamp(cam.y, -(TOP + 3) * FH, 3 * FH);
+  cam.y = clamp(cam.y, -(TOP + 3) * FH, (3 - FMIN) * FH);
 }
 
 function homeView() {
-  let top = 3;
-  for (const r of G.rooms) top = Math.max(top, r.f + 1);
-  const hpx = (top + 3) * FH;
+  let top = 3, bot = 0;
+  for (const r of G.rooms) { top = Math.max(top, r.f + 1); bot = Math.min(bot, r.f); }
+  const hpx = (top - bot + 3) * FH;
   cam.z = clamp(Math.min(cw / (W * U + (cw < 720 ? 40 : 160)), (ch - (cw < 720 ? 340 : 230)) / hpx), 0.35, 1.6);
   cam.x = W * U / 2;
-  cam.y = -(top + 1) * FH / 2 + 30 / cam.z;
+  cam.y = -(top + 1 + bot) * FH / 2 + 30 / cam.z;
   clampCam();
 }
 
@@ -794,6 +877,38 @@ const ART = {
   },
   lift(c, x, y, w, h, lit, over) { R(c, over ? 'rgba(75,85,99,.22)' : '#4b5563', x, y, w, h); R(c, '#6b7280', x + 4, y, 1.5, h); R(c, '#6b7280', x + w - 5.5, y, 1.5, h); if (!over) R(c, '#374151', x, y, w, 2); },
   xlift(c, x, y, w, h, lit, over) { R(c, over ? 'rgba(59,63,115,.22)' : '#3b3f73', x, y, w, h); R(c, '#d4a72c', x + 4, y, 1.5, h); R(c, '#d4a72c', x + w - 5.5, y, 1.5, h); if (!over) R(c, '#2b2e57', x, y, w, 2); },
+  vend(c, x, y, w, h) {
+    base(c, '#eef1f4', x, y, w, h);
+    R(c, '#c92a2a', x + 3, y + 9, w - 6, h - 10); R(c, '#ffe3e3', x + 4.5, y + 11, w - 9, 9); R(c, '#222', x + 4.5, y + h - 9, w - 9, 3);
+  },
+  garage(c, x, y, w, h, lit, over, r) {
+    base(c, '#7b8190', x, y, w, h);
+    R(c, '#f1c40f', x, y + 3, w, 2);
+    for (let i = 0; i <= 6; i++) R(c, 'rgba(255,255,255,.5)', x + 3 + i * 20.3, y + h - 3, 1, 2);
+    const n = r ? Math.ceil((r.used || 0) / 2) : 4, cols = ['#e03131', '#1c7ed6', '#f8f9fa', '#2f9e44', '#f59f00', '#495057'];
+    for (let i = 0; i < n; i++) {
+      const dx = x + 5 + i * 20.3;
+      R(c, cols[i % 6], dx, y + h - 10, 16, 6); R(c, cols[i % 6], dx + 3, y + h - 14, 9, 4); R(c, '#cfe8ff', dx + 4, y + h - 13, 7, 3);
+      R(c, '#111', dx + 2, y + h - 5, 3.5, 3.5); R(c, '#111', dx + 10.5, y + h - 5, 3.5, 3.5);
+    }
+    R(c, '#1c7ed6', x + w - 14, y + 8, 10, 10); c.fillStyle = '#fff'; c.font = 'bold 9px system-ui'; c.textAlign = 'center'; c.fillText('P', x + w - 9, y + 16.5);
+  },
+  clean(c, x, y, w, h) {
+    base(c, '#e3f6f5', x, y, w, h);
+    R(c, '#fff', x + 5, y + h - 17, 13, 16); c.fillStyle = '#74c0fc'; c.beginPath(); c.arc(x + 11.5, y + h - 8, 4, 0, 7); c.fill();
+    R(c, '#fff', x + 20, y + h - 17, 13, 16); c.fillStyle = '#74c0fc'; c.beginPath(); c.arc(x + 26.5, y + h - 8, 4, 0, 7); c.fill();
+    R(c, '#8a5a3c', x + 46, y + 9, 1.5, h - 14); R(c, '#adb5bd', x + 43, y + h - 6, 8, 4);
+    R(c, '#1c7ed6', x + 53, y + h - 9, 7, 8);
+    R(c, '#8a5a3c', x + 37, y + 12, 22, 1.5); for (let i = 0; i < 4; i++) R(c, ['#ffd43b', '#ff8787', '#69db7c', '#74c0fc'][i], x + 38 + i * 5, y + 8, 3.5, 4);
+  },
+  metro(c, x, y, w, h) {
+    R(c, '#2f3542', x, y, w, h); R(c, '#6b7280', x, y, w, 3);
+    for (let i = 0; i < w / 8; i++) R(c, i % 2 ? '#dfe6ee' : '#cfd8e3', x + i * 8, y + 3, 8, 9);
+    R(c, '#f1c40f', x, y + h - 7, w, 1.5); R(c, '#9aa3b2', x, y + h - 5, w, 5);
+    R(c, '#e8590c', x + 26, y + 14, w - 52, h - 20); R(c, '#fff', x + 26, y + 22, w - 52, 2);
+    for (let i = 0; i < 9; i++) R(c, '#cfe8ff', x + 32 + i * 18, y + 16, 11, 5);
+    R(c, '#1c7ed6', x + 6, y + 14, 12, 12); c.fillStyle = '#fff'; c.font = 'bold 10px system-ui'; c.textAlign = 'center'; c.fillText('M', x + 12, y + 24);
+  },
   deck(c, x, y, w, h, lit) {
     base(c, lit === 1 ? '#3a4a6b' : '#cfefff', x, y, w, h);
     for (let i = 1; i < 5; i++) R(c, '#7c8794', x + i * w / 5, y + 3, 2, h - 3);
@@ -893,11 +1008,12 @@ function draw() {
   const vis = G.rooms.filter(r => r.f >= lo && r.f <= hi).sort((a, b) => !!T[a.type].transport - !!T[b.type].transport);
   for (const r of vis) {
     const t = T[r.type], x = r.x * U, y = -(r.f + 1) * FH, w = t.w * U;
-    ART[r.type](ctx, x, y, w, FH, night ? (r.inside > 0 || r.type === 'lobby' ? 2 : 1) : 0, grid.has(key(r.f, r.x)) || grid.has(key(r.f, r.x + 1)));
+    ART[r.type](ctx, x, y, w, FH, night ? (r.inside > 0 || r.type === 'lobby' ? 2 : 1) : 0, grid.has(key(r.f, r.x)) || grid.has(key(r.f, r.x + 1)), r);
+    if (r.dirty) { R(ctx, 'rgba(120,85,30,.4)', x, y + 3, w, FH - 3); ctx.font = '13px system-ui'; ctx.textAlign = 'center'; ctx.fillText('🧹', x + w / 2, y + 22); }
     if (!t.transport) {
       const n = Math.min(r.inside, Math.floor(w / 9));
       for (let i = 0; i < n; i++) drawPerson(ctx, x + (i + 0.5) * w / n + ((i * 7) % 5) - 2, y + FH - 1, '#3b4252');
-      if (night && r.inside === 0 && r.type !== 'lobby') R(ctx, 'rgba(8,12,40,.38)', x, y, w, FH);
+      if (night && r.inside === 0 && r.type !== 'lobby' && !t.util) R(ctx, 'rgba(8,12,40,.38)', x, y, w, FH);
       if (t.pop || t.pay) {
         if (!ok(r)) {
           ctx.fillStyle = '#e03131'; ctx.beginPath(); ctx.arc(x + w - 9, y + 11, 6.5, 0, 7); ctx.fill();
@@ -925,7 +1041,7 @@ function draw() {
     if (p.climb > 0) fy = p.f + (p.leg.to - p.f) * p.climb;
     if (p.st === 'wait') { const k = p.leg.sh.x + ':' + p.f, i = qn.get(k) || 0; qn.set(k, i + 1); px -= Math.min(i, 14) * 5; }
     if (px < vx0 - 10 || px > vx1 + 10) continue;
-    drawPerson(ctx, px, -fy * FH - 1, stressCol(p.stress));
+    drawPerson(ctx, px, -fy * FH - 1, p.kind === 'cleaner' ? '#1c7ed6' : stressCol(p.stress));
   }
 
   // schaduwstuk onder de muis
@@ -1011,7 +1127,7 @@ function buildToolbar() {
     ART[id](c, 0, 0, w, FH, 0);
     if (t.lift) drawCar(c, 0, 0, id, 0, false);
     const locked = t.star > G.stars;
-    const b = add(id, t.name, locked ? '🔒 ' + stars(t.star) : euro(t.cost), ic, i === 9 ? '0' : i + 1);
+    const b = add(id, t.name, locked ? '🔒 ' + stars(t.star) : euro(t.cost), ic, i < 9 ? i + 1 : i === 9 ? '0' : '');
     b.title = t.desc; b.classList.toggle('locked', locked);
     if (i === 0) b.classList.add('sep');
   });
@@ -1055,7 +1171,7 @@ function updInfo() {
     if (s.top === s.bot) h += '<p class="warn">⚠️ Deze lift is maar 1 verdieping hoog en gaat dus nergens heen. Kies ' + t.name + ' en klik erboven of eronder.</p>';
     else {
       const n = s.cars.length, mx = maxCars(s);
-      h += '<p>Rijdt van ' + floorName(s.bot) + ' tot ' + floorName(s.top) + '.</p><p>🛗 Cabines: <b>' + n + '</b> van ' + mx + ' (elk ' + t.cap + ' mensen)</p>' +
+      h += '<p>Rijdt van ' + floorName(s.bot) + ' tot ' + floorName(s.top) + '.</p><p>🛗 Cabines: <b>' + n + '</b> van ' + mx + ' (elk ' + t.cap + ' mensen)</p><p>🔧 Onderhoud: ' + euro(n * t.upkeep) + ' per dag</p>' +
         '<p>👥 In de lift: ' + s.cars.reduce((a, c) => a + c.pass.length, 0) + '</p><p>⏳ Wachtend: ' + s.queue.length + '</p>' +
         (s.queue.length > t.cap * n * 2 ? '<p class="warn">Het is hier te druk. ' + (n < mx ? 'Koop een extra cabine.' : 'Bouw er een lift naast.') + '</p>' : '') +
         '<div class="act">' + (n < mx ? '<button class="btn green" data-a="car+">➕ Extra cabine (' + euro(t.shaft) + ')</button>' : mx < MAX_CARS ? '<p>Maak de lift langer voor meer cabines.</p>' : '') +
@@ -1066,10 +1182,15 @@ function updInfo() {
     if (r.type === 'stairs') h += '<p>Verbindt ' + floorName(r.f) + ' met ' + floorName(r.f + 1) + '.</p>';
     else if (r.type === 'lobby') h += '<p>' + t.desc + ' Hier komen alle mensen binnen.</p>';
     else if (!ok(r)) h += '<p class="warn">⚠️ Niemand kan hier komen. Zet een trap of lift vast aan dit stuk vloer.</p>';
-    else {
+    else if (t.util) {
+      h += '<p>' + t.desc + '</p>';
+      if (r.type === 'garage') h += '<p>🚗 Bezet: ' + (r.used || 0) + ' van ' + t.spots + ' plekken</p>';
+      if (r.type === 'vend') h += '<p>💰 Vandaag verdiend: ' + euro(r.earned) + '</p>';
+    } else {
       const face = r.rating >= 75 ? '😀' : r.rating >= 45 ? '😐' : '😡';
       h += '<p>' + face + ' Tevreden: <b>' + Math.round(r.rating) + '%</b></p>';
       if (r.rating < 75) h += '<p class="warn">' + (r.cause === 'stairs' ? 'Mensen moeten te veel trappen lopen. Bouw een lift.' : 'Mensen wachten te lang op de lift. Klik op de lift voor een extra cabine, of bouw een lift erbij.') + '</p>';
+      if (r.dirty) h += '<p class="warn">🧹 Deze kamer is vies. Er komt pas een nieuwe gast als hij is schoongemaakt' + (cnt('clean') ? '.' : ': bouw een Schoonmaak.') + '</p>';
       h += '<p>' + t.desc + '</p>';
       if (t.open) h += '<p>🕗 Open van ' + t.open[0] + ' tot ' + t.open[1] + ' uur' + (isOpen(r) ? '' : ' (nu dicht)') + '</p>';
       h += '<p>👥 Nu binnen: ' + r.inside + '</p><p>💰 Vandaag verdiend: ' + euro(r.earned) + '</p>';
@@ -1112,20 +1233,21 @@ function updHud() {
 }
 
 function updMission() {
-  const el = $('mission'), m = MISSIONS[G.mission];
+  const el = $('mission'), m = MISSIONS.find(m => !G.done.includes(m.id));
   let want = null, h;
   if (!m) h = '<div class="k">Alle opdrachten gehaald</div><div class="t">🏆 Je toren is af!</div><div class="h">Bouw gerust verder.</div>';
   else {
     const n = Math.min(m.g, Math.floor(m.n()));
     if (n >= m.g) {
-      G.mission++;
+      G.done.push(m.id);
       if (m.r) { G.money += m.r; toast('✅ Opdracht gehaald! Beloning: ' + euro(m.r), 'good'); } else toast('✅ Opdracht gehaald!', 'good');
       sfx('star'); save();
       return updMission();
     }
     want = m.tool;
-    h = '<div class="k">🎯 Opdracht ' + (G.mission + 1) + ' van ' + MISSIONS.length + '</div><div class="t">' + m.t + '</div><div class="h">' + m.h + '</div>' +
-        '<div class="p"><span class="bar"><i style="width:' + (n / m.g * 100) + '%"></i></span><span>' + n + '/' + m.g + (m.r ? ' · 🎁 ' + euro(m.r) : '') + '</span></div>';
+    const k = MISSIONS.filter(q => G.done.includes(q.id)).length + 1;
+    h = '<div class="k">🎯 Opdracht ' + k + ' van ' + MISSIONS.length + '</div><div class="t">' + m.t + '</div><div class="h">' + m.h + '</div>' +
+        '<div class="p"><span class="bar"><i style="width:' + (n / m.g * 100) + '%"></i></span><span>' + (m.euro ? euro(n) : n + '/' + m.g) + (m.r ? ' · 🎁 ' + euro(m.r) : '') + '</span></div>';
   }
   if (el.dataset.h !== h) { el.innerHTML = h; el.dataset.h = h; }
   for (const b of document.querySelectorAll('.tool')) b.classList.toggle('want', b.dataset.tool === want && tool !== want);
@@ -1145,6 +1267,7 @@ const HELP = '<ul>' +
   '<li>💰 <b>Geld:</b> mensen betalen als ze aankomen. Blije mensen betalen het meest.</li>' +
   '<li>🔴 <b>Rode poppetjes</b> wachten te lang. Klik op de lift voor een extra cabine, of bouw een lift erbij.</li>' +
   '<li>⭐ <b>Sterren:</b> meer inwoners geeft sterren. Daarmee mag je hoger bouwen en krijg je nieuwe kamers.</li>' +
+  '<li>🚇 <b>Onder de grond</b> (scroll omlaag) passen winkels, een parkeergarage en een metrostation. Kantoren en woningen hebben daglicht nodig.</li>' +
   '<li>↩️ <b>Vergist?</b> Druk op de pijl of Ctrl+Z. Rondkijken: slepen met Kijken, of met de rechtermuisknop.</li></ul>';
 
 function showStart() {
@@ -1299,6 +1422,7 @@ document.addEventListener('keydown', e => {
   else if (k === 'p') setSpeed(speedIdx ? 0 : 1);
   else if (k === 'x') setTool('demolish');
   else if (k >= '0' && k <= '9') setTool(TOOLS[k === '0' ? 9 : +k - 1]);
+  else if (k === 'h') homeView();
   else if (k === '+' || k === '=') zoomAt(1.25, cw / 2, ch / 2);
   else if (k === '-') zoomAt(0.8, cw / 2, ch / 2);
   else if (k === 'arrowup') { cam.y -= 60 / cam.z; clampCam(); }
@@ -1329,12 +1453,22 @@ document.addEventListener('visibilitychange', () => { if (document.hidden && run
 window.addEventListener('pagehide', () => { if (running) save(); });
 
 // ───────────────────────── 8. Spellus ─────────────────────────
+let lastHour = -1;
 function step(dt) {
   const h = G.min / 60;
   const quiet = active === 0 && (h >= 22.5 || h < 5.5);   // 's nachts doorspoelen als iedereen slaapt
   const dmin = dt * MIN_PER_SEC * (quiet ? 10 : 1);
   G.min += dmin;
   if (G.min >= 1440) { G.min -= 1440; G.day++; newDay(); }
+  const hr = Math.floor(G.min / 60);
+  if (hr !== lastHour) {
+    lastHour = hr;
+    if (hr >= 8 && hr < 20) for (const r of G.rooms) if (T[r.type].hourly && ok(r)) {
+      const v = T[r.type].hourly; G.money += v; G.today += v; r.earned += v;
+      if (rnd() < 0.25) floatAt(r, '+' + euro(v), '#8df0a5');
+    }
+  }
+  if (G.today > (G.best || 0)) G.best = G.today;
   spawnVisitors(dmin);
   active = 0;
   for (let i = 0; i < people.length; i++) updPerson(people[i], dt);

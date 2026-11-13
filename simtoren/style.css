@@ -93,15 +93,15 @@ button { font: inherit; color: inherit; border: 0; background: none; cursor: poi
   box-shadow: 0 2px 10px rgba(0, 0, 0, .3); scrollbar-width: thin;
 }
 .tool {
-  position: relative; flex: 0 0 auto; width: 82px; padding: 5px 3px 4px; border-radius: 10px;
+  position: relative; flex: 0 0 auto; width: 76px; padding: 5px 3px 4px; border-radius: 10px;
   display: flex; flex-direction: column; align-items: center; gap: 1px;
   background: #2b3346; border: 2px solid transparent;
 }
 .tool:hover { background: #364058; }
 .tool.on { border-color: #ffd24a; background: #46506b; }
-.tool canvas { width: 64px; height: 36px; border-radius: 5px; background: #8fd0f5; }
+.tool canvas { width: 60px; height: 34px; border-radius: 5px; background: #8fd0f5; }
 .tool .ic { height: 36px; font-size: 24px; line-height: 36px; }
-.tool .n { font-size: 12px; font-weight: 700; }
+.tool .n { font-size: 11px; font-weight: 700; white-space: nowrap; }
 .tool .c { font-size: 11px; color: #8df0a5; }
 .tool .key { position: absolute; top: 2px; left: 5px; font-size: 10px; opacity: .55; }
 .tool.locked { opacity: .5; cursor: not-allowed; }
