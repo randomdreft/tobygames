@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Visvijver - TobyGames</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎣</text></svg>">
-<link rel="stylesheet" href="visvijver/style.css?v=1">
+<link rel="stylesheet" href="visvijver/style.css?v=2">
 </head>
 <body>
 <a href="index.html" class="back-btn">&larr; TobyGames</a>
@@ -39,6 +39,12 @@
         <div id="prog-balk"><div id="prog-vul"></div><span id="prog-vis">🐟</span><span class="prog-eind">🎣</span></div>
     </div>
 
+    <!-- Beet: klik op het goede moment -->
+    <div id="beetmeter" class="hidden">
+        <div class="meter-label">❗ Beet! Klik in het groen <span id="beet-kans"></span></div>
+        <div id="beet-balk"><div id="beet-wijzer"></div></div>
+    </div>
+
     <!-- Knoppen -->
     <div id="joystick"><div id="joystick-knop"></div></div>
     <button id="btn-interact" class="hidden"></button>
@@ -53,7 +59,7 @@
         <p id="vangst-info"></p>
         <div class="knoppen">
             <button id="vangst-emmer" class="action-btn">🪣 In de emmer</button>
-            <button id="vangst-terug" class="action-btn grijs">🌊 Teruggooien</button>
+            <button id="vangst-terug" class="action-btn grijs">🌊 Teruggooien <span class="desk">(T)</span></button>
         </div>
     </div>
 
@@ -73,9 +79,10 @@
             <p>Loop rond de vijver in het bos, gooi je hengel uit en ontdek wat er bijt!
                Gewone vissen, zeldzame vissen, rare dingen… en misschien wel een monster. 🐙</p>
             <ul id="uitleg">
-                <li><b>🚶 Lopen:</b> <span class="desk"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> of pijltjes. Klik in het spel om rond te kijken met de muis.</span><span class="mob">joystick linksonder. Sleep over het scherm om rond te kijken.</span></li>
+                <li><b>🚶 Lopen:</b> <span class="desk"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> of de pijltjes. Rondkijken doe je met de muis.</span><span class="mob">joystick linksonder. Sleep over het scherm om rond te kijken.</span></li>
                 <li><b>🎣 Uitgooien:</b> kijk naar het water en druk op de knop <span class="desk">(of <kbd>spatie</kbd>)</span>.</li>
-                <li><b>❗ Beet:</b> duikt de dobber onder? Houd de knop ingedrukt om in te halen.</li>
+                <li><b>❗ Beet:</b> duikt de dobber onder? Er gaat een streepje heen en weer. Druk als het in het <b class="groen">groen</b> staat! Rood = mis. Elke vis heeft een eigen 🎯 vangkans.</li>
+                <li><b>💪 Inhalen:</b> houd daarna de knop ingedrukt.</li>
                 <li><b>📏 Spanning:</b> blijf in het <b class="groen">groen</b>! In het rood breekt je lijn, te slap en de vis ontsnapt. Loslaten = spanning omlaag.</li>
                 <li><b>🛒 Verkopen</b> doe je bij het kraampje. Je mooiste vissen bewaar je in het <b>🐠 aquarium</b>.</li>
             </ul>
@@ -85,6 +92,6 @@
     </div>
 </div>
 
-<script type="module" src="visvijver/game.js?v=1"></script>
+<script type="module" src="visvijver/game.js?v=2"></script>
 </body>
 </html>

@@ -1,9 +1,9 @@
 // Visvijver - hoofdspel: lopen, vissen, spanningsmeter, kraampje, visboek en aquarium
 import * as THREE from './vendor/three.module.min.js';
-import { SPECIES, SOORT, ZONES, CATS, BRIEFJES, HENGELS, LIJNEN, AAS, EMMER_MAX, AQUARIUM_MAX } from './data.js';
-import { Sound } from './sound.js';
-import { buildModel, animeerModel } from './models.js';
-import { buildWorld, WATER_Y, WERELD_R, pondR, DOCK, STALL, HUT, OBST, inPond, onDock, zoneAt } from './world.js';
+import { SPECIES, SOORT, ZONES, CATS, BRIEFJES, HENGELS, LIJNEN, AAS, EMMER_MAX, AQUARIUM_MAX } from './data.js?v=2';
+import { Sound } from './sound.js?v=2';
+import { buildModel, animeerModel } from './models.js?v=2';
+import { buildWorld, WATER_Y, WERELD_R, pondR, DOCK, STALL, HUT, OBST, inPond, onDock, zoneAt } from './world.js?v=2';
 
 const $ = id => document.getElementById(id);
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
@@ -40,6 +40,11 @@ try {
   throw e;
 }
 renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+// schaduwen worden één keer berekend (de zon staat stil), dat kost daarna niets meer
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.shadowMap.autoUpdate = false;
+renderer.shadowMap.needsUpdate = true;
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(65, 1, 0.1, 400);
 camera.rotation.order = 'YXZ';
@@ -147,9 +152,16 @@ function kijkEinde(e) {
   if (e.pointerId !== kijk.id) return;
   kijk.id = null;
   if (e.type === 'pointerup' && e.pointerType === 'mouse' && kijk.bewogen < 5 && !isTouch && magKijken() && canvas.requestPointerLock) {
-    try { const p = canvas.requestPointerLock(); if (p && p.catch) p.catch(() => {}); } catch (err) { /* geen muisvergrendeling: slepen werkt ook */ }
+    vergrendel();
   }
 }
+// muis vastzetten in het spel; daarna onthouden we dat de speler zo wil spelen
+let wilLock = false;
+function vergrendel() {
+  if (isTouch || !canvas.requestPointerLock || document.pointerLockElement === canvas) return;
+  try { const p = canvas.requestPointerLock(); if (p && p.catch) p.catch(() => {}); } catch (err) { /* geen muisvergrendeling: slepen werkt ook */ }
+}
+document.addEventListener('pointerlockchange', () => { if (document.pointerLockElement === canvas) wilLock = true; });
 canvas.addEventListener('pointerup', kijkEinde);
 canvas.addEventListener('pointercancel', kijkEinde);
 document.addEventListener('mousemove', e => {
@@ -185,6 +197,11 @@ window.addEventListener('keydown', e => {
   if (e.repeat) return;
   toetsen[e.code] = true;
   if (e.code === 'Space') zetActie(true);
+  if (F.state === 'toon') {
+    if (e.code === 'Enter') sluitVangst(true);
+    if (e.code === 'KeyT' || e.code === 'Backspace') sluitVangst(false);
+    return;
+  }
   if (e.code === 'KeyE') interact();
   if (e.code === 'KeyB') paneelOpen === 'boek' ? sluitPaneel() : openPaneel('boek');
   if (e.code === 'KeyM') wisselGeluid();
@@ -201,15 +218,12 @@ function kanStaan(x, z) {
 }
 
 function beweegSpeler(dt) {
-  let vooruit = 0, opzij = 0, draaien = 0;
+  let vooruit = 0, opzij = 0;
   if (toetsen.KeyW || toetsen.ArrowUp) vooruit += 1;
   if (toetsen.KeyS || toetsen.ArrowDown) vooruit -= 1;
-  if (toetsen.KeyD) opzij += 1;
-  if (toetsen.KeyA) opzij -= 1;
-  if (toetsen.ArrowLeft) draaien += 1;
-  if (toetsen.ArrowRight) draaien -= 1;
+  if (toetsen.KeyD || toetsen.ArrowRight) opzij += 1;
+  if (toetsen.KeyA || toetsen.ArrowLeft) opzij -= 1;
   vooruit -= joy.y; opzij += joy.x;
-  if (draaien && magKijken()) speler.yaw += draaien * 2.0 * dt;
   const l = Math.hypot(vooruit, opzij);
   const vast = paneelOpen || ['werpen', 'beet', 'inhalen', 'toon'].includes(F.state);
   if (l > 0.08 && !vast) {
@@ -257,7 +271,7 @@ const SLAP = 0.15, ROOD = 0.8;
 const F = {
   state: 'rust',          // rust | werpen | wachten | beet | inhalen | toon
   t: 0, van: new THREE.Vector3(), doel: new THREE.Vector3(), zone: 'open',
-  beetT: 0, n1: false, n2: false, dip: 0, venster: 0, ringT: 0,
+  beetT: 0, n1: false, n2: false, dip: 0, venster: 0, ringT: 0, beetP: 0,
   soort: null, forceer: null, spanning: 0, prog: 0, slap: 0, duur: 0, moe: false, rukT: 0, rukNa: 0, klikT: 0, zwaai: 0,
   toon: null, vangst: null,
 };
@@ -273,7 +287,31 @@ function zetActie(aan) {
     if (richt.ok) werp(); else { toast('Kijk naar het water om uit te gooien 🌊'); Sound.fout(); }
   } else if (F.state === 'wachten') {
     if (F.beetT > 1.3) haalIn();
+  } else if (F.state === 'beet') slaAan();
+  else if (F.state === 'toon' && F.t >= 1) {
+    if (save.emmer.length < EMMER_MAX) sluitVangst(true);
+    else { toast(isTouch ? 'Je emmer is vol! Gooi hem terug.' : 'Je emmer is vol! Druk op T om hem terug te gooien.'); Sound.fout(); }
   }
+}
+
+// ---- beet: klik op het goede moment. Het streepje gaat heen en weer over rood - geel - groen.
+const GROEN = 0.09, GEEL = 0.24;        // afstand tot het midden van de balk
+const beetPos = () => { const p = F.beetP % 2; return p < 1 ? p : 2 - p; };
+// kans dat de haak blijft zitten; in het groen krijg je 20 erbij
+const vangKans = (s, perfect) => save.vangsten < 3 ? 100 : Math.min(100, s.kans + (perfect ? 20 : 0));
+function slaAan() {
+  const afstand = Math.abs(beetPos() - 0.5);
+  if (afstand > GEEL) {
+    toast('❌ Mis! Je klikte in het rood. Wacht tot het streepje in het groen staat.', 4);
+    Sound.ontsnapt(); world.splash(F.doel.x, F.doel.z, 8, 1); rust(); return;
+  }
+  const perfect = afstand <= GROEN, kans = vangKans(F.soort, perfect);
+  if (Math.random() * 100 >= kans) {
+    toast(`🐟💨 Net niet… hij schoot los van de haak! (vangkans ${kans}%)` + (perfect ? '' : ' Tip: in het groen heb je meer kans.'), 4.5);
+    Sound.ontsnapt(); world.splash(F.doel.x, F.doel.z, 8, 1); rust(); return;
+  }
+  if (perfect) toast('🎯 Perfect! Hij zit goed vast.', 1.8);
+  startInhalen();
 }
 
 function werp() {
@@ -290,7 +328,7 @@ function haalIn() {
 function rust() {
   F.state = 'rust'; F.soort = null;
   dobber.visible = false; lijn.visible = false;
-  $('meter').classList.add('hidden'); $('banner').classList.add('hidden');
+  $('meter').classList.add('hidden'); $('banner').classList.add('hidden'); $('beetmeter').classList.add('hidden');
   btnActie.classList.remove('beet');
 }
 
@@ -318,7 +356,7 @@ function kiesVangst(zone) {
 function startInhalen() {
   F.state = 'inhalen';
   F.spanning = 0.42; F.prog = 0.12; F.slap = 0; F.duur = 0; F.moe = false; F.rukT = 0; F.rukNa = 1.5 + Math.random() * 2;
-  $('banner').classList.add('hidden'); btnActie.classList.remove('beet');
+  $('banner').classList.add('hidden'); $('beetmeter').classList.add('hidden'); btnActie.classList.remove('beet');
   $('meter').classList.remove('hidden');
 }
 
@@ -349,7 +387,6 @@ function vang() {
 
   F.state = 'toon'; F.vangst = rec; F.t = 0;
   $('meter').classList.add('hidden');
-  if (document.pointerLockElement) document.exitPointerLock();
   const m = buildModel(s);
   m.position.copy(dobber.position); scene.add(m);
   F.toon = { m, van: dobber.position.clone() };
@@ -361,14 +398,14 @@ function vang() {
 
   const cat = CATS[s.cat];
   $('vangst-nieuw').classList.toggle('hidden', !isNieuw);
-  $('vangst-cat').textContent = cat.naam; $('vangst-cat').style.background = cat.kleur;
+  $('vangst-cat').textContent = `${cat.naam} · 🎯 vangkans ${s.kans}%`; $('vangst-cat').style.background = cat.kleur;
   $('vangstkaart').style.borderColor = cat.kleur;
   $('vangst-naam').textContent = s.naam;
   $('vangst-maten').textContent = `${fmtMaten(rec)} · €${rec.waarde}` + (record ? ' · 🏆 Nieuw record!' : '');
   $('vangst-info').textContent = s.id === 'fles' ? `Op het briefje staat: ${BRIEFJES[rec.briefje]}` : s.info;
   const vol = save.emmer.length >= EMMER_MAX;
   $('vangst-emmer').disabled = vol;
-  $('vangst-emmer').textContent = vol ? '🪣 Emmer is vol!' : '🪣 In de emmer';
+  $('vangst-emmer').innerHTML = vol ? '🪣 Emmer is vol!' : '🪣 In de emmer <span class="desk">(spatie)</span>';
   $('vangstkaart').classList.remove('hidden');
   hud();
 }
@@ -387,6 +424,8 @@ function sluitVangst(inEmmer) {
   scene.remove(F.toon.m); F.toon = null; F.vangst = null;
   toonLicht.intensity = 0;
   $('vangstkaart').classList.add('hidden');
+  if (document.activeElement && document.activeElement !== document.body) document.activeElement.blur();
+  if (wilLock) vergrendel();          // muis weer vast, zodat je meteen verder kunt kijken en vissen
   bewaar(); hud(); rust();
 }
 $('vangst-emmer').addEventListener('click', () => sluitVangst(true));
@@ -423,7 +462,10 @@ function updateVissen(dt) {
     dobber.rotation.z = Math.sin(tijd * 1.7) * 0.12;
     if (F.beetT <= 0) {
       F.soort = kiesVangst(F.zone);
-      F.state = 'beet'; F.venster = 4; F.ringT = 0;
+      F.state = 'beet'; F.venster = 5.5; F.ringT = 0; F.beetP = 0;
+      $('beet-kans').textContent = `🎯 vangkans ${vangKans(F.soort, false)}%`;
+      $('beet-wijzer').style.left = '0%';
+      $('beetmeter').classList.remove('hidden');
       world.splash(F.doel.x, F.doel.z, 14, 1.1); world.ripple(F.doel.x, F.doel.z, 2.2, 1);
       Sound.beet();
       $('banner').textContent = '❗ BEET! ❗'; $('banner').classList.remove('hidden');
@@ -433,8 +475,10 @@ function updateVissen(dt) {
     F.venster -= dt; F.ringT -= dt;
     dobber.position.set(F.doel.x + Math.sin(tijd * 30) * 0.04, WATER_Y - 0.2 + Math.sin(tijd * 14) * 0.05, F.doel.z);
     if (F.ringT <= 0) { F.ringT = 0.35; world.ripple(F.doel.x, F.doel.z, 1.5, 0.8); world.splash(F.doel.x, F.doel.z, 2, 0.6); }
-    if (actie.ingedrukt) startInhalen();
-    else if (F.venster <= 0) { toast('Te laat… de vis is er vandoor! 🐟💨'); Sound.ontsnapt(); rust(); }
+    // sterke vissen laten het streepje sneller gaan
+    F.beetP += dt * (save.vangsten < 3 ? 0.6 : 0.75 + 0.3 * F.soort.f);
+    $('beet-wijzer').style.left = beetPos() * 100 + '%';
+    if (F.venster <= 0) { toast('Te laat… de vis is er vandoor! 🐟💨'); Sound.ontsnapt(); rust(); }
   } else if (F.state === 'inhalen') {
     // de vis wordt langzaam moe, zodat ook een zware vis met geduld te vangen is
     F.duur += dt;
@@ -564,7 +608,7 @@ function updateHud() {
   const k = isTouch ? 'de knop' : 'spatie';
   if (F.state === 'rust') hint = richt.ok ? `Druk op ${k} om uit te gooien` : 'Loop naar de vijver en kijk naar het water';
   else if (F.state === 'wachten') { hint = 'Wachten op beet… 🤫'; knop = '↩️<small>Haal in</small>'; }
-  else if (F.state === 'beet') { hint = `Houd ${k} ingedrukt!`; knop = '❗<small>BEET!</small>'; }
+  else if (F.state === 'beet') { hint = `Druk op ${k} als het streepje in het GROEN staat!`; knop = '❗<small>BEET!</small>'; }
   else if (F.state === 'inhalen') { hint = 'Vasthouden = inhalen · Loslaten = spanning omlaag'; knop = '💪<small>Trek!</small>'; }
   if (paneelOpen || F.state === 'toon' || !gestart) hint = '';
   if (hint !== hintOud) { $('hint').textContent = hint; hintOud = hint; }
@@ -654,10 +698,10 @@ function tekenPaneel() {
     h += `<div class="boek-kop">Ontdekt: ${aantal} van de ${SPECIES.length} soorten · ${save.vangsten}× iets gevangen</div><div class="boek-grid">`;
     for (const s of SPECIES) {
       const b = save.boek[s.id], kleur = CATS[s.cat].kleur;
-      if (b) h += `<div class="boek-kaart" style="border-color:${kleur}">${plaatje(s.id)}<b>${s.naam}</b><small>${b.n}× gevangen</small><small>Grootste: ${fmtMaten(b)}</small></div>`;
+      if (b) h += `<div class="boek-kaart" style="border-color:${kleur}">${plaatje(s.id)}<b>${s.naam}</b><small>${b.n}× gevangen</small><small>Grootste: ${fmtMaten(b)}</small><small class="kans">🎯 Vangkans ${s.kans}%</small></div>`;
       else {
         const plek = Object.keys(s.w).sort((a, c) => s.w[c] - s.w[a])[0];
-        h += `<div class="boek-kaart onbekend" style="border-color:${kleur}">${plaatje(s.id)}<b>???</b><small>${CATS[s.cat].naam}</small><small>Tip: ${ZONES[plek].naam.toLowerCase()}${s.avond === true ? ', ’s avonds' : ''}</small></div>`;
+        h += `<div class="boek-kaart onbekend" style="border-color:${kleur}">${plaatje(s.id)}<b>???</b><small>${CATS[s.cat].naam}</small><small>Tip: ${ZONES[plek].naam.toLowerCase()}${s.avond === true ? ', ’s avonds' : ''}</small><small class="kans">🎯 Vangkans ${s.kans}%</small></div>`;
       }
     }
     h += `</div>`;
@@ -678,7 +722,7 @@ function openPaneel(naam) {
   $('paneel').classList.remove('hidden');
   Sound.tik();
 }
-function sluitPaneel() { paneelOpen = null; $('paneel').classList.add('hidden'); }
+function sluitPaneel() { paneelOpen = null; $('paneel').classList.add('hidden'); if (wilLock) vergrendel(); }
 $('paneel-sluit').addEventListener('click', sluitPaneel);
 $('paneel').addEventListener('click', e => { if (e.target === $('paneel')) sluitPaneel(); });
 $('btn-boek').addEventListener('click', () => openPaneel('boek'));
@@ -725,6 +769,7 @@ function start() {
   Sound.unlock();
   $('start-screen').classList.add('hidden');
   gestart = true;
+  vergrendel();
   if (!save.uitleg) { save.uitleg = true; bewaar(); toast('Welkom! Loop naar het water, kijk naar een plek en gooi je hengel uit. 🎣', 6); }
   Sound.tik();
 }

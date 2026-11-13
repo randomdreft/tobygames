@@ -121,6 +121,16 @@ export const SPECIES = [
     model: { type: 'kriebelkraak' } },
 ];
 
+// kans (in procent) dat de haak blijft zitten als je op tijd klikt; in het groen komt er 20 bij
+const KANS = {
+  voorn: 95, stekelbaars: 95, baars: 90, brasem: 90, zeelt: 85, karper: 80, paling: 80, snoek: 75,
+  snoekbaars: 65, spiegelkarper: 60, koi: 60, meerval: 55,
+  goudvis: 45, regenboogvis: 40, maanvis: 35,
+  laars: 100, blikje: 100, badeend: 100, fles: 95, schatkist: 70,
+  brulbaard: 30, blub: 25, kriebelkraak: 28,
+};
+for (const s of SPECIES) s.kans = KANS[s.id] ?? 80;
+
 export const SOORT = Object.fromEntries(SPECIES.map(s => [s.id, s]));
 
 export const BRIEFJES = [

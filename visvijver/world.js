@@ -1,6 +1,6 @@
 // Visvijver - de wereld: vijver, bos, steiger, kraampje, aquariumhut, lucht en spetters
 import * as THREE from './vendor/three.module.min.js';
-import { M } from './models.js';
+import { M } from './models.js?v=2';
 
 export const WATER_Y = -0.12;
 export const WERELD_R = 23;
@@ -70,12 +70,42 @@ export function buildWorld(scene) {
   const W = { eve: 0 };
 
   // ---------- lucht en licht ----------
-  scene.background = new THREE.Color(0x8fd4ff);
-  scene.fog = new THREE.Fog(0x8fd4ff, 32, 85);
+  scene.background = new THREE.Color(0xa9dcff);
+  scene.fog = new THREE.Fog(0xa9dcff, 34, 90);
   const hemi = new THREE.HemisphereLight(0xdff3ff, 0x6a9a4a, 1.7);
   const zon = new THREE.DirectionalLight(0xfff2d6, 2.1);
-  zon.position.set(30, 40, 12);
+  zon.position.set(36, 34, -31);          // dezelfde kant als de zon aan de hemel
+  zon.castShadow = true;
+  zon.shadow.mapSize.set(2048, 2048);
+  Object.assign(zon.shadow.camera, { left: -34, right: 34, top: 34, bottom: -34, near: 1, far: 140 });
+  zon.shadow.bias = -0.0006; zon.shadow.normalBias = 0.05;
   scene.add(hemi, zon);
+
+  // hemelkoepel met verloop van horizon naar boven
+  const koepelMat = new THREE.ShaderMaterial({
+    side: THREE.BackSide, depthWrite: false, fog: false,
+    uniforms: { boven: { value: new THREE.Color(0x3d94ea) }, horizon: { value: new THREE.Color(0xa9dcff) } },
+    vertexShader: 'varying vec3 vP; void main() { vP = position; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
+    fragmentShader: `uniform vec3 boven; uniform vec3 horizon; varying vec3 vP;
+      void main() { float h = max(0.0, normalize(vP).y); gl_FragColor = vec4(mix(horizon, boven, pow(h, 0.55)), 1.0);
+      #include <colorspace_fragment>
+      }`,
+  });
+  const koepel = new THREE.Mesh(new THREE.SphereGeometry(320, 24, 12), koepelMat);
+  koepel.renderOrder = -10; scene.add(koepel);
+
+  const gloedTex = (() => {
+    const c = document.createElement('canvas'); c.width = c.height = 128;
+    const x = c.getContext('2d'), g = x.createRadialGradient(64, 64, 0, 64, 64, 64);
+    g.addColorStop(0, 'rgba(255,255,255,1)'); g.addColorStop(0.25, 'rgba(255,255,255,0.45)'); g.addColorStop(1, 'rgba(255,255,255,0)');
+    x.fillStyle = g; x.fillRect(0, 0, 128, 128);
+    return new THREE.CanvasTexture(c);
+  })();
+  const halo = (kleur, maat) => {
+    const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: gloedTex, color: kleur, blending: THREE.AdditiveBlending, depthWrite: false, fog: false, transparent: true }));
+    sp.scale.setScalar(maat); scene.add(sp); return sp;
+  };
+  const zonHalo = halo(0xffe9a0, 60), maanHalo = halo(0xbfd0ff, 30);
 
   const zonBol = new THREE.Mesh(BOL, new THREE.MeshBasicMaterial({ color: 0xfff3a0, fog: false }));
   zonBol.scale.setScalar(9);
@@ -94,14 +124,18 @@ export function buildWorld(scene) {
   scene.add(sterren);
 
   const wolken = [];
-  const wolkMat = new THREE.MeshLambertMaterial({ color: 0xffffff, flatShading: true, fog: false });
-  for (let i = 0; i < 7; i++) {
+  const wolkMat = new THREE.MeshBasicMaterial({ color: 0xffffff, fog: false });      // echt wit: geen groen licht van het gras
+  const wolkOnder = new THREE.MeshBasicMaterial({ color: 0xe4ecf6, fog: false });
+  for (let i = 0; i < 10; i++) {
     const g = new THREE.Group();
-    for (let j = 0; j < 4; j++) {
+    for (let j = 0; j < 5; j++) {
       const b = new THREE.Mesh(BOL, wolkMat);
       b.position.set(j * 3 - 4.5 + R() * 1.5, R() * 1.2, R() * 2);
       b.scale.set(5 + R() * 3, 2.2 + R() * 1.5, 3.5 + R() * 2);
       g.add(b);
+      const o = new THREE.Mesh(BOL, wolkOnder);        // lichtgrijze onderkant voor wat diepte
+      o.position.copy(b.position); o.position.y -= 0.35; o.scale.copy(b.scale).multiplyScalar(0.96);
+      g.add(o);
     }
     g.position.set(R() * 160 - 80, 26 + R() * 12, R() * 160 - 80);
     wolken.push(g); scene.add(g);
@@ -120,8 +154,33 @@ export function buildWorld(scene) {
   vorm.holes.push(gat);
   const grondGeo = new THREE.ShapeGeometry(vorm, 24);
   grondGeo.rotateX(-Math.PI / 2);
-  const grond = new THREE.Mesh(grondGeo, new THREE.MeshLambertMaterial({ color: 0x74b84a }));
+  const grasTex = (() => {
+    const B = 512, c = document.createElement('canvas'); c.width = c.height = B;
+    const x = c.getContext('2d');
+    x.fillStyle = '#74b84a'; x.fillRect(0, 0, B, B);
+    const rond = (px, py, r, kleur) => {       // tekenen met omloop, zodat de tegel naadloos aansluit
+      x.fillStyle = kleur;
+      for (const dx of [-B, 0, B]) for (const dy of [-B, 0, B]) { x.beginPath(); x.arc(px + dx, py + dy, r, 0, 6.3); x.fill(); }
+    };
+    for (let i = 0; i < 260; i++) rond(R() * B, R() * B, 14 + R() * 46, ['rgba(60,140,50,0.10)', 'rgba(150,210,90,0.10)', 'rgba(90,170,60,0.12)', 'rgba(200,220,110,0.06)'][(R() * 4) | 0]);
+    for (let i = 0; i < 5000; i++) {
+      x.strokeStyle = R() < 0.5 ? 'rgba(40,110,40,0.28)' : 'rgba(170,225,110,0.28)'; x.lineWidth = 1.2;
+      const px = R() * B, py = R() * B; x.beginPath(); x.moveTo(px, py); x.lineTo(px + (R() - 0.5) * 3, py - 3 - R() * 5); x.stroke();
+    }
+    const t = new THREE.CanvasTexture(c);
+    t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(1 / 11, 1 / 11); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8;
+    return t;
+  })();
+  const grond = new THREE.Mesh(grondGeo, new THREE.MeshLambertMaterial({ color: 0xffffff, map: grasTex }));
   scene.add(grond);
+
+  // verre heuvels achter het bos
+  const heuvelMat = new THREE.MeshLambertMaterial({ color: 0x7fb39a, flatShading: true, fog: false });
+  for (let i = 0; i < 18; i++) {
+    const a = (i / 18) * Math.PI * 2 + R() * 0.2, r = 150 + R() * 40, h = 28 + R() * 34;
+    const m = new THREE.Mesh(new THREE.ConeGeometry(48 + R() * 30, h, 7), heuvelMat);
+    m.position.set(Math.cos(a) * r, h / 2 - 4, Math.sin(a) * r); m.rotation.y = R() * 3; scene.add(m);
+  }
 
   // schuine oever
   const oeverPos = [], oeverIdx = [];
@@ -136,19 +195,51 @@ export function buildWorld(scene) {
   oeverGeo.setIndex(oeverIdx); oeverGeo.computeVertexNormals();
   scene.add(new THREE.Mesh(oeverGeo, new THREE.MeshLambertMaterial({ color: 0xd9c48a, side: THREE.DoubleSide, flatShading: true })));
 
-  const bodem = new THREE.Mesh(new THREE.CircleGeometry(19, 28), new THREE.MeshLambertMaterial({ color: 0x1f6a86 }));
+  const bodemTex = (() => {
+    const c = document.createElement('canvas'); c.width = c.height = 256;
+    const x = c.getContext('2d'), g = x.createRadialGradient(128, 128, 10, 128, 128, 128);
+    g.addColorStop(0, '#0f4666'); g.addColorStop(0.55, '#1f6f8c'); g.addColorStop(0.85, '#4fb0b4'); g.addColorStop(1, '#8fd6c8');
+    x.fillStyle = g; x.fillRect(0, 0, 256, 256);
+    const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
+  })();
+  const bodem = new THREE.Mesh(new THREE.CircleGeometry(19, 40), new THREE.MeshLambertMaterial({ color: 0xffffff, map: bodemTex }));
   bodem.rotation.x = -Math.PI / 2; bodem.position.y = -1.7;
   scene.add(bodem);
 
   // ---------- water ----------
-  const waterGeo = new THREE.PlaneGeometry(38, 38, 30, 30);
+  const waterGeo = new THREE.PlaneGeometry(38, 38, 40, 40);
   waterGeo.rotateX(-Math.PI / 2);
-  const waterMat = new THREE.MeshPhongMaterial({ color: 0x3fa7dd, transparent: true, opacity: 0.8, flatShading: true, shininess: 90, specular: 0xaaddff });
+  const waterMat = new THREE.MeshPhongMaterial({ color: 0x3fa7dd, transparent: true, opacity: 0.74, flatShading: true, shininess: 140, specular: 0xd8f0ff });
   const water = new THREE.Mesh(waterGeo, waterMat);
   water.position.y = WATER_Y;
   scene.add(water);
   const wp = waterGeo.attributes.position;
   const wBasis = Float32Array.from(wp.array);
+
+  // schuimrandje langs de oever
+  const schuimPos = [], schuimIdx = [];
+  for (let i = 0; i <= N; i++) {
+    const a = (i / N) * Math.PI * 2, r = pondR(a);
+    schuimPos.push(Math.cos(a) * r * 0.995, 0, Math.sin(a) * r * 0.995, Math.cos(a) * r * 0.955, 0, Math.sin(a) * r * 0.955);
+    if (i < N) { const k = i * 2; schuimIdx.push(k, k + 1, k + 2, k + 1, k + 3, k + 2); }
+  }
+  const schuimGeo = new THREE.BufferGeometry();
+  schuimGeo.setAttribute('position', new THREE.Float32BufferAttribute(schuimPos, 3)); schuimGeo.setIndex(schuimIdx);
+  const schuimMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.4, depthWrite: false, side: THREE.DoubleSide });
+  const schuim = new THREE.Mesh(schuimGeo, schuimMat); schuim.position.y = WATER_Y + 0.05; scene.add(schuim);
+
+  // waterplanten en keien op de bodem
+  const wier = [], keien = [];
+  for (let i = 0; i < 70; i++) {
+    const a = R() * 6.28, r = Math.sqrt(R()) * 11.5, h = 0.5 + R() * 0.9;
+    wier.push({ x: Math.cos(a) * r, y: -1.7 + h / 2, z: Math.sin(a) * r, sx: 0.22, sy: h, sz: 0.22, c: [0x2f8f5a, 0x3fa86a, 0x257a4a][(R() * 3) | 0], rz: (R() - 0.5) * 0.3 });
+  }
+  for (let i = 0; i < 26; i++) {
+    const a = R() * 6.28, r = Math.sqrt(R()) * 11.5, k = 0.4 + R() * 0.8;
+    keien.push({ x: Math.cos(a) * r, y: -1.62, z: Math.sin(a) * r, sx: k * 1.3, sy: k * 0.7, sz: k, ry: R() * 3, c: 0x6f8a94 });
+  }
+  const onderMat = new THREE.MeshLambertMaterial({ color: 0xffffff, flatShading: true });
+  scene.add(inst(new THREE.ConeGeometry(0.5, 1, 5), onderMat, wier), inst(new THREE.DodecahedronGeometry(0.5, 0), onderMat, keien));
 
   // schaduwen van vissen onder water
   const schimMat = new THREE.MeshBasicMaterial({ color: 0x123a52, transparent: true, opacity: 0.45, depthWrite: false });
@@ -205,6 +296,16 @@ export function buildWorld(scene) {
     stelen.push({ x, y: 0.14, z, sx: 0.035, sy: 0.28, sz: 0.035, c: 0x3d8f3a });
     bloemen.push({ x, y: 0.31, z, s: 0.14, c: bloemKleur[(R() * 5) | 0] });
   }
+  const pollen = [];
+  for (let i = 0; i < 900; i++) {
+    const a = R() * 6.28, r = pondR(a) + 0.4 + R() * 11, x = Math.cos(a) * r, z = Math.sin(a) * r;
+    if (Math.hypot(x, z) > 25 || (Math.abs(x) < 1.6 && z > 10 && z < 15)) continue;
+    const h = 0.1 + R() * 0.16;
+    for (let j = 0; j < 3; j++) pollen.push({ x: x + (R() - 0.5) * 0.22, y: h / 2, z: z + (R() - 0.5) * 0.22, sx: 0.05, sy: h * (0.7 + R() * 0.5), sz: 0.05, rx: (R() - 0.5) * 0.5, rz: (R() - 0.5) * 0.5, c: [0x6cc04a, 0x7ccc54, 0x62b444, 0x92d862][(R() * 4) | 0] });
+  }
+  const polMesh = inst(new THREE.ConeGeometry(0.5, 1, 4), wit, pollen);
+  polMesh.userData.geenSchaduw = true;
+  scene.add(polMesh);
   scene.add(inst(new THREE.DodecahedronGeometry(0.5, 0), wit, stenen), inst(CIL, wit, stelen), inst(new THREE.IcosahedronGeometry(0.5, 0), wit, bloemen));
 
   // ---------- riet ----------
@@ -301,6 +402,15 @@ export function buildWorld(scene) {
   hut.position.set(HUT.x, 0, HUT.z); hut.lookAt(0, 0, 0);
   scene.add(hut);
 
+  // ---------- schaduwen: alles wat stevig is werpt en vangt schaduw ----------
+  scene.traverse(o => {
+    if (!o.isMesh || o === koepel || o === water || o === zonBol || o === maanBol) return;
+    const m = o.material;
+    if (!m.isMeshLambertMaterial || m.transparent || m === wolkMat || m === heuvelMat) return;
+    o.receiveShadow = true;
+    o.castShadow = !o.userData.geenSchaduw && o !== grond && o !== bodem;
+  });
+
   // ---------- vuurvliegjes ----------
   const vvPos = new Float32Array(40 * 3), vv = [];
   for (let i = 0; i < 40; i++) { const a = R() * 6.28, r = 8 + R() * 14; vv.push({ x: Math.cos(a) * r, z: Math.sin(a) * r, y: 0.6 + R() * 2, f: R() * 6.28 }); }
@@ -341,8 +451,9 @@ export function buildWorld(scene) {
 
   // ---------- kleuren voor dag / zonsondergang / avond ----------
   const K = (h) => new THREE.Color(h);
-  const dag = { lucht: K(0x8fd4ff), hemi: K(0xdff3ff), zon: K(0xfff2d6), water: K(0x3fa7dd) };
-  const nacht = { lucht: K(0x22316e), hemi: K(0x7f92d8), zon: K(0x9db4ff), water: K(0x1d4a8a) };
+  const dag = { lucht: K(0xa9dcff), boven: K(0x3d94ea), hemi: K(0xdff3ff), zon: K(0xfff2d6), water: K(0x3fa7dd) };
+  const nacht = { lucht: K(0x2a3a7a), boven: K(0x0a1238), hemi: K(0x7f92d8), zon: K(0x9db4ff), water: K(0x1d4a8a) };
+  const heuvelKleur = K(0x5f9a72);
   const gloed = K(0xff9a62);
   const tmp = new THREE.Color();
   let springT = 6;
@@ -357,14 +468,21 @@ export function buildWorld(scene) {
     const s = 4 * e * (1 - e);
     tmp.copy(dag.lucht).lerp(nacht.lucht, e).lerp(gloed, s * 0.55);
     scene.background.copy(tmp); scene.fog.color.copy(tmp);
+    koepelMat.uniforms.horizon.value.copy(tmp);
+    heuvelMat.color.copy(tmp).lerp(heuvelKleur, 0.45 - e * 0.2);
+    koepelMat.uniforms.boven.value.copy(dag.boven).lerp(nacht.boven, e).lerp(gloed, s * 0.18);
+    schuimMat.opacity = (0.3 + Math.sin(t * 1.3) * 0.1) * (1 - e * 0.5);
     hemi.color.copy(dag.hemi).lerp(nacht.hemi, e); hemi.intensity = 1.7 - 0.45 * e;
     zon.color.copy(dag.zon).lerp(nacht.zon, e).lerp(gloed, s * 0.6); zon.intensity = 2.1 - 1.1 * e;
     waterMat.color.copy(dag.water).lerp(nacht.water, e).lerp(gloed, s * 0.25);
     zonBol.position.set(70, 62 - e * 85, -60); zonBol.material.color.set(0xfff3a0).lerp(gloed, Math.min(1, e * 2));
     maanBol.position.set(-60, -25 + e * 80, -70);
+    zonHalo.position.copy(zonBol.position); zonHalo.material.color.copy(zonBol.material.color); zonHalo.material.opacity = 0.9;
+    maanHalo.position.copy(maanBol.position); maanHalo.material.opacity = e * 0.8;
     sterren.material.opacity = Math.max(0, e - 0.3) * 1.3;
     vliegjes.material.opacity = e * 0.95;
     wolkMat.color.set(0xffffff).lerp(nacht.lucht, e * 0.7).lerp(gloed, s * 0.5);
+    wolkOnder.color.set(0xe4ecf6).lerp(nacht.lucht, e * 0.8).lerp(gloed, s * 0.6);
 
     // golfjes
     const arr = wp.array;

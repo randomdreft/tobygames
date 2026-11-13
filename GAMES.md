@@ -358,7 +358,7 @@ Stadachtervolging vanuit vogelperspectief. Vlucht voor de politie door een proce
 |---------|--------|--------|
 | `style.css` | ~300 | CSS variabelen, glassmorphism overlays, HUD, joystick, responsive |
 | `sound.js` | ~160 | Web Audio API: motor (pitch varieert met snelheid), sirene (afstandsafhankelijk), pickup, crash, waarschuwingspiep, countdown |
-| `renderer.js` | ~2200 | Canvas rendering in drie lagen: (1) grond als gecachete celtegels (asfalt, rode fietsstroken, zebrapaden, stoepen, tuinen, parken), (2) alles op de grond (remsporen, schaduwen, voetgangers, pickups, auto's), (3) volumes: gebouwen en boomkruinen met hoogte, geprojecteerd vanuit het schermmidden zodat ze meekantelen tijdens het rijden. Verder rook, wolkenschaduwen, vogels, zwevende teksten, minimap, brandstofpijl |
+| `renderer.js` | ~1000 | Canvas rendering: stad als gecachete celtegels (asfalt, zebrapaden, stoepen, gebouwen met muren/schaduw/daken, parken met paden en vijvers), gedetailleerde auto's (politie met NL-striping en zwaailichtgloed), jerrycans/batterijen, particles, bandensporen, vignette, minimap, brandstofpijl |
 | `game.js` | ~830 | Game class, input, physics, politie-AI, spawning, collision, pauze, high scores |
 
 ### Wereld
@@ -419,13 +419,9 @@ Stadachtervolging vanuit vogelperspectief. Vlucht voor de politie door een proce
 
 - **Vignette**: rood pulsend bij lage brandstof (< 25), blauw flitsend bij politie dichtbij (< 150px)
 - **Particles**: uitlaatdampen bij rijden, vonken bij crash, glitter bij pickup
-- **Bandensporen**: doorlopende lijnen op het wegdek die langzaam vervagen
+- **Bandensporen**: persistent op het wegdek, langzaam vervagende zwarte markeringen
 - **Jerrycan-animatie**: zwevend/bobbend met glow-effect
 - **Sirene-gloed**: afwisselend rood/blauw op politieauto's
-- **Diepte**: gebouwen (rijtjeshuizen met zadeldak, kantoren, glazen torens, winkels met luifels, flats, loodsen met containers) hebben muren met ramen en kantelen mee met de camera; boomkruinen in parken worden doorzichtig boven de speler of een pickup
-- **Leven in de stad**: voetgangers op de stoep, eenden in de vijver, rokende schoorstenen, vogels en wolkenschaduwen (puur decor, geen botsingen)
-- **Auto's**: voorwielen sturen mee, remlichten gloeien, taxi en bestelbus in het verkeer
-- **Feedback**: zwevende tekst bij pickups (+22, TURBO!, OLIE!, -15), schermschok bij botsing, snelheidsstrepen tijdens turbo; de renderer leidt dit af uit de spelstatus, zonder haken in `game.js`
 - **Minimap**: rechtsbovenhoek, toont wegen, speler (rood/groen), politie (blauw), jerrycans (geel/groen), viewport
 
 ### Brandstofpijl
@@ -492,14 +488,15 @@ Hardloopspel in zijaanzicht (canvas), bedacht door Toby. Toegevoegd 13 november 
 | `style.css` | Styling van HUD, overlays en panelen |
 | `sound.js` | Web Audio geluiden, mute (localStorage `visvijver_mute`) |
 | `data.js` | Soorten, plekken, winkelspullen, briefjes |
-| `models.js` | Low-poly modellen van alle 23 vangsten |
-| `world.js` | Vijver, bos, riet, lelies, steiger, kraampje, aquariumhut, dag/avond, spetters |
+| `models.js` | Gladde modellen van alle 23 vangsten. Vissen krijgen een berekend lijf met huidtextuur (schubben, strepen, stippen en bek zitten in de textuur); vinnen, ogen en snorharen worden op het berekende oppervlak geplaatst met de voet ín het lijf, zodat niets loszweeft |
+| `world.js` | Vijver, bos, riet, lelies, steiger, kraampje, aquariumhut, hemelkoepel, heuvels, gras, schaduwen, dag/avond, spetters |
 | `game.js` | Besturing, vissen, spanningsmeter, kraampje, visboek, aquarium, opslag (localStorage `visvijver_save`) |
 | `vendor/three.module.min.js` | three.js 0.170.0 (r170), lokaal meegeleverd, met `LICENSE-three.txt` (MIT) |
 
 ### Spel
 
-- **Besturing**: WASD/pijltjes lopen, muis (pointer lock of slepen) kijken, spatie uitgooien/inhalen, E kraampje/aquarium, B visboek, M geluid. Touch: joystick, sleep-kijken en actieknop
+- **Besturing**: WASD en pijltjes doen hetzelfde (links/rechts = zijwaarts lopen), muis (pointer lock of slepen) kijken, spatie uitgooien/inhalen, E kraampje/aquarium, B visboek, M geluid. Na een vangst blijft de muis vast: spatie of klik = in de emmer, T = teruggooien. Touch: joystick, sleep-kijken en actieknop
+- **Beet-balk** (13 november 2026): bij beet gaat een streepje heen en weer over rood-geel-groen. Rood = mis, geel = vangkans van de soort, groen = vangkans + 20. Sterke vissen laten het streepje sneller gaan. De vangkans per soort staat in `data.js` (`KANS`) en is zichtbaar bij beet, op de vangstkaart en in het visboek. De eerste 3 vangsten lukken altijd (mits niet rood)
 - **Spanningsmeter**: ingedrukt houden haalt in en verhoogt de spanning; te hoog = lijn breekt, te lang te slap = vis ontsnapt. Een vis wordt na een tijdje moe
 - **5 plekken**: open water, diep, riet, waterlelies, onder de steiger; elk met eigen soorten
 - **23 vangsten**: 8 gewone, 4 zeldzame, 3 legendarische (Maanvis bijt vooral in de avond), 5 rare dingen, 3 monsters
@@ -507,6 +504,7 @@ Hardloopspel in zijaanzicht (canvas), bedacht door Toby. Toegevoegd 13 november 
 - **Winkel**: 4 hengels, 4 lijnen, 4 soorten aas. Emmer 12 plekken, aquarium 8
 - **Dag/avond-cyclus** van 5 minuten
 - `?debug` in de URL zet een testhulpje op `window.__vv`
+- Bij wijzigingen: verhoog `?v=` in `visvijver.html` én in de imports van `game.js` en `world.js` (de server cachet js een uur)
 
 ---
 

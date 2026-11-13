@@ -63,6 +63,19 @@ button { font-family: inherit; }
   width: min(380px, calc(100% - 24px)); background: rgba(0,0,0,0.6); border-radius: 14px; padding: 8px 12px 12px; color: #fff;
   pointer-events: none;
 }
+#beetmeter {
+  position: absolute; bottom: 62px; left: 50%; transform: translateX(-50%); z-index: 45;
+  width: min(420px, calc(100% - 24px)); background: rgba(0,0,0,0.65); border-radius: 14px; padding: 8px 12px 14px; color: #fff;
+  pointer-events: none;
+}
+#beet-kans { float: right; color: #ffe27a; text-transform: none; }
+#beet-balk {
+  position: relative; height: 34px; border-radius: 17px; border: 2px solid #fff;
+  background: linear-gradient(90deg, #e8262d 0 26%, #ffd633 26% 41%, #3fce4d 41% 59%, #ffd633 59% 74%, #e8262d 74%);
+}
+#beet-wijzer { position: absolute; top: -6px; bottom: -6px; left: 0; width: 10px; margin-left: -5px; background: #fff; border-radius: 5px; box-shadow: 0 0 0 2px #222, 0 0 10px #fff; }
+body.touch #beetmeter { bottom: 170px; }
+.boek-kaart small.kans { color: #1a7a3a; font-weight: bold; }
 #meter.schud { animation: schud 0.12s infinite; }
 @keyframes schud { 25% { margin-left: -3px; } 75% { margin-left: 3px; } }
 .meter-label { font-size: 12px; font-weight: bold; margin: 4px 0 3px; text-transform: uppercase; letter-spacing: 0.5px; }
@@ -197,8 +210,8 @@ kbd { display: inline-block; background: #fff; color: #333; border-radius: 4px; 
   #hint { max-width: calc(100% - 20px); }
 }
 @media (max-height: 480px) {
-  #meter { bottom: 8px; }
-  body.touch #meter { bottom: 8px; width: min(300px, calc(100% - 300px)); }
+  #meter, #beetmeter { bottom: 8px; }
+  body.touch #meter, body.touch #beetmeter { bottom: 8px; width: min(300px, calc(100% - 300px)); }
   #vangstkaart { padding: 8px 14px 10px; }
   #vangst-info { display: none; }
 }
