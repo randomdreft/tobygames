@@ -16,6 +16,8 @@ Torenbouwspel voor TobyGames.nl. Volledig herbouwd op 13 november 2026 (de eerst
 - **Voortgang:** sterren via inwoners (`STAR_POP`), bouwhoogte via `MAXF`, opdrachten in `MISSIONS`.
 - **Opslaan:** `localStorage`, sleutel `simtoren2_save`.
 
+- **Bezoekers:** per soort (winkel, restaurant, bioscoop) één stroom voor de hele toren die zich over de zaken verdeelt (`demand`, `CAP`, `spawnVisitors`).
+
 ## Afstellen
 
 Prijzen, inkomsten en liftsnelheden staan in de tabel `T` bovenaan `game.js`.

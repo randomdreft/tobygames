@@ -24,19 +24,19 @@ const T = {
   apartment:  { name: 'Appartement', w: 4, cost: 10000, star: 1, pop: 3, pay: 1500,
                 desc: '3 bewoners. Betalen als ze thuiskomen.' },
   shop:       { name: 'Winkel', w: 4, cost: 15000, star: 1, pop: 2, pay: 250, open: [9, 20],
-                desc: 'Elke klant betaalt. Op de begane grond komen de meeste klanten.' },
+                desc: 'Klanten verdelen zich over al je winkels. Meer inwoners = meer klanten.' },
   stairs:     { name: 'Trap', w: 2, cost: 1500, star: 1, pop: 0, transport: true,
                 desc: 'Naar één verdieping hoger. Mag ook over kamers heen.' },
   lift:       { name: 'Lift', w: 2, cost: 2500, shaft: 5000, star: 1, pop: 0, transport: true, lift: true, speed: 3.5, cap: 6,
                 desc: 'Sleep omhoog om hem langer te maken. Klik erop voor extra cabines.' },
   restaurant: { name: 'Restaurant', w: 8, cost: 40000, star: 2, pop: 4, pay: 300, open: [11, 22],
-                desc: 'Druk met lunch en avondeten.' },
+                desc: 'Druk met lunch en avondeten. Gasten verdelen zich over je restaurants.' },
   hotel:      { name: 'Hotelkamer', w: 3, cost: 14000, star: 3, pop: 2, pay: 4500,
                 desc: 'Gasten komen ’s avonds en betalen per nacht.' },
   xlift:      { name: 'Snellift', w: 2, cost: 5000, shaft: 15000, star: 3, pop: 0, transport: true, lift: true, speed: 8, cap: 12,
                 desc: 'Ruim twee keer zo snel en twee keer zo groot.' },
   cinema:     { name: 'Bioscoop', w: 12, cost: 120000, star: 4, pop: 6, pay: 200, open: [13, 22],
-                desc: 'Films om 14, 17 en 20 uur. Heel veel bezoekers tegelijk!' },
+                desc: 'Films om 14, 17 en 20 uur. Heel veel bezoekers tegelijk! Eén bioscoop is vaak genoeg.' },
   deck:       { name: 'Uitkijkpunt', w: 10, cost: 400000, star: 5, pop: 0, pay: 100, open: [10, 20], floor: TOP,
                 desc: 'Alleen op verdieping 30. Hiermee is je toren af!' },
 };
@@ -47,7 +47,7 @@ const MISSIONS = [
   { t: 'Bouw een trap', h: 'Zet een trap op de begane grond. Dan kunnen mensen naar verdieping 1.', tool: 'stairs', n: () => cnt('stairs'), g: 1, r: 3000 },
   { t: 'Bouw 3 appartementen op verdieping 1', h: 'Bouwen kan alleen bovenop iets anders. Sleep om er meer naast elkaar te zetten.', tool: 'apartment', n: () => cnt('apartment'), g: 3, r: 8000 },
   { t: 'Bouw een lift van 4 verdiepingen', h: 'Kies Lift, klik op de begane grond en sleep omhoog.', tool: 'lift', n: () => maxShaft(), g: 4, r: 10000 },
-  { t: 'Bouw een winkel', h: 'Op de begane grond komen de meeste klanten.', tool: 'shop', n: () => cnt('shop'), g: 1, r: 5000 },
+  { t: 'Bouw een winkel', h: 'Op de begane grond komen de meeste klanten. Te veel winkels heeft geen zin: ze delen de klanten.', tool: 'shop', n: () => cnt('shop'), g: 1, r: 5000 },
   { t: 'Haal 40 inwoners', h: 'Bouw meer kantoren en appartementen. Je krijgt dan je 2e ster.', n: () => pop, g: 40, r: 20000 },
   { t: 'Bouw een restaurant', h: 'Werknemers en bewoners komen er eten.', tool: 'restaurant', n: () => cnt('restaurant'), g: 1, r: 15000 },
   { t: 'Maak iedereen blij: 85% tevreden', h: 'Rode poppetjes wachten te lang. Klik op een lift en koop een extra cabine.', n: () => mood, g: 85, r: 20000 },
@@ -504,26 +504,29 @@ function updPerson(p, dt) {
   if (!p.leg) { p.st = 'out'; if (p.kind === 'visitor') p.dead = true; }   // route weggesloopt
 }
 
-// Bezoekers van buiten voor winkels, restaurants, bioscoop en uitkijkpunt.
-function visitorsPerHour(r) {
-  const h = G.min / 60, q = 0.4 + 0.6 * r.rating / 100;
-  switch (r.type) {
-    case 'shop': return Math.min(7, (1.5 + pop / 50) * (r.f === 0 ? 1.6 : 1)) * q;
-    case 'restaurant': return ((h >= 11.5 && h < 14) || (h >= 17 && h < 21) ? Math.min(10, 3 + pop / 40) : 0.8) * q;
+// Bezoekers van buiten. Per soort is er één stroom bezoekers voor de hele toren (groeit met het aantal
+// inwoners); die verdeelt zich over alle open zaken van die soort. Meer winkels = minder klanten per winkel.
+const CAP = { shop: 4, restaurant: 10, cinema: 48, deck: 8 };        // max bezoekers per uur per zaak
+function demand(type) {
+  const h = G.min / 60;
+  switch (type) {
+    case 'shop': return 2 + pop / 15;
+    case 'restaurant': return (h >= 11.5 && h < 14) || (h >= 17 && h < 21) ? 4 + pop / 10 : 1 + pop / 100;
     case 'deck': return 8;
-    case 'cinema': {
-      for (const s of [14, 17, 20]) if (h >= s - 0.85 && h < s - 0.1) return Math.min(36, 12 + pop / 8) / 0.75;
+    case 'cinema':
+      for (const s of [14, 17, 20]) if (h >= s - 0.85 && h < s - 0.1) return (12 + pop / 4) / 0.75;
       return 0;
-    }
   }
   return 0;
 }
+const pull = r => (0.4 + 0.6 * r.rating / 100) * (r.type === 'shop' && r.f === 0 ? 1.6 : 1);
 
 function spawnVisitors(dmin) {
   if (people.length > 900) return;
-  for (const r of G.rooms) {
-    if (!T[r.type].open || !ok(r) || !isOpen(r)) continue;
-    r.acc += visitorsPerHour(r) * dmin / 60;
+  const open = G.rooms.filter(r => T[r.type].open && ok(r) && isOpen(r)), total = {};
+  for (const r of open) total[r.type] = (total[r.type] || 0) + pull(r);
+  for (const r of open) {
+    r.acc += Math.min(CAP[r.type], demand(r.type) * pull(r) / total[r.type]) * dmin / 60;
     while (r.acc >= 1) {
       r.acc--;
       const p = mkPerson('visitor', null);
@@ -997,8 +1000,11 @@ function select(r) {
   if (r) updInfo();
 }
 
+// Tijdens het indrukken van een knop het paneel niet opnieuw opbouwen: anders verdwijnt de knop
+// onder de vinger en gaat de klik verloren.
+let infoHold = false;
 function updInfo() {
-  const r = selected; if (!r) return;
+  const r = selected; if (!r || infoHold) return;
   if (!byId.has(r.id)) { select(null); return; }
   const t = T[r.type], el = $('info');
   let h = '<button class="x" data-a="close">✕</button><h3>' + t.name + '</h3><div class="sub">' + floorName(r.f) + '</div>';
@@ -1031,6 +1037,8 @@ function updInfo() {
   if (el.dataset.h !== h) { el.innerHTML = h; el.dataset.h = h; }
 }
 
+$('info').addEventListener('pointerdown', () => { infoHold = true; });
+for (const ev of ['pointerup', 'pointercancel']) window.addEventListener(ev, () => setTimeout(() => { infoHold = false; }, 0));
 $('info').addEventListener('click', e => {
   const a = e.target.dataset.a, r = selected;
   if (!a || !r) return;
