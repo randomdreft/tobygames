@@ -27,13 +27,13 @@ const T = {
                 desc: 'Klanten verdelen zich over al je winkels. Meer inwoners = meer klanten.' },
   stairs:     { name: 'Trap', w: 2, cost: 1500, star: 1, pop: 0, transport: true,
                 desc: 'Naar één verdieping hoger. Mag ook over kamers heen.' },
-  lift:       { name: 'Lift', w: 2, cost: 2500, shaft: 5000, star: 1, pop: 0, transport: true, lift: true, speed: 3.5, cap: 6,
+  lift:       { name: 'Lift', w: 2, cost: 2500, shaft: 5000, star: 1, pop: 0, transport: true, lift: true, speed: 4.5, cap: 8,
                 desc: 'Sleep omhoog om hem langer te maken. Klik erop voor extra cabines.' },
   restaurant: { name: 'Restaurant', w: 8, cost: 40000, star: 2, pop: 4, pay: 300, open: [11, 22],
                 desc: 'Druk met lunch en avondeten. Gasten verdelen zich over je restaurants.' },
   hotel:      { name: 'Hotelkamer', w: 3, cost: 14000, star: 3, pop: 2, pay: 4500,
                 desc: 'Gasten komen ’s avonds en betalen per nacht.' },
-  xlift:      { name: 'Snellift', w: 2, cost: 5000, shaft: 15000, star: 3, pop: 0, transport: true, lift: true, speed: 8, cap: 12,
+  xlift:      { name: 'Snellift', w: 2, cost: 5000, shaft: 15000, star: 3, pop: 0, transport: true, lift: true, speed: 10, cap: 16,
                 desc: 'Ruim twee keer zo snel en twee keer zo groot.' },
   cinema:     { name: 'Bioscoop', w: 12, cost: 120000, star: 4, pop: 6, pay: 200, open: [13, 22],
                 desc: 'Films om 14, 17 en 20 uur. Heel veel bezoekers tegelijk! Eén bioscoop is vaak genoeg.' },
@@ -190,11 +190,8 @@ function rebuild() {
 }
 
 function rebuildShafts() {
-  const old = shafts; shafts = [];
-  for (const s of old) {
-    for (const c of s.cars) for (const p of c.pass) { p.st = 'go'; p.leg = null; p.f = Math.round(c.y); p.x = s.x + 1; }
-    for (const p of s.queue) { p.st = 'go'; p.leg = null; p.car = null; }
-  }
+  const old = shafts, kept = new Set(), used = new Set();
+  shafts = [];
   const cells = G.rooms.filter(r => T[r.type].lift)
     .sort((a, b) => a.x - b.x || a.type.localeCompare(b.type) || a.f - b.f);
   let cur = null;
@@ -205,11 +202,23 @@ function rebuildShafts() {
   for (const s of shafts) {
     const n = clamp(Math.max(...s.cells.map(c => c.cars || 1)), 1, maxCars(s));
     s.cells.forEach((c, i) => { if (i === 0 && n > 1) c.cars = n; else delete c.cars; });
-    const o = old.find(o => o.x === s.x && o.type === s.type && o.bot <= s.top && o.top >= s.bot);
+    const inside = f => f >= s.bot && f <= s.top;
+    const o = old.find(o => !used.has(o) && o.x === s.x && o.type === s.type && o.bot <= s.top && o.top >= s.bot);
+    if (o) used.add(o);
     for (let i = 0; i < n; i++) {
-      const y = o && o.cars[i] ? Math.round(o.cars[i].y) : s.bot + Math.round(i * (s.top - s.bot) / n);
-      s.cars.push({ y: clamp(y, s.bot, s.top), dir: 0, door: 0, pass: [] });
+      const oc = o && o.cars[i], car = { y: s.bot + Math.round(i * (s.top - s.bot) / n), dir: 0, door: 0, pass: [] };
+      if (oc && oc.y >= s.bot && oc.y <= s.top) {
+        // dezelfde cabine rijdt gewoon door, met iedereen die nog op zijn bestemming kan komen
+        car.y = oc.y; car.dir = oc.dir; car.door = oc.door;
+        for (const p of oc.pass) if (inside(p.leg.to)) { p.leg = { ...p.leg, sh: s }; car.pass.push(p); kept.add(p); }
+      } else if (oc) car.y = clamp(Math.round(oc.y), s.bot, s.top);
+      s.cars.push(car);
     }
+    if (o && s.top > s.bot) for (const p of o.queue) if (inside(p.f) && inside(p.leg.to)) { p.leg = { ...p.leg, sh: s }; p.car = null; s.queue.push(p); kept.add(p); }
+  }
+  for (const s of old) {
+    for (const c of s.cars) for (const p of c.pass) if (!kept.has(p)) { p.st = 'go'; p.leg = null; p.f = Math.round(c.y); p.x = s.x + 1; }
+    for (const p of s.queue) if (!kept.has(p)) { p.st = 'go'; p.leg = null; p.car = null; }
   }
 }
 
@@ -329,17 +338,39 @@ function distTo(dest) {
   return d;
 }
 
+// Geschatte moeite van één stap: reistijd + loopafstand + drukte van de hele lift
+// (wachtenden en meerijders, gedeeld door wat de cabines samen aankunnen).
+function legCost(p, e, d) {
+  let c = e.c + d[e.n] + 0.2 * Math.abs(e.x - p.x);
+  if (e.sh) {
+    const s = e.sh, riders = s.cars.reduce((n, k) => n + k.pass.length, 0);
+    c += 25 * (s.queue.length + 0.5 * riders) / (s.cars.length * T[s.type].cap);
+  }
+  return c;
+}
+
 function nextLeg(p, here, dest) {
   const d = distTo(dest);
   let best = null, bc = Infinity;
   for (const e of adj[here]) {
-    const rest = d[e.n];
-    if (!(rest < d[here])) continue;
-    let c = e.c + rest + 0.2 * Math.abs(e.x - p.x);
-    if (e.sh) c += 1.5 * e.sh.queue.reduce((n, q) => n + (q.f === p.f), 0);
+    if (!(d[e.n] < d[here])) continue;
+    const c = legCost(p, e, d);
     if (c < bc) { bc = c; best = e; }
   }
+  if (best) best.cost = bc;
   return best;
+}
+
+// Wie al een tijd staat te wachten kijkt of een andere lift (of de trap) inmiddels veel sneller is.
+function reconsider(p) {
+  const here = nodeOf(p.f, p.x), room = p.dest.room && byId.get(p.dest.room);
+  if (here === undefined) return;
+  const destN = room ? nodeOf(room.f, room.x) : 0, alt = nextLeg(p, here, destN);
+  if (!alt || alt.sh === p.leg.sh) return;
+  if (alt.cost + 5 < legCost(p, p.leg, distTo(destN))) {
+    p.leg.sh.queue = p.leg.sh.queue.filter(q => q !== p);
+    p.car = null; p.st = 'go'; p.leg = alt;
+  }
 }
 
 function mkPerson(kind, home) {
@@ -473,7 +504,11 @@ function updPerson(p, dt) {
     p.st = 'out'; p.leg = null; if (p.kind === 'visitor') p.dead = true;
     return;
   }
-  if (p.st === 'wait') { p.stress += dt; return; }
+  if (p.st === 'wait') {
+    p.stress += dt; p.rw = (p.rw || 0) + dt;
+    if (p.rw > 3) { p.rw = 0; reconsider(p); }
+    return;
+  }
   if (p.st === 'ride') { p.stress += dt * 0.15; return; }
   const leg = p.leg;
   if (leg && leg.k === 'stairs') {
@@ -750,8 +785,8 @@ const ART = {
     c.lineTo(x + w - 2, y + h); c.fill();
     c.strokeStyle = '#4a5568'; c.lineWidth = 1.5; c.beginPath(); c.moveTo(x + 2, y + h - 14); c.lineTo(x + w - 3, y - 8 + 6); c.stroke();
   },
-  lift(c, x, y, w, h) { R(c, '#4b5563', x, y, w, h); R(c, '#6b7280', x + 4, y, 1.5, h); R(c, '#6b7280', x + w - 5.5, y, 1.5, h); R(c, '#374151', x, y, w, 2); },
-  xlift(c, x, y, w, h) { R(c, '#3b3f73', x, y, w, h); R(c, '#d4a72c', x + 4, y, 1.5, h); R(c, '#d4a72c', x + w - 5.5, y, 1.5, h); R(c, '#2b2e57', x, y, w, 2); },
+  lift(c, x, y, w, h, lit, over) { R(c, over ? 'rgba(75,85,99,.22)' : '#4b5563', x, y, w, h); R(c, '#6b7280', x + 4, y, 1.5, h); R(c, '#6b7280', x + w - 5.5, y, 1.5, h); if (!over) R(c, '#374151', x, y, w, 2); },
+  xlift(c, x, y, w, h, lit, over) { R(c, over ? 'rgba(59,63,115,.22)' : '#3b3f73', x, y, w, h); R(c, '#d4a72c', x + 4, y, 1.5, h); R(c, '#d4a72c', x + w - 5.5, y, 1.5, h); if (!over) R(c, '#2b2e57', x, y, w, 2); },
   deck(c, x, y, w, h, lit) {
     base(c, lit === 1 ? '#3a4a6b' : '#cfefff', x, y, w, h);
     for (let i = 1; i < 5; i++) R(c, '#7c8794', x + i * w / 5, y + 3, 2, h - 3);
