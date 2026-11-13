@@ -106,6 +106,7 @@ function load() {
     G.rooms = G.rooms.filter(r => T[r.type]);
     for (const r of G.rooms) { r.inside = 0; r.acc = 0; }
     people = []; shafts = []; floats = []; undo = []; selected = null;
+    for (let f = FMIN; f <= TOP; f++) fillGaps(f);
     rebuild();
     for (const r of G.rooms) occupants(r, 'load');
     return true;
@@ -133,7 +134,21 @@ function addRoom(r) {
   r.inside = 0; r.acc = 0;
   G.rooms.push(r);
   for (let i = 0; i < T[r.type].w; i++) G.slabs[key(r.f, r.x + i)] = 1;
-  if (r.type === 'stairs') { G.slabs[key(r.f + 1, r.x)] = 1; G.slabs[key(r.f + 1, r.x + 1)] = 1; }   // overloop boven de trap
+  if (r.type === 'stairs') { G.slabs[key(r.f + 1, r.x)] = 1; G.slabs[key(r.f + 1, r.x + 1)] = 1; fillGaps(r.f + 1); }   // overloop boven de trap
+  fillGaps(r.f);
+}
+
+// Restgaten van 1 tot 3 vakjes (te smal voor een kamer) worden vanzelf vloer,
+// zodat je er gewoon bovenop kunt bouwen.
+function fillGaps(f) {
+  if (f === 0) return;
+  for (let x = 0; x < W;) {
+    if (G.slabs[key(f, x)]) { x++; continue; }
+    let e = x;
+    while (e < W && !G.slabs[key(f, e)]) e++;
+    if (e - x <= 3) for (let i = x; i < e; i++) G.slabs[key(f, i)] = 1;
+    x = e;
+  }
 }
 
 function rebuild() {
