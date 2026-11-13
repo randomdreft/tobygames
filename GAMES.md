@@ -356,7 +356,7 @@ Stadachtervolging vanuit vogelperspectief. Vlucht voor de politie door een proce
 |---------|--------|--------|
 | `style.css` | ~300 | CSS variabelen, glassmorphism overlays, HUD, joystick, responsive |
 | `sound.js` | ~160 | Web Audio API: motor (pitch varieert met snelheid), sirene (afstandsafhankelijk), pickup, crash, waarschuwingspiep, countdown |
-| `renderer.js` | ~510 | Canvas rendering: stad (wegen, gebouwen, parken), auto's, jerrycans/batterijen, particles, bandensporen, vignette, minimap, brandstofpijl |
+| `renderer.js` | ~1000 | Canvas rendering: stad als gecachete celtegels (asfalt, zebrapaden, stoepen, gebouwen met muren/schaduw/daken, parken met paden en vijvers), gedetailleerde auto's (politie met NL-striping en zwaailichtgloed), jerrycans/batterijen, particles, bandensporen, vignette, minimap, brandstofpijl |
 | `game.js` | ~830 | Game class, input, physics, politie-AI, spawning, collision, pauze, high scores |
 
 ### Wereld
