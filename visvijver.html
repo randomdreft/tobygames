@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Visvijver - TobyGames</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎣</text></svg>">
+<link rel="stylesheet" href="visvijver/style.css?v=1">
+</head>
+<body>
+<a href="index.html" class="back-btn">&larr; TobyGames</a>
+
+<div id="game-container">
+    <canvas id="gameCanvas"></canvas>
+
+    <!-- HUD -->
+    <div id="hud">
+        <div class="hud-pill" id="geld-display" title="Je geld">💰 <span id="geld">0</span></div>
+        <button class="hud-pill hud-btn" id="btn-emmer" title="Je emmer">🪣 <span id="emmer">0/12</span></button>
+        <button class="hud-pill hud-btn" id="btn-boek" title="Visboek (B)">📖<span class="lbl"> Visboek</span></button>
+        <button class="hud-pill hud-btn" id="btn-mute" title="Geluid aan/uit (M)">🔊</button>
+        <button class="hud-pill hud-btn" id="btn-help" title="Uitleg">❓</button>
+    </div>
+
+    <div id="plek" class="hidden"></div>
+    <div id="richtpunt"></div>
+    <div id="hint"></div>
+    <div id="banner" class="hidden"></div>
+    <div id="toast" class="hidden"></div>
+
+    <!-- Spanningsmeter -->
+    <div id="meter" class="hidden">
+        <div class="meter-label">Spanning <span id="slap-waarschuwing" class="hidden">⚠️ te slap!</span></div>
+        <div id="spanning-balk">
+            <div class="zone slap"></div><div class="zone goed"></div><div class="zone rood"></div>
+            <div id="spanning-wijzer"></div>
+        </div>
+        <div class="meter-label">Binnenhalen</div>
+        <div id="prog-balk"><div id="prog-vul"></div><span id="prog-vis">🐟</span><span class="prog-eind">🎣</span></div>
+    </div>
+
+    <!-- Knoppen -->
+    <div id="joystick"><div id="joystick-knop"></div></div>
+    <button id="btn-interact" class="hidden"></button>
+    <button id="btn-actie">🎣<small>Gooi</small></button>
+
+    <!-- Vangstkaart -->
+    <div id="vangstkaart" class="hidden">
+        <div id="vangst-nieuw" class="hidden">✨ NIEUW in je visboek! ✨</div>
+        <div id="vangst-cat"></div>
+        <h2 id="vangst-naam"></h2>
+        <div id="vangst-maten"></div>
+        <p id="vangst-info"></p>
+        <div class="knoppen">
+            <button id="vangst-emmer" class="action-btn">🪣 In de emmer</button>
+            <button id="vangst-terug" class="action-btn grijs">🌊 Teruggooien</button>
+        </div>
+    </div>
+
+    <!-- Paneel (kraampje, visboek, aquarium, emmer) -->
+    <div id="paneel" class="overlay hidden">
+        <div id="paneel-doos">
+            <button id="paneel-sluit" aria-label="Sluiten">✕</button>
+            <h2 id="paneel-titel"></h2>
+            <div id="paneel-inhoud"></div>
+        </div>
+    </div>
+
+    <!-- Start / uitleg -->
+    <div id="start-screen" class="overlay">
+        <div class="start-doos">
+            <h1>🎣 Visvijver</h1>
+            <p>Loop rond de vijver in het bos, gooi je hengel uit en ontdek wat er bijt!
+               Gewone vissen, zeldzame vissen, rare dingen… en misschien wel een monster. 🐙</p>
+            <ul id="uitleg">
+                <li><b>🚶 Lopen:</b> <span class="desk"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> of pijltjes. Klik in het spel om rond te kijken met de muis.</span><span class="mob">joystick linksonder. Sleep over het scherm om rond te kijken.</span></li>
+                <li><b>🎣 Uitgooien:</b> kijk naar het water en druk op de knop <span class="desk">(of <kbd>spatie</kbd>)</span>.</li>
+                <li><b>❗ Beet:</b> duikt de dobber onder? Houd de knop ingedrukt om in te halen.</li>
+                <li><b>📏 Spanning:</b> blijf in het <b class="groen">groen</b>! In het rood breekt je lijn, te slap en de vis ontsnapt. Loslaten = spanning omlaag.</li>
+                <li><b>🛒 Verkopen</b> doe je bij het kraampje. Je mooiste vissen bewaar je in het <b>🐠 aquarium</b>.</li>
+            </ul>
+            <button id="start-btn" class="action-btn groot">▶ Start met vissen!</button>
+            <button id="reset-btn" class="link-btn hidden">Opnieuw beginnen (alles wissen)</button>
+        </div>
+    </div>
+</div>
+
+<script type="module" src="visvijver/game.js?v=1"></script>
+</body>
+</html>

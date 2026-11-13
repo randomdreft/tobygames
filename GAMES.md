@@ -13,6 +13,8 @@ Alle spellen op [tobygames.nl](https://tobygames.nl). Grotere spellen zijn opges
 | `boter-kaas-eieren-xl.html` | BKE XL | 5x5 boter-kaas-en-eieren met AI-modus |
 | `winkeltje.html` | Winkeltje | Winkelsimulatie: verzamel items, help klanten |
 | `politiejacht.html` + `politiejacht/` | Politiejacht | Stadachtervolging met brandstofmechanisme, EV-modus, meerdere politieauto's |
+| `balkenrace.html` + `balkenrace/` | Balkenrace | Hardloopspel: spring over ijzeren balken, race tegen vier computerlopers, 8 races |
+| `visvijver.html` + `visvijver/` | Visvijver | 3D-visspel (three.js): rondlopen, spanningsmeter, 23 vangsten, winkel, visboek, aquarium |
 
 ---
 
@@ -446,6 +448,61 @@ Pulserende richtingspijl aan de schermrand die naar de dichtstbijzijnde jerrycan
 - **High scores**: top 10 in localStorage (`politiejacht_scores`), toont score, tijd, verzamelde items, modus, datum
 - **Responsive**: canvas vult volledig scherm, devicePixelRatio-ondersteuning
 - **Oude versie**: `politie.html` is nog aanwezig maar niet meer gelinkt vanuit index
+
+---
+
+## Balkenrace
+
+Hardloopspel in zijaanzicht (canvas), bedacht door Toby. Toegevoegd 13 november 2026.
+
+### Bestandsstructuur (`balkenrace/`)
+
+| Bestand | Inhoud |
+|---------|--------|
+| `style.css` | Styling, responsive |
+| `sound.js` | Web Audio geluiden, mute (localStorage `balkenrace_muted`) |
+| `renderer.js` | Canvas: stadion, tribune met publiek, baan, I-balken, lopers, effecten, voortgangsbalk |
+| `game.js` | Spelregels, input, tegenstanders, races, opslag (localStorage `balkenrace_save`), schermen |
+
+### Spel
+
+- **Besturing**: spatie / pijl omhoog / W / klik / tik = springen; in de lucht nog één keer (dubbele sprong). M = geluid, P/Esc = pauze
+- **Balken**: laag, breed (je kunt erop landen), staand, 2- en 3-hoog gestapeld, en paren
+- **Botsen = struikelen**: ca. 1 s traag en maximaal 3 munten kwijt; je bent nooit af
+- **Power-ups**: schild (12 s of één botsing), magneet (9 s), supersnel (3 s, ramt door balken)
+- **Tegenstanders**: 4 computerlopers in eigen banen die ook springen en soms struikelen
+- **8 races**: 100, 150, 200, 300, 400, 500, 600 en 800 m; top 3 opent de volgende race
+- **Opslag**: beste tijd en plek per race, munten, shirtkleur (6 kleuren vrij te spelen met munten)
+- `window.BR` staat open als debug-ingang
+
+---
+
+## Visvijver
+
+3D-visspel in first-person, bedacht door Toby. Toegevoegd 13 november 2026.
+
+### Bestandsstructuur (`visvijver/`)
+
+| Bestand | Inhoud |
+|---------|--------|
+| `style.css` | Styling van HUD, overlays en panelen |
+| `sound.js` | Web Audio geluiden, mute (localStorage `visvijver_mute`) |
+| `data.js` | Soorten, plekken, winkelspullen, briefjes |
+| `models.js` | Low-poly modellen van alle 23 vangsten |
+| `world.js` | Vijver, bos, riet, lelies, steiger, kraampje, aquariumhut, dag/avond, spetters |
+| `game.js` | Besturing, vissen, spanningsmeter, kraampje, visboek, aquarium, opslag (localStorage `visvijver_save`) |
+| `vendor/three.module.min.js` | three.js 0.170.0 (r170), lokaal meegeleverd, met `LICENSE-three.txt` (MIT) |
+
+### Spel
+
+- **Besturing**: WASD/pijltjes lopen, muis (pointer lock of slepen) kijken, spatie uitgooien/inhalen, E kraampje/aquarium, B visboek, M geluid. Touch: joystick, sleep-kijken en actieknop
+- **Spanningsmeter**: ingedrukt houden haalt in en verhoogt de spanning; te hoog = lijn breekt, te lang te slap = vis ontsnapt. Een vis wordt na een tijdje moe
+- **5 plekken**: open water, diep, riet, waterlelies, onder de steiger; elk met eigen soorten
+- **23 vangsten**: 8 gewone, 4 zeldzame, 3 legendarische (Maanvis bijt vooral in de avond), 5 rare dingen, 3 monsters
+- **Makkelijk begin**: de eerste 3 vangsten zijn altijd gewone vis
+- **Winkel**: 4 hengels, 4 lijnen, 4 soorten aas. Emmer 12 plekken, aquarium 8
+- **Dag/avond-cyclus** van 5 minuten
+- `?debug` in de URL zet een testhulpje op `window.__vv`
 
 ---
 

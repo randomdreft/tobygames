@@ -69,9 +69,27 @@ Stadachtervolging vanuit vogelperspectief. Vlucht voor de politie door een proce
 
 **[Speel Politiejacht](https://tobygames.nl/politiejacht.html)**
 
+---
+
+### 🏃 Balkenrace
+*Spring over ijzeren balken en win de race*
+
+Hardloopspel in zijaanzicht, bedacht door Toby. Je bent een atleet in een vol stadion en racet tegen vier computerlopers. Spring (en dubbelspring) over ijzeren balken, pak munten en power-ups (schild, magneet, supersnel). Botsen betekent struikelen, niet af. Acht races van 100 tot 800 meter, met beste tijden en vrij te spelen shirtkleuren.
+
+**[Speel Balkenrace](https://tobygames.nl/balkenrace.html)**
+
+---
+
+### 🎣 Visvijver
+*Vissen in 3D bij een vijver in het bos*
+
+3D-visspel, bedacht door Toby. Loop rond de vijver, gooi je hengel uit en houd de spanningsmeter in het groen. 23 vangsten op vijf plekken: gewone en zeldzame vissen, rare dingen en drie grappige monsters. Verkoop je vangst bij het kraampje voor betere hengels, lijnen en aas, vul je visboek en bewaar je mooiste vissen in je eigen aquarium.
+
+**[Speel Visvijver](https://tobygames.nl/visvijver.html)**
+
 ## Technisch
 
-- **Nul externe dependencies** — puur HTML5 + CSS3 + JavaScript
+- **Nul externe dependencies** — puur HTML5 + CSS3 + JavaScript. Enige uitzondering: Visvijver gebruikt three.js, lokaal meegeleverd in `visvijver/vendor/` (geen CDN)
 - **Nul build tools** — geen npm, geen webpack, geen node_modules
 - **Nul tracking** — geen analytics, geen cookies, geen ads
 - **Mobile-friendly** — touch controls waar nodig
@@ -110,6 +128,21 @@ tobygames/
 │   ├── sound.js            # Web Audio geluidseffecten
 │   ├── renderer.js         # Canvas rendering
 │   └── game.js             # Game engine en AI
+├── balkenrace.html         # Balkenrace (HTML shell)
+├── balkenrace/              # Balkenrace modules
+│   ├── style.css           # CSS
+│   ├── sound.js            # Web Audio geluidseffecten
+│   ├── renderer.js         # Canvas rendering (stadion, lopers, balken)
+│   └── game.js             # Spelregels, tegenstanders, races, opslag
+├── visvijver.html          # Visvijver (HTML shell)
+├── visvijver/               # Visvijver modules (3D)
+│   ├── style.css           # CSS
+│   ├── sound.js            # Web Audio geluidseffecten
+│   ├── data.js             # Soorten, plekken, winkelspullen
+│   ├── models.js           # Low-poly modellen van alle vangsten
+│   ├── world.js            # Vijver, bos, steiger, dag/avond
+│   ├── game.js             # Besturing, vissen, winkel, visboek, aquarium
+│   └── vendor/             # three.js r170 (lokaal, MIT-licentie)
 ├── emoji/                  # Apple emoji PNGs (lokaal gehost)
 ├── GAMES.md                # Gedetailleerde technische docs per spel
 └── README.md               # Dit bestand

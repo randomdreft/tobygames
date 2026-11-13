@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Balkenrace - TobyGames</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏃</text></svg>">
+<link rel="stylesheet" href="balkenrace/style.css?v=1">
+</head>
+<body>
+<a href="index.html" class="back-btn">&larr; TobyGames</a>
+
+<div id="top-buttons">
+    <button id="pause-btn" class="icon-btn" title="Pauze" style="display:none">&#x23F8;&#xFE0F;</button>
+    <button id="mute-btn" class="icon-btn" title="Geluid aan/uit">&#x1F50A;</button>
+</div>
+
+<div id="game-container">
+    <canvas id="gameCanvas"></canvas>
+
+    <!-- HUD -->
+    <div id="hud" style="display:none">
+        <div id="hud-main">
+            <span id="hud-pos">1e</span>
+            <span id="hud-dist">nog 100 m</span>
+            <span id="hud-coins">&#x1FA99; 0</span>
+            <span id="hud-time">0,0 s</span>
+        </div>
+        <div id="powerups">
+            <div class="pu" id="pu-shield"><span>&#x1F6E1;&#xFE0F;</span><div class="pu-bar"><div></div></div></div>
+            <div class="pu" id="pu-magnet"><span>&#x1F9F2;</span><div class="pu-bar"><div></div></div></div>
+            <div class="pu" id="pu-sprint"><span>&#x26A1;</span><div class="pu-bar"><div></div></div></div>
+        </div>
+    </div>
+
+    <!-- Startscherm -->
+    <div id="menu-screen" class="overlay">
+        <h1>&#x1F3C3; Balkenrace</h1>
+        <p>
+            Ren de race van je leven! Spring over de ijzeren balken, pak munten
+            en wees sneller dan de andere lopers. In de lucht kun je
+            <b>nog een keer springen</b>!
+        </p>
+        <div id="coin-total">&#x1FA99; <span id="coin-total-value">0</span> munten</div>
+        <div id="race-list"></div>
+        <div id="shirt-row">
+            <span id="shirt-label">Jouw shirt:</span>
+            <div id="shirt-list"></div>
+        </div>
+        <div id="controls-info">
+            <p><kbd>spatie</kbd> of <kbd>&#x2191;</kbd> of klik/tik = springen &mdash; 2&times; = dubbele sprong</p>
+            <p>&#x1F6E1;&#xFE0F; schild &nbsp; &#x1F9F2; magneet &nbsp; &#x26A1; supersnel</p>
+        </div>
+    </div>
+
+    <!-- Aftellen -->
+    <div id="countdown" style="display:none"><span id="countdown-text">3</span></div>
+
+    <!-- Pauze -->
+    <div id="pause-screen" class="overlay" style="display:none">
+        <h1>&#x23F8;&#xFE0F; Pauze</h1>
+        <button id="resume-btn" class="action-btn">&#x25B6; Verder rennen</button>
+        <button id="quit-btn" class="action-btn secondary">&#x1F3DF;&#xFE0F; Naar de races</button>
+    </div>
+
+    <!-- Uitslag -->
+    <div id="result-screen" class="overlay" style="display:none">
+        <h1 id="result-title">&#x1F947; Gewonnen!</h1>
+        <div id="podium"></div>
+        <div id="result-list"></div>
+        <div id="result-stats"></div>
+        <div id="result-buttons">
+            <button id="next-btn" class="action-btn">&#x25B6; Volgende race</button>
+            <button id="retry-btn" class="action-btn secondary">&#x1F504; Opnieuw</button>
+            <button id="menu-btn" class="action-btn secondary">&#x1F3DF;&#xFE0F; Races</button>
+        </div>
+    </div>
+</div>
+
+<canvas id="fxCanvas"></canvas>
+
+<script src="balkenrace/sound.js?v=1"></script>
+<script src="balkenrace/renderer.js?v=1"></script>
+<script src="balkenrace/game.js?v=1"></script>
+</body>
+</html>
