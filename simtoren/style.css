@@ -72,7 +72,9 @@ button { font: inherit; color: inherit; border: 0; background: none; cursor: poi
 .btn.big { font-size: 17px; padding: 13px 22px; }
 
 /* ---------- zoom ---------- */
-#zoom { position: fixed; right: 8px; bottom: 128px; z-index: 4; display: flex; flex-direction: column; gap: 4px; }
+#mini { position: fixed; right: 8px; bottom: 128px; z-index: 4; border-radius: 10px; cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, .35); border: 2px solid rgba(24, 30, 44, .88); touch-action: none; }
+#zoom { position: fixed; right: 238px; bottom: 128px; z-index: 4; display: flex; flex-direction: column; gap: 4px; }
 #zoom button {
   width: 40px; height: 40px; border-radius: 10px; background: rgba(24, 30, 44, .88);
   font-size: 18px; font-weight: 700; box-shadow: 0 2px 8px rgba(0, 0, 0, .25);
@@ -150,6 +152,6 @@ button { font: inherit; color: inherit; border: 0; background: none; cursor: poi
   #toasts { top: 200px; }
   #mission .h { display: none; }
   #info { top: auto; bottom: 150px; right: 6px; left: 6px; width: auto; z-index: 6; }
-  #zoom { display: none; }
+  #zoom, #mini { display: none; }
   .tool { width: 72px; }
 }

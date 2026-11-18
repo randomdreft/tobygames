@@ -9,9 +9,13 @@
 'use strict';
 
 // ───────────────────────── 1. Instellingen ─────────────────────────
-const U = 16, FH = 36, W = 40, FMIN = -6, TOP = 30;
-const MAXF = [8, 14, 22, 30, 30];          // bouwhoogte per ster
-const STAR_POP = [0, 40, 120, 250, 450];   // inwoners nodig per ster
+// De wereld is W vakjes breed, verdeeld in kavels van PW vakjes. Je begint met kavels START_LO t/m START_HI
+// en koopt de rest erbij (G.lo, G.hi).
+const U = 16, FH = 36, W = 120, PW = 10, FMIN = -12, TOP = 60, START_LO = 4, START_HI = 7;
+const MAXF = [12, 20, 30, 40, 50, 60, 60];                // bouwhoogte per ster
+const MINF = [-6, -6, -8, -10, -12, -12, -12];           // kelderdiepte per ster
+const STAR_POP = [0, 40, 120, 250, 450, 800, 1300];      // inwoners nodig per ster
+const MAX_STARS = STAR_POP.length;
 const MIN_PER_SEC = 2;                     // spelminuten per seconde op snelheid 1
 const SPEEDS = [0, 1, 3, 8];
 const SAVE_KEY = 'simtoren2_save';
@@ -45,10 +49,29 @@ const T = {
                 desc: '3 schoonmakers maken hotelkamers schoon. Een vieze kamer krijgt geen gasten.' },
   metro:      { name: 'Metrostation', w: 14, cost: 500000, star: 4, pop: 0, util: true, under: true, max: 1,
                 desc: 'Alleen onder de grond. Brengt de helft meer bezoekers naar je winkels en restaurants.' },
-  deck:       { name: 'Uitkijkpunt', w: 10, cost: 400000, star: 5, pop: 0, pay: 100, open: [10, 20], floor: TOP,
-                desc: 'Alleen op verdieping 30. Hiermee is je toren af!' },
+  deck:       { name: 'Uitkijkpunt', w: 10, cost: 400000, star: 5, pop: 0, pay: 100, open: [10, 20], minF: 30,
+                desc: 'Vanaf verdieping 30. Het hoogste uitzicht van Nederland!' },
+  // ── later vrij te spelen. roof = alleen bovenop het dak, er kan niets meer boven. ──
+  solar:      { name: 'Zonnepanelen', w: 4, cost: 8000, star: 2, pop: 0, util: true, roof: true, hourly: 120,
+                desc: 'Op het dak. Levert elk uur overdag stroomgeld op.' },
+  gym:        { name: 'Sportschool', w: 6, cost: 25000, star: 2, pop: 2, pay: 150, open: [7, 22],
+                desc: 'Bewoners en werknemers komen sporten. Wie sport, loopt makkelijker trappen.' },
+  pool:       { name: 'Zwembad', w: 10, cost: 80000, star: 3, pop: 3, pay: 250, open: [8, 21],
+                desc: 'Spetteren! Trekt veel bezoekers, vooral als je toren groot is.' },
+  heli:       { name: 'Helikopterplatform', w: 8, cost: 150000, star: 3, pop: 0, util: true, roof: true, minF: 10,
+                desc: 'Op het dak, vanaf verdieping 10. Om de twee uur landt er een helikopter met een rijke gast.' },
+  vault:      { name: 'Kluis', w: 6, cost: 250000, star: 4, pop: 0, util: true, under: true, max: 1,
+                desc: 'Diep onder de grond. Elke nacht krijg je 2% rente over je geld (hoogstens €30.000).' },
+  aquarium:   { name: 'Aquarium', w: 12, cost: 300000, star: 5, pop: 4, pay: 400, under: true, open: [10, 20],
+                desc: 'Onder de grond. Haaien, vissen en heel veel bezoekers.' },
+  coaster:    { name: 'Dakachtbaan', w: 16, cost: 1500000, star: 6, pop: 6, pay: 600, roof: true, minF: 20, open: [10, 22],
+                desc: 'Een achtbaan bovenop je toren, vanaf verdieping 20. Gillen!' },
+  airport:    { name: 'Vliegveld', w: 30, cost: 5000000, star: 7, pop: 0, roof: true, util: true, minF: 40, max: 1,
+                desc: 'Een landingsbaan op het dak, vanaf verdieping 40! Elk uur landt er een vliegtuig. Ook komen er meer bezoekers.' },
 };
-const TOOLS = ['office', 'apartment', 'shop', 'stairs', 'lift', 'vend', 'restaurant', 'garage', 'hotel', 'clean', 'xlift', 'cinema', 'metro', 'deck'];
+const TOOLS = ['office', 'apartment', 'shop', 'stairs', 'lift', 'vend', 'restaurant', 'garage', 'hotel', 'clean', 'xlift', 'cinema', 'metro', 'deck',
+               'solar', 'gym', 'pool', 'heli', 'vault', 'aquarium', 'coaster', 'airport'];
+const LAND_BASE = 40000, LAND_GROW = 1.7;   // eerste kavel kost €40.000, elke volgende 1,7 keer zoveel
 
 // Opdrachten hebben een vaste naam (id); G.done onthoudt welke gehaald zijn. Zo kunnen er later
 // opdrachten tussen gezet worden zonder dat oude spelstanden in de war raken.
@@ -60,19 +83,34 @@ const MISSIONS = [
   { id: 'shop', t: 'Bouw een winkel', h: 'Op de begane grond komen de meeste klanten. Te veel winkels heeft geen zin: ze delen de klanten.', tool: 'shop', n: () => cnt('shop'), g: 1, r: 5000 },
   { id: 'pop40', t: 'Haal 40 inwoners', h: 'Bouw meer kantoren en appartementen. Je krijgt dan je 2e ster.', n: () => pop, g: 40, r: 20000 },
   { id: 'restaurant', t: 'Bouw een restaurant', h: 'Werknemers en bewoners komen er eten.', tool: 'restaurant', n: () => cnt('restaurant'), g: 1, r: 15000 },
+  { id: 'land', t: 'Koop een stuk grond erbij', h: 'Kies Grond kopen onderaan en klik naast je bouwterrein. Dan kun je breder bouwen.', tool: 'land', n: () => G.bought || 0, g: 1, r: 10000 },
+  { id: 'solar', t: 'Leg zonnepanelen op een dak', h: 'Zonnepanelen kunnen alleen bovenop. Er kan daarna niets meer boven.', tool: 'solar', n: () => cnt('solar'), g: 1, r: 5000 },
   { id: 'garage', t: 'Bouw een parkeergarage in de kelder', h: 'Scroll omlaag en bouw onder de grond. Zet er een lift of trap naartoe.', tool: 'garage', n: () => G.rooms.some(r => r.type === 'garage' && ok(r)) ? 1 : 0, g: 1, r: 20000 },
   { id: 'mood85', t: 'Maak iedereen blij: 85% tevreden', h: 'Rode poppetjes wachten te lang. Klik op een lift en koop een extra cabine.', n: () => mood, g: 85, r: 20000 },
   { id: 'pop120', t: 'Haal 120 inwoners', h: 'Je mag nu tot verdieping 14 bouwen.', n: () => pop, g: 120, r: 40000 },
   { id: 'hotel', t: 'Bouw 5 hotelkamers', h: 'Hotelgasten betalen goed.', tool: 'hotel', n: () => cnt('hotel'), g: 5, r: 30000 },
   { id: 'clean', t: 'Bouw een schoonmaakdienst', h: 'Na elke gast is een hotelkamer vies. Schoonmakers lossen dat op.', tool: 'clean', n: () => cnt('clean'), g: 1, r: 20000 },
+  { id: 'heli', t: 'Bouw een helikopterplatform op het dak', h: 'Vanaf verdieping 10, helemaal bovenop. Zet er een lift naartoe!', tool: 'heli', n: () => G.rooms.some(r => r.type === 'heli' && ok(r)) ? 1 : 0, g: 1, r: 40000 },
+  { id: 'gym', t: 'Bouw een sportschool', h: 'Wie gesport heeft, neemt vaker de trap.', tool: 'gym', n: () => cnt('gym'), g: 1, r: 15000 },
   { id: 'xlift', t: 'Bouw een snellift van 10 verdiepingen', h: 'Een snellift is ideaal voor hoge torens.', tool: 'xlift', n: () => maxShaft('xlift'), g: 10, r: 40000 },
   { id: 'pop250', t: 'Haal 250 inwoners', h: 'Hoger en hoger! Vergeet de liften niet.', n: () => pop, g: 250, r: 80000 },
   { id: 'cinema', t: 'Bouw een bioscoop', h: 'Let op: er komen veel mensen tegelijk.', tool: 'cinema', n: () => cnt('cinema'), g: 1, r: 50000 },
   { id: 'metro', t: 'Bouw een metrostation', h: 'Diep onder de grond. Bezoekers komen dan ook met de metro.', tool: 'metro', n: () => cnt('metro'), g: 1, r: 100000 },
   { id: 'pop450', t: 'Haal 450 inwoners', h: 'Nog één ster te gaan.', n: () => pop, g: 450, r: 150000 },
-  { id: 'deck', t: 'Bouw het Uitkijkpunt op verdieping 30', h: 'Het hoogste punt van Nederland!', tool: 'deck', n: () => cnt('deck'), g: 1, r: 0 },
+  { id: 'deck', t: 'Bouw het Uitkijkpunt op verdieping 30', h: 'Het hoogste punt van Nederland! Hoger mag ook.', tool: 'deck', n: () => cnt('deck'), g: 1, r: 0 },
   { id: 'deep', t: 'Graaf tot in kelder 4', h: 'Wie weet wat je daar beneden vindt...', n: () => -Math.min(0, ...G.rooms.map(r => r.f)), g: 4, r: 50000 },
   { id: 'rich', t: 'Verdien €400.000 op één dag', h: 'Een goede mix van kamers, een metro en parkeerplekken helpen.', n: () => G.best || 0, g: 400000, r: 250000, euro: true },
+  // ── verder spelen na het uitkijkpunt ──
+  { id: 'land3', t: 'Maak je bouwterrein 3 stukken breder', h: 'Koop grond links en rechts van je toren.', tool: 'land', n: () => G.bought || 0, g: 3, r: 100000 },
+  { id: 'pool', t: 'Bouw een zwembad', h: 'Een zwembad trekt veel bezoekers.', tool: 'pool', n: () => cnt('pool'), g: 1, r: 50000 },
+  { id: 'vault', t: 'Bouw een kluis in de kelder', h: 'Elke nacht krijg je rente. Hoe meer geld, hoe meer rente.', tool: 'vault', n: () => G.rooms.some(r => r.type === 'vault' && ok(r)) ? 1 : 0, g: 1, r: 50000 },
+  { id: 'aquarium', t: 'Bouw een aquarium onder de grond', h: 'Haaien in de kelder!', tool: 'aquarium', n: () => cnt('aquarium'), g: 1, r: 100000 },
+  { id: 'pop800', t: 'Haal 800 inwoners', h: 'Dan krijg je je 6e ster en mag je tot verdieping 50.', n: () => pop, g: 800, r: 300000 },
+  { id: 'coaster', t: 'Bouw een dakachtbaan', h: 'Vanaf verdieping 20, helemaal bovenop.', tool: 'coaster', n: () => cnt('coaster'), g: 1, r: 300000 },
+  { id: 'deep10', t: 'Graaf tot in kelder 10', h: 'Ze zeggen dat er heel diep iets ouds begraven ligt...', n: () => -Math.min(0, ...G.rooms.map(r => r.f)), g: 10, r: 200000 },
+  { id: 'pop1300', t: 'Haal 1300 inwoners', h: 'De 7e ster: dan mag je tot verdieping 60 en komt het vliegveld vrij.', n: () => pop, g: 1300, r: 1000000 },
+  { id: 'airport', t: 'Bouw een vliegveld bovenop je toren', h: 'Vanaf verdieping 40. Je hebt flink wat breedte nodig!', tool: 'airport', n: () => cnt('airport'), g: 1, r: 0 },
+  { id: 'rich2', t: 'Verdien €2.000.000 op één dag', h: 'De grootste toren van de wereld!', n: () => G.best || 0, g: 2000000, r: 0, euro: true },
 ];
 const OLD_MISSIONS = ['office', 'stairs', 'apartment', 'lift', 'shop', 'pop40', 'restaurant', 'mood85', 'pop120', 'hotel', 'xlift', 'pop250', 'cinema', 'pop450', 'deck'];
 
@@ -94,12 +132,17 @@ let pop = 0, mood = 100, active = 0;
 let tool = 'select', hover = null, selected = null, stroke = null, undo = [];
 let speedIdx = 1, muted = false, running = false, lastWarn = -1e9;
 const cam = { x: W * U / 2, y: -3 * FH, z: 1 };
+// eigen bouwterrein in vakjes, en waar de straat begint en eindigt
+const lx = () => G.lo * PW, rx = () => (G.hi + 1) * PW;
+const XL = () => lx() - 6, XR = () => rx() + 6, XMID = () => (lx() + rx()) / 2;
+const landCost = () => Math.round(LAND_BASE * Math.pow(LAND_GROW, G.bought || 0) / 1000) * 1000;
+const plotOf = x => Math.floor(x / PW);
 
 function newGame() {
-  G = { v: 2, money: START_MONEY, day: 1, min: 7 * 60, stars: 1, done: [], won: false,
-        nextId: 1, rooms: [], slabs: {}, today: 0 };
+  G = { v: 3, money: START_MONEY, day: 1, min: 7 * 60, stars: 1, done: [], won: false,
+        nextId: 1, rooms: [], slabs: {}, today: 0, lo: START_LO, hi: START_HI, bought: 0 };
   people = []; shafts = []; floats = []; undo = []; selected = null;
-  addRoom({ id: G.nextId++, type: 'lobby', f: 0, x: 16, rating: 100, earned: 0 });
+  addRoom({ id: G.nextId++, type: 'lobby', f: 0, x: 56, rating: 100, earned: 0 });
   rebuild();
 }
 
@@ -115,7 +158,15 @@ function save() {
 function load() {
   try {
     const d = JSON.parse(localStorage.getItem(SAVE_KEY));
-    if (!d || d.v !== 2 || !Array.isArray(d.rooms)) return false;
+    if (!d || (d.v !== 2 && d.v !== 3) || !Array.isArray(d.rooms)) return false;
+    if (d.v === 2) {
+      // oude toren (40 vakjes breed) schuift naar het midden van de nieuwe, bredere wereld
+      const dx = START_LO * PW;
+      for (const r of d.rooms) r.x += dx;
+      const sl = {};
+      for (const k in d.slabs) { const i = k.indexOf(','); sl[key(+k.slice(0, i), +k.slice(i + 1) + dx)] = 1; }
+      d.slabs = sl; d.lo = START_LO; d.hi = START_HI; d.bought = 0; d.v = 3;
+    }
     speedIdx = d.speedIdx || 1; muted = !!d.muted;
     delete d.speedIdx; delete d.muted;
     G = d;
@@ -135,6 +186,10 @@ const hasSave = () => { try { return !!localStorage.getItem(SAVE_KEY); } catch (
 const cnt = type => G.rooms.reduce((n, r) => n + (r.type === type), 0);
 const maxShaft = type => shafts.reduce((m, s) => (!type || s.type === type) ? Math.max(m, s.top - s.bot + 1) : m, 0);
 const maxFloor = () => MAXF[G.stars - 1];
+const minFloor = () => MINF[G.stars - 1];
+// Iets met roof (zonnepanelen, helikopterplatform...) moet bovenop staan: daar kan niets meer op.
+const roofAt = (f, x) => { const r = grid.get(key(f, x)); return r && T[r.type].roof ? r : null; };
+const nextStar = (tab, cmp) => { for (let s = G.stars; s < MAX_STARS; s++) if (cmp(tab[s])) return s + 1; return 0; };
 const absNow = () => G.day * 1440 + G.min;
 // Elk aaneengesloten stuk vloer is een 'knoop'. De begane grond (overal bereikbaar) is knoop 0.
 function nodeOf(f, x) {
@@ -160,10 +215,11 @@ function addRoom(r) {
 // zodat je er gewoon bovenop kunt bouwen.
 function fillGaps(f) {
   if (f === 0) return;
-  for (let x = 0; x < W;) {
+  const xe = rx();
+  for (let x = lx(); x < xe;) {
     if (G.slabs[key(f, x)]) { x++; continue; }
     let e = x;
-    while (e < W && !G.slabs[key(f, e)]) e++;
+    while (e < xe && !G.slabs[key(f, e)]) e++;
     if (e - x <= 3) for (let i = x; i < e; i++) G.slabs[key(f, i)] = 1;
     x = e;
   }
@@ -254,15 +310,21 @@ function costOf(type, f, x) {
 function whyNot(type, f, x) {
   const t = T[type];
   if (t.star > G.stars) return 'Dit komt vrij bij ' + stars(t.star);
-  if (x < 0 || x + t.w > W) return 'Dit valt buiten je bouwterrein';
-  if (t.floor !== undefined && f !== t.floor) return 'Het uitkijkpunt kan alleen op verdieping ' + t.floor;
+  if (x < 0 || x + t.w > W) return 'Dit valt buiten de wereld';
+  if (x < lx() || x + t.w > rx()) return 'Deze grond is nog niet van jou. Koop hem met 🏷️ Grond kopen (' + euro(landCost()) + ')';
+  if (t.minF !== undefined && f < t.minF) return t.name + ' kan pas vanaf verdieping ' + t.minF;
   if (f < FMIN) return 'Dieper dan kelder ' + (-FMIN) + ' kan niet';
+  if (f < minFloor()) { const s = nextStar(MINF, m => f >= m); return s ? 'Zo diep graven mag pas met ' + stars(s) : 'Dieper kan niet'; }
   if (t.under && f >= 0) return 'Dit kan alleen onder de grond';
   if (t.above && f < 0) return 'Dit heeft daglicht nodig: bouw het boven de grond';
+  if (t.roof && f < 1) return 'Dit moet bovenop een dak';
   if (t.max && cnt(type) >= t.max) return 'Je hebt al een ' + t.name.toLowerCase();
-  if (f > maxFloor() || (type === 'stairs' && f + 1 > maxFloor()))
-    return G.stars < 4 ? 'Zo hoog mag pas met ' + stars(G.stars + 1) : 'Dit is de hoogste verdieping';
+  const top = type === 'stairs' ? f + 1 : f;
+  if (top > maxFloor()) { const s = nextStar(MAXF, m => top <= m); return s ? 'Zo hoog mag pas met ' + stars(s) : 'Dit is de hoogste verdieping'; }
   for (let i = 0; i < t.w; i++) if (layer(type).has(key(f, x + i))) return t.transport ? 'Hier zit al een trap of lift' : 'Hier staat al iets';
+  for (let i = 0; i < t.w; i++) if (roofAt(f - 1, x + i)) return 'Op ' + T[roofAt(f - 1, x + i).type].name.toLowerCase() + ' kun je niet verder bouwen';
+  if (type === 'stairs') for (let i = 0; i < t.w; i++) if (roofAt(f, x + i)) return 'Vanaf het dak kan geen trap verder omhoog';
+  if (t.roof) for (let i = 0; i < t.w; i++) if (G.slabs[key(f + 1, x + i)] || tgrid.has(key(f + 1, x + i))) return 'Dit moet helemaal bovenop: hier staat al iets boven';
   if (f > 0) { for (let i = 0; i < t.w; i++) if (!G.slabs[key(f - 1, x + i)]) return 'Bouw eerst iets op de verdieping eronder'; }
   if (f < -1) { for (let i = 0; i < t.w; i++) if (!G.slabs[key(f + 1, x + i)]) return 'Bouw eerst de kelder erboven'; }
   if (t.lift) {
@@ -287,7 +349,11 @@ function place(type, f, x) {
     G.gold = true; G.money += 100000; sfx('star');
     toast('💰 Bij het graven vind je een oude schatkist! +' + euro(100000), 'star');
   }
-  if ((T[type].pop || T[type].pay) && !ok(r) && performance.now() - lastWarn > 8000) {
+  if (f <= -10 && !G.dino) {
+    G.dino = true; G.money += 500000; sfx('star');
+    toast('🦖 Je vindt dinosaurusbotten! Een museum koopt ze voor ' + euro(500000), 'star');
+  }
+  if ((T[type].pop || T[type].pay || T[type].util) && !ok(r) && performance.now() - lastWarn > 8000) {
     lastWarn = performance.now();
     toast('⚠️ Hier kan nog niemand komen. Zet een trap of lift vast aan dit stuk vloer.', 'bad');
   }
@@ -304,7 +370,7 @@ function removeRoom(r) {
     } else if (p.at === r.id) {
       p.at = null; p.stay = null; p.st = 'go'; p.tt = 0; p.f = r.f; p.x = r.x + w / 2; p.leg = null; p.climb = 0;
       p.dest = p.kind === 'visitor' ? { out: true } : { room: p.home };
-      p.exitX = p.x < W / 2 ? -6 : W + 6; p.exit = null;
+      p.exitX = p.x < XMID() ? XL() : XR(); p.exit = null;
     } else if (p.dest && p.dest.room === r.id) { p.dest = { out: true }; p.exit = null; }
   }
   for (const s of shafts) { s.queue = s.queue.filter(p => !p.dead); for (const c of s.cars) c.pass = c.pass.filter(p => !p.dead); }
@@ -408,8 +474,8 @@ function reconsider(p) {
 
 function mkPerson(kind, home) {
   const fr = rnd();
-  const p = { kind, home, fit: fr < 0.4 ? 0 : fr < 0.8 ? 1 : 2, st: 'out', at: null, f: 0, x: -6, dir: 1, stress: 0, sS: 0, flights: 0,
-              dest: null, leg: null, climb: 0, tt: 0, plan: [], stay: null, slot: rnd(), exitX: -6 };
+  const p = { kind, home, fit: fr < 0.4 ? 0 : fr < 0.8 ? 1 : 2, st: 'out', at: null, f: 0, x: XL(), dir: 1, stress: 0, sS: 0, flights: 0,
+              dest: null, leg: null, climb: 0, tt: 0, plan: [], stay: null, slot: rnd(), exitX: XL() };
   people.push(p);
   return p;
 }
@@ -503,15 +569,16 @@ function dayPlan(p, mode) {
   return ev.sort((a, b) => a.t - b.t);
 }
 
+const VENUES = ['restaurant', 'shop', 'gym', 'pool'];   // hier gaan eigen bewoners en werknemers ook heen
 const isOpen = r => { const o = T[r.type].open, h = G.min / 60; return !o || (h >= o[0] && h < o[1]); };
 
 function pickVenue() {
-  const list = G.rooms.filter(r => (r.type === 'restaurant' || r.type === 'shop') && ok(r) && isOpen(r));
+  const list = G.rooms.filter(r => VENUES.includes(r.type) && ok(r) && isOpen(r));
   return list.length ? list[Math.floor(rnd() * list.length)] : null;
 }
 
 function go(p, dest) {
-  let f = 0, x = rnd() < 0.5 ? -6 : W + 6;
+  let f = 0, x = rnd() < 0.5 ? XL() : XR();
   if (p.st !== 'in') { const g = gate(p); if (g) { f = g.f; x = g.x; } }
   if (p.st === 'in') {
     const r = byId.get(p.at);
@@ -524,7 +591,7 @@ function go(p, dest) {
     return;
   }
   Object.assign(p, { st: 'go', dest, f, x, tt: 0, leg: null, climb: 0, stress: 0, sS: 0, flights: 0, stay: null,
-                     exitX: x < W / 2 ? -6 : W + 6, exit: dest.out ? gate(p) : null });
+                     exitX: x < XMID() ? XL() : XR(), exit: dest.out ? gate(p) : null });
 }
 
 function walk(p, tx, dt) {
@@ -554,6 +621,7 @@ function arrive(p) {
   if (p.dest.out) { p.st = 'out'; if (p.kind === 'visitor') p.dead = true; return; }
   const r = byId.get(p.dest.room);
   putIn(p, r);
+  if (r.type === 'gym') p.fit = 2;   // na het sporten loop je makkelijker trappen
   if (p.dest.pay) earn(r, p); else if (p.kind !== 'cleaner') rate(r, p);
   if (p.dest.stay) p.stay = absNow() + p.dest.stay;
 }
@@ -627,14 +695,21 @@ function updPerson(p, dt) {
 
 // Bezoekers van buiten. Per soort is er één stroom bezoekers voor de hele toren (groeit met het aantal
 // inwoners); die verdeelt zich over alle open zaken van die soort. Meer winkels = minder klanten per winkel.
-const CAP = { shop: 4, restaurant: 10, cinema: 48, deck: 8 };        // max bezoekers per uur per zaak
-function demand(type) { return rawDemand(type) * (metroRoom && ok(metroRoom) ? 1.5 : 1); }
+const CAP = { shop: 4, restaurant: 10, cinema: 48, deck: 8, gym: 6, pool: 14, aquarium: 30, coaster: 40 };   // max bezoekers per uur per zaak
+function demand(type) {
+  const air = G.rooms.some(r => r.type === 'airport' && ok(r));
+  return rawDemand(type) * (1 + (metroRoom && ok(metroRoom) ? 0.5 : 0) + (air ? 0.5 : 0));
+}
 function rawDemand(type) {
   const h = G.min / 60;
   switch (type) {
     case 'shop': return 2 + pop / 15;
     case 'restaurant': return (h >= 11.5 && h < 14) || (h >= 17 && h < 21) ? 4 + pop / 10 : 1 + pop / 100;
     case 'deck': return 8;
+    case 'gym': return 1 + pop / 60;
+    case 'pool': return 3 + pop / 25;
+    case 'aquarium': return 6 + pop / 20;
+    case 'coaster': return 10 + pop / 15;
     case 'cinema':
       for (const s of [14, 17, 20]) if (h >= s - 0.85 && h < s - 0.1) return (12 + pop / 4) / 0.75;
       return 0;
@@ -644,7 +719,7 @@ function rawDemand(type) {
 const pull = r => (0.4 + 0.6 * r.rating / 100) * (r.type === 'shop' && r.f === 0 ? 1.6 : 1);
 
 function spawnVisitors(dmin) {
-  if (people.length > 900) return;
+  if (people.length > 2500) return;
   const open = G.rooms.filter(r => T[r.type].open && ok(r) && isOpen(r)), total = {};
   for (const r of open) total[r.type] = (total[r.type] || 0) + pull(r);
   for (const r of open) {
@@ -663,7 +738,10 @@ function spawnVisitors(dmin) {
 function newDay() {
   const upkeep = shafts.reduce((n, s) => n + s.cars.length * T[s.type].upkeep, 0);
   G.money -= upkeep;
-  if (G.today > 0 || upkeep) toast('🌙 Dag ' + (G.day - 1) + ' voorbij: ' + euro(G.today) + ' verdiend' + (upkeep ? ', ' + euro(upkeep) + ' liftonderhoud' : ''));
+  const vault = G.rooms.find(r => r.type === 'vault' && ok(r));
+  let rente = 0;
+  if (vault && G.money > 0) { rente = Math.round(Math.min(30000, G.money * 0.02)); G.money += rente; vault.rente = rente; floatAt(vault, '+' + euro(rente), '#ffe08a'); }
+  if (G.today > 0 || upkeep) toast('🌙 Dag ' + (G.day - 1) + ' voorbij: ' + euro(G.today) + ' verdiend' + (upkeep ? ', ' + euro(upkeep) + ' liftonderhoud' : '') + (rente ? ', ' + euro(rente) + ' rente' : ''));
   G.today = 0;
   for (const r of G.rooms) r.earned = 0;
   for (const p of people) if (p.kind !== 'visitor') p.plan = dayPlan(p, 'day');
@@ -774,18 +852,20 @@ function resize() {
   cv.width = Math.round(cw * dpr); cv.height = Math.round(ch * dpr);
 }
 
+const ZMIN = 0.15, ZMAX = 2.5;
 function clampCam() {
-  cam.z = clamp(cam.z, 0.35, 2.5);
+  cam.z = clamp(cam.z, ZMIN, ZMAX);
   cam.x = clamp(cam.x, -150, W * U + 150);
   cam.y = clamp(cam.y, -(TOP + 3) * FH, (3 - FMIN) * FH);
 }
 
 function homeView() {
-  let top = 3, bot = 0;
-  for (const r of G.rooms) { top = Math.max(top, r.f + 1); bot = Math.min(bot, r.f); }
+  let top = 3, bot = 0, x0 = 1e9, x1 = -1e9;
+  for (const r of G.rooms) { top = Math.max(top, r.f + 1); bot = Math.min(bot, r.f); x0 = Math.min(x0, r.x); x1 = Math.max(x1, r.x + T[r.type].w); }
+  x0 = Math.min(x0, XMID() - 20); x1 = Math.max(x1, XMID() + 20);
   const hpx = (top - bot + 3) * FH;
-  cam.z = clamp(Math.min(cw / (W * U + (cw < 720 ? 40 : 160)), (ch - (cw < 720 ? 340 : 230)) / hpx), 0.35, 1.6);
-  cam.x = W * U / 2;
+  cam.z = clamp(Math.min(cw / ((x1 - x0) * U + (cw < 720 ? 40 : 160)), (ch - (cw < 720 ? 340 : 230)) / hpx), ZMIN, 1.6);
+  cam.x = (x0 + x1) / 2 * U;
   cam.y = -(top + 1 + bot) * FH / 2 + 30 / cam.z;
   clampCam();
 }
@@ -916,7 +996,109 @@ const ART = {
     R(c, '#333', x + w / 2 - 1, y + h - 16, 2, 15); R(c, '#e5484d', x + w / 2 - 8, y + h - 21, 16, 6); R(c, '#111', x + w / 2 + 7, y + h - 20, 3, 4);
     R(c, '#666', x + w - 20, y - 30, 2, 30); R(c, '#ae1c28', x + w - 18, y - 30, 20, 4); R(c, '#fff', x + w - 18, y - 26, 20, 4); R(c, '#21468b', x + w - 18, y - 22, 20, 4);
   },
+  // dak-dingen staan in de open lucht: geen muren, wel een vloer
+  solar(c, x, y, w, h) {
+    R(c, '#9aa3b2', x, y + h - 4, w, 4);
+    for (let i = 0; i < 3; i++) {
+      const dx = x + 3 + i * 20;
+      c.fillStyle = '#1e3a8a'; c.beginPath(); c.moveTo(dx, y + h - 6); c.lineTo(dx + 6, y + h - 24); c.lineTo(dx + 19, y + h - 24); c.lineTo(dx + 15, y + h - 6); c.fill();
+      c.strokeStyle = '#93c5fd'; c.lineWidth = 0.7; c.beginPath(); c.moveTo(dx + 3, y + h - 15); c.lineTo(dx + 17, y + h - 15); c.moveTo(dx + 10, y + h - 24); c.lineTo(dx + 8, y + h - 6); c.stroke();
+      R(c, '#555', dx + 8, y + h - 6, 2, 3);
+    }
+  },
+  gym(c, x, y, w, h, lit) {
+    base(c, '#fde2e4', x, y, w, h);
+    windowAt(c, x + 6, y + 8, 18, 9, lit);
+    R(c, '#333', x + 32, y + h - 6, 26, 4); R(c, '#555', x + 36, y + h - 14, 3, 8); R(c, '#555', x + 51, y + h - 14, 3, 8); R(c, '#e03131', x + 34, y + h - 15, 22, 2);
+    R(c, '#444', x + 66, y + h - 20, 3, 19); R(c, '#666', x + 62, y + h - 21, 11, 3); R(c, '#e03131', x + 68, y + h - 11, 14, 4);
+    R(c, '#222', x + 80, y + 14, 2, 8); R(c, '#222', x + 89, y + 14, 2, 8); R(c, '#777', x + 78, y + 17, 15, 2);
+  },
+  pool(c, x, y, w, h, lit) {
+    base(c, '#e7f5ff', x, y, w, h);
+    windowAt(c, x + 8, y + 7, 20, 9, lit);
+    windowAt(c, x + w - 28, y + 7, 20, 9, lit);
+    R(c, '#4dabf7', x + 6, y + h - 14, w - 12, 13); R(c, '#a5d8ff', x + 6, y + h - 14, w - 12, 2);
+    for (let i = 0; i < 4; i++) R(c, '#fff', x + 20 + i * 34, y + h - 9, 10, 1.5);
+    R(c, '#adb5bd', x + w - 12, y + h - 24, 2, 12); R(c, '#adb5bd', x + w - 17, y + h - 24, 2, 12);
+    R(c, '#ffd43b', x + 40, y + 20, 22, 3);
+  },
+  heli(c, x, y, w, h) {
+    R(c, '#4b5563', x, y + h - 6, w, 6);
+    R(c, '#6b7280', x + 6, y + h - 8, w - 12, 2);
+    c.strokeStyle = '#facc15'; c.lineWidth = 2; c.beginPath(); c.ellipse(x + w / 2, y + h - 7, 40, 3, 0, 0, 7); c.stroke();
+    c.fillStyle = '#fff'; c.font = 'bold 10px system-ui'; c.textAlign = 'center'; c.fillText('H', x + w / 2, y + h - 10);
+    for (const dx of [4, w - 6]) { R(c, '#999', x + dx, y + h - 16, 2, 10); R(c, '#ef4444', x + dx - 1, y + h - 18, 4, 3); }
+  },
+  vault(c, x, y, w, h) {
+    base(c, '#495057', x, y, w, h);
+    R(c, '#868e96', x + 8, y + 6, 26, h - 7); c.fillStyle = '#adb5bd'; c.beginPath(); c.arc(x + 21, y + 20, 9, 0, 7); c.fill();
+    c.strokeStyle = '#495057'; c.lineWidth = 2; c.beginPath(); c.moveTo(x + 15, y + 20); c.lineTo(x + 27, y + 20); c.moveTo(x + 21, y + 14); c.lineTo(x + 21, y + 26); c.stroke();
+    for (let i = 0; i < 4; i++) { R(c, '#fcc419', x + 44 + i * 11, y + h - 7, 9, 5); R(c, '#f59f00', x + 44 + i * 11, y + h - 7, 9, 1); }
+    for (let i = 0; i < 3; i++) R(c, '#fcc419', x + 49 + i * 11, y + h - 12, 9, 5);
+    R(c, '#fcc419', x + 55, y + h - 17, 9, 5);
+  },
+  aquarium(c, x, y, w, h) {
+    base(c, '#1c3d5a', x, y, w, h);
+    R(c, '#1971c2', x + 4, y + 5, w - 8, h - 7); R(c, '#4dabf7', x + 4, y + 5, w - 8, 3);
+    R(c, '#e9c46a', x + 4, y + h - 6, w - 8, 4);
+    const t = performance.now() / 1000;
+    const fish = (fx, fy, col, s) => { c.fillStyle = col; c.beginPath(); c.ellipse(fx, fy, 5 * s, 2.5 * s, 0, 0, 7); c.fill(); c.beginPath(); c.moveTo(fx - 4 * s, fy); c.lineTo(fx - 8 * s, fy - 3 * s); c.lineTo(fx - 8 * s, fy + 3 * s); c.fill(); };
+    for (let i = 0; i < 6; i++) fish(x + 12 + ((i * 47 + t * (8 + i * 3)) % (w - 24)), y + 13 + (i % 3) * 6, ['#ff922b', '#ffd43b', '#f06595'][i % 3], 1);
+    fish(x + 20 + ((t * 14) % (w - 40)), y + 17, '#adb5bd', 2.2);   // haai
+    for (let i = 0; i < 5; i++) R(c, '#2b8a3e', x + 10 + i * 40, y + h - 14, 2, 9);
+  },
+  coaster(c, x, y, w, h) {
+    R(c, '#9aa3b2', x, y + h - 4, w, 4);
+    c.strokeStyle = '#e03131'; c.lineWidth = 3; c.beginPath();
+    const yy = i => y + h - 8 - 26 * Math.abs(Math.sin(i / w * Math.PI * 2.5));
+    for (let i = 0; i <= w; i += 4) i ? c.lineTo(x + i, yy(i)) : c.moveTo(x + i, yy(i));
+    c.stroke();
+    c.strokeStyle = '#868e96'; c.lineWidth = 1;
+    for (let i = 8; i < w; i += 16) { c.beginPath(); c.moveTo(x + i, yy(i)); c.lineTo(x + i, y + h - 4); c.stroke(); }
+    const t = (performance.now() / 1000 * 50) % w;
+    for (let k = 0; k < 3; k++) { const q = (t + k * 9) % w; R(c, ['#ffd43b', '#4dabf7', '#69db7c'][k], x + q - 3, yy(q) - 6, 7, 5); }
+  },
+  airport(c, x, y, w, h) {
+    R(c, '#4b5563', x, y + h - 8, w, 8);
+    R(c, '#374151', x, y + h - 10, w, 2);
+    for (let i = 10; i < w - 10; i += 24) R(c, '#f8f9fa', x + i, y + h - 6, 12, 1.5);
+    for (let i = 0; i < w; i += 30) R(c, (Math.floor(performance.now() / 400) + i / 30) % 2 ? '#ffd43b' : '#868e96', x + i + 2, y + h - 12, 3, 2);
+    // verkeerstoren
+    R(c, '#adb5bd', x + w - 30, y - 10, 6, h); R(c, '#495057', x + w - 34, y - 18, 14, 8); R(c, '#a5d8ff', x + w - 33, y - 17, 12, 5);
+    c.fillStyle = '#fff'; c.font = 'bold 9px system-ui'; c.textAlign = 'left'; c.fillText('✈ TOBY AIRPORT', x + 8, y + h - 14);
+  },
 };
+
+// Helikopter of vliegtuig dat landt en weer vertrekt. t = spelminuten sinds het begin van de landing.
+function drawFlyer(c, r) {
+  const t = absNow() - (r.land || -1e9), x = r.x * U, y = -(r.f + 1) * FH, w = T[r.type].w * U;
+  const rotor = Math.sin(performance.now() / 30);
+  if (r.type === 'heli') {
+    if (t < 0 || t > 30) return;
+    const lift = t < 8 ? (8 - t) / 8 : t > 22 ? (t - 22) / 8 : 0;
+    const hx = x + w / 2 + (t < 8 ? -lift * 160 : t > 22 ? lift * 160 : 0), hy = y + FH - 9 - lift * 200;
+    c.fillStyle = '#1c7ed6'; c.beginPath(); c.ellipse(hx, hy - 7, 16, 8, 0, 0, 7); c.fill();
+    R(c, '#1c7ed6', hx + 12, hy - 10, 26, 4); R(c, '#1864ab', hx + 34, hy - 16, 4, 10);
+    c.fillStyle = '#a5d8ff'; c.beginPath(); c.ellipse(hx - 7, hy - 9, 7, 4.5, 0, 0, 7); c.fill();
+    R(c, '#333', hx - 12, hy, 24, 2); R(c, '#333', hx - 8, hy - 2, 2, 3); R(c, '#333', hx + 6, hy - 2, 2, 3);
+    R(c, '#333', hx - 1, hy - 18, 2, 4);
+    const rw = 30 * Math.abs(rotor) + 6; R(c, '#222', hx - rw, hy - 19, rw * 2, 1.5);
+  } else if (r.type === 'airport') {
+    if (t < 0 || t > 40) return;
+    let px, alt;
+    if (t < 10) { px = x + w + (10 - t) * 60; alt = (10 - t) * 22; }        // aanvliegen van rechts
+    else if (t < 16) { px = x + w - (t - 10) / 6 * (w * 0.55); alt = 0; }   // uitrollen
+    else if (t < 28) { px = x + w * 0.45; alt = 0; }                      // passagiers in en uit
+    else { const k = t - 28; px = x + w * 0.45 - k * k * 6; alt = Math.max(0, (k - 3) * 25); }   // opstijgen naar links
+    const py = y + FH - 10 - alt;
+    c.fillStyle = '#f8f9fa'; c.beginPath(); c.ellipse(px, py - 6, 34, 6, 0, 0, 7); c.fill();
+    c.fillStyle = '#ae1c28'; c.beginPath(); c.moveTo(px + 26, py - 8); c.lineTo(px + 38, py - 24); c.lineTo(px + 40, py - 8); c.fill();
+    c.fillStyle = '#21468b'; c.beginPath(); c.moveTo(px - 4, py - 5); c.lineTo(px + 10, py + 4); c.lineTo(px + 16, py + 4); c.lineTo(px + 8, py - 5); c.fill();
+    for (let i = 0; i < 7; i++) R(c, '#1c7ed6', px - 20 + i * 6, py - 9, 3, 2.5);
+    c.fillStyle = '#a5d8ff'; c.beginPath(); c.ellipse(px - 29, py - 7, 4, 2.5, 0, 0, 7); c.fill();
+    if (alt === 0) { R(c, '#333', px - 22, py - 1, 2, 4); R(c, '#333', px + 6, py - 1, 2, 4); }
+  }
+}
 
 // slot/of: meerdere cabines staan naast elkaar in dezelfde schacht
 function drawCar(c, x, y, type, n, open, slot = 0, of = 1) {
@@ -941,7 +1123,7 @@ function floatAt(r, txt, col) {
   if (floats.length > 60) floats.shift();
 }
 
-const BG = Array.from({ length: 46 }, (_, i) => ({ x: -1500 + i * 82 + ((i * 37) % 23), w: 50 + (i * 53) % 40, h: 50 + (i * 97) % 190 }));
+const BG = Array.from({ length: 80 }, (_, i) => ({ x: -2500 + i * 87 + ((i * 37) % 23), w: 50 + (i * 53) % 40, h: 50 + (i * 97) % 190 }));
 const STARS = Array.from({ length: 60 }, (_, i) => ({ x: (i * 0.618) % 1, y: ((i * 0.377) % 1) * 0.7, s: 1 + (i % 3) * 0.5 }));
 
 function ghostFor(h) {
@@ -987,15 +1169,34 @@ function draw() {
   R(ctx, mix([70, 72, 80], [176, 180, 188], d), -6 * U, 0, (W + 12) * U, 4);
 
   // bouwgrens en verdiepingsnummers
-  const mf = maxFloor();
-  if (cam.z > 0.5) {
-    ctx.font = '10px system-ui'; ctx.textAlign = 'right'; ctx.fillStyle = night ? 'rgba(255,255,255,.6)' : 'rgba(20,30,50,.6)';
-    for (let f = FMIN; f <= mf; f++) ctx.fillText(f === 0 ? 'BG' : f > 0 ? f : 'K' + (-f), -8, -f * FH - 13);
+  const mf = maxFloor(), nf = minFloor(), L = lx() * U, Rr = rx() * U;
+  // grond die nog niet van jou is: donkerder, met bordjes 'Te koop' op de kavels ernaast
+  for (let pl = 0; pl < W / PW; pl++) {
+    if (pl >= G.lo && pl <= G.hi) continue;
+    const px = pl * PW * U;
+    if (px + PW * U < vx0 || px > vx1) continue;
+    R(ctx, 'rgba(10,20,40,.10)', px, -(mf + 1) * FH, PW * U, (mf + 1) * FH);
+    R(ctx, 'rgba(0,0,0,.28)', px, 7, PW * U, (-nf) * FH);
+    if (pl === G.lo - 1 || pl === G.hi + 1) {
+      const cx = px + PW * U / 2, hot = hover && plotOf(hover.u) === pl && tool === 'land';
+      R(ctx, '#7a5237', cx - 2, -34, 4, 34);
+      R(ctx, hot ? '#ffd24a' : '#fff7e0', cx - 42, -62, 84, 32); ctx.strokeStyle = '#7a5237'; ctx.lineWidth = 2; ctx.strokeRect(cx - 42, -62, 84, 32);
+      ctx.fillStyle = '#c92a2a'; ctx.font = 'bold 11px system-ui'; ctx.textAlign = 'center'; ctx.fillText('TE KOOP', cx, -49);
+      ctx.fillStyle = '#2b2b2b'; ctx.font = 'bold 11px system-ui'; ctx.fillText(euro(landCost()), cx, -36);
+    }
   }
-  ctx.strokeStyle = night ? 'rgba(255,255,255,.45)' : 'rgba(20,30,50,.4)'; ctx.lineWidth = 1.5; ctx.setLineDash([6, 6]);
-  ctx.beginPath(); ctx.moveTo(0, -(mf + 1) * FH); ctx.lineTo(W * U, -(mf + 1) * FH); ctx.moveTo(0, 0); ctx.lineTo(0, -(mf + 1) * FH); ctx.moveTo(W * U, 0); ctx.lineTo(W * U, -(mf + 1) * FH); ctx.stroke();
+  if (cam.z > 0.4) {
+    ctx.font = '10px system-ui'; ctx.textAlign = 'right'; ctx.fillStyle = night ? 'rgba(255,255,255,.6)' : 'rgba(20,30,50,.6)';
+    for (let f = nf; f <= mf; f++) if (f % (cam.z > 0.7 ? 1 : 5) === 0 || f === mf) ctx.fillText(f === 0 ? 'BG' : f > 0 ? f : 'K' + (-f), L - 8, -f * FH - 13);
+  }
+  ctx.strokeStyle = night ? 'rgba(255,255,255,.45)' : 'rgba(20,30,50,.4)'; ctx.lineWidth = 1.5 / Math.min(1, cam.z); ctx.setLineDash([6, 6]);
+  ctx.beginPath(); ctx.moveTo(L, -(mf + 1) * FH); ctx.lineTo(Rr, -(mf + 1) * FH); ctx.moveTo(L, -nf * FH); ctx.lineTo(L, -(mf + 1) * FH); ctx.moveTo(Rr, -nf * FH); ctx.lineTo(Rr, -(mf + 1) * FH);
+  ctx.moveTo(L, -nf * FH); ctx.lineTo(Rr, -nf * FH); ctx.stroke();
   ctx.setLineDash([]);
-  if (G.stars < 4) { ctx.textAlign = 'center'; ctx.font = '11px system-ui'; ctx.fillStyle = night ? 'rgba(255,255,255,.7)' : 'rgba(20,30,50,.6)'; ctx.fillText('Hoger bouwen mag met ' + stars(G.stars + 1), W * U / 2, -(mf + 1) * FH - 6); }
+  const up = nextStar(MAXF, m => m > mf);
+  if (up) { ctx.textAlign = 'center'; ctx.font = '11px system-ui'; ctx.fillStyle = night ? 'rgba(255,255,255,.7)' : 'rgba(20,30,50,.6)'; ctx.fillText('Hoger bouwen mag met ' + stars(up), (L + Rr) / 2, -(mf + 1) * FH - 6); }
+  const down = nextStar(MINF, m => m < nf);
+  if (down) { ctx.textAlign = 'center'; ctx.font = '11px system-ui'; ctx.fillStyle = 'rgba(255,255,255,.7)'; ctx.fillText('Dieper graven mag met ' + stars(down), (L + Rr) / 2, -nf * FH + 14); }
 
   // lege vloeren, kamers
   const lo = Math.floor(-vy1 / FH) - 1, hi = Math.floor(-vy0 / FH) + 1;
@@ -1014,11 +1215,11 @@ function draw() {
       const n = Math.min(r.inside, Math.floor(w / 9));
       for (let i = 0; i < n; i++) drawPerson(ctx, x + (i + 0.5) * w / n + ((i * 7) % 5) - 2, y + FH - 1, '#3b4252');
       if (night && r.inside === 0 && r.type !== 'lobby' && !t.util) R(ctx, 'rgba(8,12,40,.38)', x, y, w, FH);
-      if (t.pop || t.pay) {
+      if (t.pop || t.pay || t.util) {
         if (!ok(r)) {
           ctx.fillStyle = '#e03131'; ctx.beginPath(); ctx.arc(x + w - 9, y + 11, 6.5, 0, 7); ctx.fill();
           ctx.fillStyle = '#fff'; ctx.font = 'bold 11px system-ui'; ctx.textAlign = 'center'; ctx.fillText('!', x + w - 9, y + 15);
-        } else {
+        } else if (t.pop || t.pay) {
           ctx.fillStyle = r.rating >= 75 ? '#37b24d' : r.rating >= 45 ? '#f59f00' : '#e03131';
           ctx.beginPath(); ctx.arc(x + w - 6, y + 8, 3, 0, 7); ctx.fill();
         }
@@ -1043,6 +1244,8 @@ function draw() {
     if (px < vx0 - 10 || px > vx1 + 10) continue;
     drawPerson(ctx, px, -fy * FH - 1, p.kind === 'cleaner' ? '#1c7ed6' : stressCol(p.stress));
   }
+
+  for (const r of vis) if (r.type === 'heli' || r.type === 'airport') drawFlyer(ctx, r);
 
   // schaduwstuk onder de muis
   const g = (running && hover) ? ghostFor(hover) : null;
@@ -1097,7 +1300,7 @@ function toast(txt, cls) {
 }
 
 function setTool(t) {
-  if (t !== 'select' && t !== 'demolish' && T[t].star > G.stars) { toast('🔒 ' + T[t].name + ' komt vrij bij ' + stars(T[t].star)); sfx('error'); return; }
+  if (T[t] && T[t].star > G.stars) { toast('🔒 ' + T[t].name + ' komt vrij bij ' + stars(T[t].star)); sfx('error'); return; }
   tool = t; stroke = null;
   if (t !== 'select') select(null);
   for (const b of document.querySelectorAll('.tool')) b.classList.toggle('on', b.dataset.tool === t);
@@ -1131,7 +1334,8 @@ function buildToolbar() {
     b.title = t.desc; b.classList.toggle('locked', locked);
     if (i === 0) b.classList.add('sep');
   });
-  add('demolish', 'Slopen', 'helft terug', '🔨', 'X').classList.add('sep');
+  add('land', 'Grond kopen', euro(landCost()), '🏷️', 'G').classList.add('sep');
+  add('demolish', 'Slopen', 'helft terug', '🔨', 'X');
   setTool(tool);
 }
 
@@ -1139,7 +1343,11 @@ function updHint() {
   const el = $('hint'); let txt, bad = false;
   if (tool === 'select') {
     const r = pick(hover);
-    txt = r ? T[r.type].name + ' · ' + floorName(r.f) + ' · klik voor info' : 'Sleep om rond te kijken · scroll of knijp om te zoomen · klik op een kamer voor info';
+    txt = r ? T[r.type].name + ' · ' + floorName(r.f) + ' · klik voor info' : 'Sleep om rond te kijken · scroll om te zoomen · klik op een kamer voor info';
+  } else if (tool === 'land') {
+    const pl = hover ? plotOf(hover.u) : -1, why = landWhy(pl);
+    if (hover && why) { txt = '⛔ ' + why; bad = true; }
+    else txt = hover ? '🏷️ Klik om dit stuk grond te kopen voor ' + euro(landCost()) : '🏷️ Klik op een bordje TE KOOP naast je toren. Elk stuk maakt je bouwterrein ' + PW + ' vakjes breder.';
   } else if (tool === 'demolish') {
     const r = pick(hover);
     if (r && r.type === 'lobby') { txt = 'De lobby kun je niet slopen'; bad = true; }
@@ -1150,6 +1358,27 @@ function updHint() {
     else txt = t.name + ' · ' + (g ? euro(costOf(tool, g.f, g.x)) : euro(t.cost)) + ' · ' + t.desc;
   }
   el.textContent = txt; el.classList.toggle('bad', bad);
+}
+
+// Grond kopen: alleen het kavel direct links of rechts van je terrein.
+function landWhy(pl) {
+  if (pl < 0 || pl >= W / PW) return 'Verder kun je niet kopen: dit is het eind van de stad';
+  if (pl >= G.lo && pl <= G.hi) return 'Deze grond is al van jou';
+  if (pl !== G.lo - 1 && pl !== G.hi + 1) return 'Koop eerst de grond die ertussen ligt';
+  if (G.money < landCost()) return 'Te weinig geld: dit stuk grond kost ' + euro(landCost());
+  return null;
+}
+function buyLand(pl) {
+  const why = landWhy(pl);
+  if (why) { sfx('error'); toast('⛔ ' + why, 'bad'); return; }
+  const c = landCost();
+  G.money -= c; G.bought = (G.bought || 0) + 1;
+  if (pl < G.lo) G.lo = pl; else G.hi = pl;
+  floats.push({ x: (pl + 0.5) * PW * U, y: -40, txt: '-' + euro(c), col: '#ffb3b3', t: 0 });
+  for (let f = FMIN; f <= TOP; f++) fillGaps(f);
+  rebuild(); sfx('star'); save();
+  toast('🏷️ Gekocht! Je bouwterrein is nu ' + (rx() - lx()) + ' vakjes breed.', 'good');
+  buildToolbar();
 }
 
 function select(r) {
@@ -1185,7 +1414,8 @@ function updInfo() {
     else if (t.util) {
       h += '<p>' + t.desc + '</p>';
       if (r.type === 'garage') h += '<p>🚗 Bezet: ' + (r.used || 0) + ' van ' + t.spots + ' plekken</p>';
-      if (r.type === 'vend') h += '<p>💰 Vandaag verdiend: ' + euro(r.earned) + '</p>';
+      if (t.hourly || LAND_T[r.type]) h += '<p>💰 Vandaag verdiend: ' + euro(r.earned) + '</p>';
+      if (r.type === 'vault') h += '<p>💰 Rente vannacht: ' + euro(r.rente || 0) + '</p>';
     } else {
       const face = r.rating >= 75 ? '😀' : r.rating >= 45 ? '😐' : '😡';
       h += '<p>' + face + ' Tevreden: <b>' + Math.round(r.rating) + '%</b></p>';
@@ -1217,7 +1447,7 @@ function updHud() {
   const m = Math.floor(G.min);
   $('s-time').textContent = 'Dag ' + G.day + ' · ' + String(Math.floor(m / 60)).padStart(2, '0') + ':' + String(m % 60).padStart(2, '0');
   $('s-stars').textContent = stars(G.stars);
-  if (G.stars < 5) {
+  if (G.stars < MAX_STARS) {
     const a = STAR_POP[G.stars - 1], b = STAR_POP[G.stars];
     $('s-bar').style.width = clamp((pop - a) / (b - a) * 100, 0, 100) + '%';
     $('s-pop').textContent = '👥 ' + pop + '/' + b;
@@ -1235,7 +1465,7 @@ function updHud() {
 function updMission() {
   const el = $('mission'), m = MISSIONS.find(m => !G.done.includes(m.id));
   let want = null, h;
-  if (!m) h = '<div class="k">Alle opdrachten gehaald</div><div class="t">🏆 Je toren is af!</div><div class="h">Bouw gerust verder.</div>';
+  if (!m) h = '<div class="k">Alle opdrachten gehaald</div><div class="t">🏆 Jij bent de beste torenbouwer!</div><div class="h">Bouw gerust verder.</div>';
   else {
     const n = Math.min(m.g, Math.floor(m.n()));
     if (n >= m.g) {
@@ -1267,8 +1497,11 @@ const HELP = '<ul>' +
   '<li>💰 <b>Geld:</b> mensen betalen als ze aankomen. Blije mensen betalen het meest.</li>' +
   '<li>🔴 <b>Rode poppetjes</b> wachten te lang. Klik op de lift voor een extra cabine, of bouw een lift erbij.</li>' +
   '<li>⭐ <b>Sterren:</b> meer inwoners geeft sterren. Daarmee mag je hoger bouwen en krijg je nieuwe kamers.</li>' +
-  '<li>🚇 <b>Onder de grond</b> (scroll omlaag) passen winkels, een parkeergarage en een metrostation. Kantoren en woningen hebben daglicht nodig.</li>' +
-  '<li>↩️ <b>Vergist?</b> Druk op de pijl of Ctrl+Z. Rondkijken: slepen met Kijken, of met de rechtermuisknop.</li></ul>';
+  '<li>🚇 <b>Onder de grond</b> passen winkels, een parkeergarage en een metrostation. Kantoren en woningen hebben daglicht nodig.</li>' +
+  '<li>🏷️ <b>Grond kopen:</b> klik op een bordje TE KOOP naast je toren. Dan kun je breder bouwen.</li>' +
+  '<li>🚁 <b>Op het dak</b> passen zonnepanelen, een helikopterplatform en later zelfs een vliegveld. Daarboven kan niets meer.</li>' +
+  '<li>🔍 <b>Rondkijken:</b> scroll om in en uit te zoomen. Schuiven: slepen met de rechtermuisknop, WASD of pijltjes, de muis tegen de rand, of klik op de minikaart.</li>' +
+  '<li>↩️ <b>Vergist?</b> Druk op de pijl of Ctrl+Z.</li></ul>';
 
 function showStart() {
   modal('<h1>🏗️ SimToren</h1><p>Bouw de hoogste toren van Nederland!</p>' + HELP +
@@ -1320,13 +1553,15 @@ function endStroke() {
 
 function clickAt() {
   if (!hover) return;
-  if (tool === 'demolish') {
+  if (tool === 'land') buyLand(plotOf(hover.u));
+  else if (tool === 'demolish') {
     const r = pick(hover);
     if (r && r.type === 'lobby') { sfx('error'); toast('De lobby kun je niet slopen', 'bad'); }
     else if (r) demolish([r]);
   } else if (tool === 'select') {
-    const r = pick(hover);
+    const r = pick(hover), pl = plotOf(hover.u);
     select(r || null); if (r) sfx('click');
+    else if ((pl === G.lo - 1 || pl === G.hi + 1) && hover.f >= -1 && hover.f <= 2) buyLand(pl);   // klik op een bordje TE KOOP
   } else { stroke = { ids: [], cost: 0, x: null, lastF: 0 }; tryPlace(true); endStroke(); }
 }
 
@@ -1344,16 +1579,18 @@ cv.addEventListener('pointerdown', e => {
   if (e.button !== 0 || spaceDown || tool === 'select') {
     drag = { k: 'pan', x: e.clientX, y: e.clientY, cx: cam.x, cy: cam.y, moved: false, btn: e.button };
     if (tool === 'select') cv.style.cursor = 'grabbing';
-  } else if (e.pointerType === 'touch' || tool === 'demolish') drag = { k: 'tap' };
+  } else if (e.pointerType === 'touch' || tool === 'demolish' || tool === 'land') drag = { k: 'tap' };
   else { drag = { k: 'stroke' }; stroke = { ids: [], cost: 0, x: null, lastF: 0 }; tryPlace(true); }
 });
 
+let mouse = null;   // muispositie op het speelveld, voor schuiven aan de rand
 cv.addEventListener('pointermove', e => {
   if (!running) return;
+  mouse = e.pointerType === 'mouse' ? { x: e.clientX, y: e.clientY } : null;
   if (ptrs.has(e.pointerId)) ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
   if (drag && drag.k === 'pinch' && ptrs.size === 2) {
     const [a, b] = [...ptrs.values()], d = Math.hypot(a.x - b.x, a.y - b.y), mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
-    cam.z = clamp(drag.z * d / drag.d, 0.35, 2.5);
+    cam.z = clamp(drag.z * d / drag.d, ZMIN, ZMAX);
     cam.x = drag.cx + (drag.mx - cw / 2) / drag.z - (mx - cw / 2) / cam.z;
     cam.y = drag.cy + (drag.my - ch / 2) / drag.z - (my - ch / 2) / cam.z;
     clampCam(); return;
@@ -1396,20 +1633,25 @@ function pointerEnd(e) {
 }
 cv.addEventListener('pointerup', pointerEnd);
 cv.addEventListener('pointercancel', pointerEnd);
-cv.addEventListener('pointerleave', () => { if (!drag) hover = null; });
+cv.addEventListener('pointerleave', () => { mouse = null; if (!drag) hover = null; });
 cv.addEventListener('contextmenu', e => e.preventDefault());
 
 function zoomAt(f, sx, sy) {
   const wx = (sx - cw / 2) / cam.z + cam.x, wy = (sy - ch / 2) / cam.z + cam.y;
-  cam.z = clamp(cam.z * f, 0.35, 2.5);
+  cam.z = clamp(cam.z * f, ZMIN, ZMAX);
   cam.x = wx - (sx - cw / 2) / cam.z; cam.y = wy - (sy - ch / 2) / cam.z;
   clampCam();
 }
 cv.addEventListener('wheel', e => {
   e.preventDefault();
   if (!running) return;
-  if (e.ctrlKey || e.metaKey) zoomAt(Math.exp(-e.deltaY * 0.01), e.clientX, e.clientY);
-  else { cam.x += (e.shiftKey ? e.deltaY : e.deltaX) / cam.z; if (!e.shiftKey) cam.y += e.deltaY / cam.z; clampCam(); }
+  // scrollwiel = in- en uitzoomen bij de muis; shift + scroll of zijwaarts vegen = opzij schuiven
+  const dy = e.deltaMode === 1 ? e.deltaY * 33 : e.deltaY, dx = e.deltaMode === 1 ? e.deltaX * 33 : e.deltaX;
+  if (e.shiftKey) { cam.x += (dx || dy) / cam.z; clampCam(); }
+  else {
+    if (dx) { cam.x += dx / cam.z; clampCam(); }
+    if (dy) zoomAt(Math.exp(-clamp(dy, -120, 120) * (e.ctrlKey ? 0.01 : 0.004)), e.clientX, e.clientY);
+  }
 }, { passive: false });
 
 document.addEventListener('keydown', e => {
@@ -1421,19 +1663,21 @@ document.addEventListener('keydown', e => {
   else if (k === ' ') { e.preventDefault(); if (!e.repeat) { spaceDown = true; } }
   else if (k === 'p') setSpeed(speedIdx ? 0 : 1);
   else if (k === 'x') setTool('demolish');
+  else if (k === 'g') setTool('land');
+  else if ('wasd'.includes(k)) keysDown.add(k);
   else if (k >= '0' && k <= '9') setTool(TOOLS[k === '0' ? 9 : +k - 1]);
   else if (k === 'h') homeView();
   else if (k === '+' || k === '=') zoomAt(1.25, cw / 2, ch / 2);
   else if (k === '-') zoomAt(0.8, cw / 2, ch / 2);
-  else if (k === 'arrowup') { cam.y -= 60 / cam.z; clampCam(); }
-  else if (k === 'arrowdown') { cam.y += 60 / cam.z; clampCam(); }
-  else if (k === 'arrowleft') { cam.x -= 60 / cam.z; clampCam(); }
-  else if (k === 'arrowright') { cam.x += 60 / cam.z; clampCam(); }
+  else if (k.startsWith('arrow')) { keysDown.add(k); e.preventDefault(); }
   else if ((k === 'delete' || k === 'backspace') && selected) demolish([selected]);
 });
 let spaceAt = 0;
 document.addEventListener('keydown', e => { if (e.key === ' ' && !e.repeat) spaceAt = performance.now(); });
+const keysDown = new Set();
+window.addEventListener('blur', () => keysDown.clear());
 document.addEventListener('keyup', e => {
+  keysDown.delete(e.key.toLowerCase());
   if (e.key !== ' ') return;
   spaceDown = false;
   // kort tikken op spatie = pauze, ingedrukt houden = slepen
@@ -1452,8 +1696,48 @@ window.addEventListener('resize', () => { const old = cw; resize(); if (G && Mat
 document.addEventListener('visibilitychange', () => { if (document.hidden && running) save(); });
 window.addEventListener('pagehide', () => { if (running) save(); });
 
+// ── minikaart: de hele stad in het klein. Klik of sleep om er naartoe te gaan. ──
+const mini = $('mini'), mctx = mini.getContext('2d'), MW = 220, MH = 132;
+const WY0 = -(TOP + 1) * FH, WY1 = -FMIN * FH;
+const mX = wx => wx / (W * U) * MW, mY = wy => (wy - WY0) / (WY1 - WY0) * MH;
+const MCOL = { lobby: '#c9a227', office: '#74c0fc', apartment: '#ffa94d', shop: '#69db7c', restaurant: '#ff8787', hotel: '#b197fc',
+  cinema: '#868e96', garage: '#adb5bd', metro: '#e8590c', clean: '#63e6be', deck: '#e7f5ff', vend: '#fa5252', solar: '#364fc7',
+  gym: '#f783ac', pool: '#4dabf7', heli: '#fcc419', vault: '#ffd43b', aquarium: '#1971c2', coaster: '#e03131', airport: '#f8f9fa' };
+function setupMini() {
+  const d = Math.min(2, window.devicePixelRatio || 1);
+  mini.width = MW * d; mini.height = MH * d; mini.style.width = MW + 'px'; mini.style.height = MH + 'px';
+  mctx.setTransform(d, 0, 0, d, 0, 0);
+}
+function drawMini() {
+  if (cw < 720) return;   // op een telefoon is de minikaart verborgen
+  const c = mctx, gy = mY(0);
+  R(c, '#5aa9e6', 0, 0, MW, gy); R(c, '#6e523c', 0, gy, MW, MH - gy);
+  R(c, 'rgba(255,255,255,.18)', mX(lx() * U), mY(-(maxFloor() + 1) * FH), mX((rx() - lx()) * U), mY(-minFloor() * FH) - mY(-(maxFloor() + 1) * FH));
+  R(c, '#3f9b52', 0, gy - 1, MW, 2);
+  for (const r of G.rooms) {
+    const t = T[r.type];
+    if (t.transport) continue;
+    const x = mX(r.x * U), y = mY(-(r.f + 1) * FH);
+    R(c, MCOL[r.type] || '#ccc', x, y, Math.max(1, mX(t.w * U) - 0.3), Math.max(1, mY(FH) - mY(0) - 0.3));
+  }
+  for (const sh of shafts) R(c, sh.type === 'xlift' ? '#ffd24a' : '#343a40', mX(sh.x * U), mY(-(sh.top + 1) * FH), Math.max(1, mX(2 * U)), mY(-sh.bot * FH) - mY(-(sh.top + 1) * FH));
+  const vx0 = cam.x - cw / 2 / cam.z, vy0 = cam.y - ch / 2 / cam.z;
+  c.strokeStyle = '#fff'; c.lineWidth = 1.5;
+  c.strokeRect(mX(vx0), mY(vy0), mX(cw / cam.z), mY(vy0 + ch / cam.z) - mY(vy0));
+}
+let miniDrag = false;
+function miniGo(e) {
+  const b = mini.getBoundingClientRect(), fx = (e.clientX - b.left) / b.width, fy = (e.clientY - b.top) / b.height;
+  cam.x = fx * W * U; cam.y = WY0 + fy * (WY1 - WY0); clampCam();
+}
+mini.addEventListener('pointerdown', e => { if (!running) return; miniDrag = true; try { mini.setPointerCapture(e.pointerId); } catch (err) { } miniGo(e); });
+mini.addEventListener('pointermove', e => { if (miniDrag) miniGo(e); });
+for (const ev of ['pointerup', 'pointercancel']) mini.addEventListener(ev, () => { miniDrag = false; });
+mini.addEventListener('wheel', e => { e.preventDefault(); }, { passive: false });
+
 // ───────────────────────── 8. Spellus ─────────────────────────
 let lastHour = -1;
+const LAND_T = { heli: 8, airport: 10 };   // spelminuten tot het toestel aan de grond staat
 function step(dt) {
   const h = G.min / 60;
   const quiet = active === 0 && (h >= 22.5 || h < 5.5);   // 's nachts doorspoelen als iedereen slaapt
@@ -1467,6 +1751,19 @@ function step(dt) {
       const v = T[r.type].hourly; G.money += v; G.today += v; r.earned += v;
       if (rnd() < 0.25) floatAt(r, '+' + euro(v), '#8df0a5');
     }
+    // helikopters om de twee uur, vliegtuigen elk uur
+    for (const r of G.rooms) {
+      if (!ok(r)) continue;
+      let v = 0;
+      if (r.type === 'heli' && hr >= 8 && hr <= 20 && (hr + r.id) % 2 === 0) v = Math.round(4000 * (0.5 + mood / 200));
+      if (r.type === 'airport' && hr >= 7 && hr <= 22) v = Math.round(30000 * (0.5 + mood / 200));
+      if (!v) continue;
+      r.land = absNow(); r.landPay = v;
+    }
+  }
+  for (const r of G.rooms) if (r.landPay && absNow() - r.land >= LAND_T[r.type]) {   // geld bij het neerkomen
+    const v = r.landPay; r.landPay = 0;
+    G.money += v; G.today += v; r.earned += v; floatAt(r, '+' + euro(v), '#8df0a5'); sfx('coin');
   }
   if (G.today > (G.best || 0)) G.best = G.today;
   spawnVisitors(dmin);
@@ -1479,16 +1776,32 @@ function checkProgress() {
   let sum = 0, n = 0;
   for (const r of G.rooms) if (T[r.type].pop && r.type !== 'lobby') { sum += ok(r) ? r.rating : 0; n++; }
   mood = n ? sum / n : 100;
-  while (G.stars < 5 && pop >= STAR_POP[G.stars]) {
+  while (G.stars < MAX_STARS && pop >= STAR_POP[G.stars]) {
     G.stars++;
     const fresh = TOOLS.filter(t => T[t].star === G.stars).map(t => T[t].name);
-    toast(stars(G.stars) + ' Nieuwe ster!' + (fresh.length ? ' Nieuw: ' + fresh.join(', ') + '.' : '') + (G.stars < 5 ? ' Je mag nu bouwen tot verdieping ' + maxFloor() + '.' : ''), 'star');
+    toast(stars(G.stars) + ' Nieuwe ster!' + (fresh.length ? ' Nieuw: ' + fresh.join(', ') + '.' : '') + ' Je mag nu bouwen van ' + floorName(minFloor()) + ' tot verdieping ' + maxFloor() + '.', 'star');
     sfx('star'); buildToolbar(); save();
   }
   if (!G.won && cnt('deck')) {
     G.won = true; save(); sfx('star');
-    modal('<h1>🏆 Gefeliciteerd!</h1><p>Je hebt de hoogste toren van Nederland gebouwd, in ' + G.day + ' dagen.</p><p>Er wonen en werken ' + pop + ' mensen.</p><div class="row"><button class="btn green big" data-a="close">Verder bouwen</button></div>');
+    modal('<h1>🏆 Gefeliciteerd!</h1><p>Je hebt de hoogste toren van Nederland gebouwd, in ' + G.day + ' dagen.</p><p>Er wonen en werken ' + pop + ' mensen.</p><p>Maar het kan nóg groter: koop grond, haal ⭐⭐⭐⭐⭐⭐⭐ en bouw een vliegveld op het dak!</p><div class="row"><button class="btn green big" data-a="close">Verder bouwen</button></div>');
   }
+}
+
+// Schuiven met WASD/pijltjes, of door de muis tegen de rand van het scherm te houden.
+const EDGE = 18;
+function panCam(dt) {
+  let vx = 0, vy = 0;
+  if (keysDown.has('a') || keysDown.has('arrowleft')) vx--;
+  if (keysDown.has('d') || keysDown.has('arrowright')) vx++;
+  if (keysDown.has('w') || keysDown.has('arrowup')) vy--;
+  if (keysDown.has('s') || keysDown.has('arrowdown')) vy++;
+  if (mouse && !drag && document.hasFocus()) {
+    if (mouse.x < EDGE) vx--; else if (mouse.x > cw - EDGE) vx++;
+    if (mouse.y < EDGE) vy--; else if (mouse.y > ch - EDGE) vy++;
+  }
+  if (!vx && !vy) return;
+  cam.x += clamp(vx, -1, 1) * 700 * dt / cam.z; cam.y += clamp(vy, -1, 1) * 700 * dt / cam.z; clampCam();
 }
 
 let last = 0, hudT = 0, saveT = 0;
@@ -1500,15 +1813,16 @@ function frame(now) {
   const sim = real * SPEEDS[speedIdx], n = Math.ceil(sim / 0.034);
   for (let i = 0; i < n; i++) step(sim / n);
   if (people.some(p => p.dead)) people = people.filter(p => !p.dead);
+  panCam(real);
   for (const f of floats) f.t += real;
   floats = floats.filter(f => f.t < 1.4);
   hudT += real; saveT += real;
   if (hudT > 0.15) { hudT = 0; checkProgress(); updHud(); }
   if (saveT > 10) { saveT = 0; save(); }
-  draw();
+  draw(); drawMini();
 }
 
-resize();
+resize(); setupMini();
 newGame();          // lege toren als achtergrond achter het startscherm
 homeView(); draw();
 showStart();
